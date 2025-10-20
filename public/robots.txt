@@ -1,0 +1,15 @@
+# ヒカマーズ好き嫌い.com - Robots.txt
+
+User-agent: *
+Allow: /
+Allow: /person/*
+Allow: /ranking/*
+
+# 管理画面は除外
+Disallow: /admin
+
+# APIルートは除外
+Disallow: /api/
+
+# サイトマップの場所
+Sitemap: https://hikamers-suki-kira.vercel.app/sitemap.xml

@@ -1,36 +1,239 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ヒカマーズ好き嫌い.com
 
-## Getting Started
+ヒカマーズメンバーの好き嫌い投票サイト
 
-First, run the development server:
+## 技術スタック
+
+- **フロントエンド**: Next.js 15 (App Router), React 19, TypeScript
+- **スタイリング**: Tailwind CSS 4
+- **データベース**: Supabase
+- **デプロイ**: Vercel
+- **パッケージマネージャー**: pnpm
+
+## 機能
+
+### 実装済み
+
+- ✅ **ヘッダーナビゲーション**
+  - サイト名表示
+  - ランキングリンク（好感度・不人気・トレンド）
+  - あいまい検索ボックス
+  
+- ✅ **個別ページ**（十字架）
+  - 好き・嫌いの投票機能（1日1回、Cookieで管理）
+  - 投票結果の視覚的表示
+  - 投票後のシェアボタン（X, Bluesky, LINE, URLコピー）
+  - コメント表示・投稿機能
+  - コメントフィルター（すべて、好き派のみ、嫌い派のみ）
+  - コメントへのグッド/バッドボタン
+  - 返信機能
+  - 通報・非表示ボタン
+  - 20件ごとのページネーション
+
+- ✅ **ランキングページ**
+  - 好感度ランキング（好き派の最新コメント1件表示）
+  - 不人気ランキング（嫌い派の最新コメント1件表示）
+  - トレンドランキング（過去7日間の投票数順、好き派の最新コメント1件表示）
+
+- ✅ **検索機能**
+  - あいまい検索対応
+  - 検索結果ページ（3カラム表示）
+  - 人物名・タグ・説明文で検索
+
+- ✅ **管理者コントロールパネル**
+  - パスワード認証（6WH_CkHKnsWy）
+  - 通報管理
+  - コメント削除機能
+  - コメント非表示機能
+
+- ✅ **サイドバー**
+  - 最近見た人物（LocalStorage管理）
+  - 話題の人物
+  - 話題のタグ
+  - 新着コメント
+
+- ✅ **トップページ**
+  - ヒーローセクション
+  - ランキングカード
+  - 人物一覧
+
+### 今後実装予定
+
+- NGワード設定機能（フロントエンド実装）
+- その他の人物データ追加
+- タグページ
+- コメント検索機能
+- 統計ダッシュボード
+
+## セットアップ
+
+### 1. 依存関係のインストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Supabaseのセットアップ
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. [Supabase](https://supabase.com)でプロジェクトを作成
+2. SQL Editorで `supabase/schema.sql` の内容を実行
+3. `.env.local` ファイルを作成（`.env.example` を参考）
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-## Learn More
+### 3. 開発サーバーの起動
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## データベーススキーマ
 
-## Deploy on Vercel
+### votes テーブル
+- 投票データを管理
+- person_id, vote_type, cookie_id を保存
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### comments テーブル
+- コメントデータを管理
+- 好き派/嫌い派、グッド/バッドカウント、親コメントID（返信用）を保存
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### ng_words テーブル
+- NGワードを管理
+- person_id が NULL の場合は全体適用
+
+### reports テーブル
+- 通報データを管理
+
+## デプロイ
+
+Vercelにデプロイする場合：
+
+```bash
+# Vercel CLIをインストール（未インストールの場合）
+pnpm add -g vercel
+
+# デプロイ
+vercel
+```
+
+環境変数の設定を忘れずに行ってください。
+
+## ディレクトリ構成
+
+```
+sukikirai/
+├── app/                        # Next.js App Router
+│   ├── admin/                 # 管理者パネル
+│   │   └── page.tsx
+│   ├── person/[id]/          # 個別ページ
+│   │   └── page.tsx
+│   ├── ranking/              # ランキングページ
+│   │   ├── popularity/       # 好感度ランキング
+│   │   ├── unpopular/        # 不人気ランキング
+│   │   └── trending/         # トレンドランキング
+│   ├── search/               # 検索結果ページ
+│   │   └── page.tsx
+│   ├── layout.tsx            # ルートレイアウト
+│   ├── page.tsx              # トップページ
+│   └── globals.css           # グローバルスタイル
+├── components/               # Reactコンポーネント
+│   ├── Header.tsx            # ヘッダー
+│   ├── VoteButton.tsx        # 投票ボタン
+│   ├── ShareButtons.tsx      # シェアボタン
+│   ├── CommentSection.tsx    # コメント表示
+│   ├── CommentForm.tsx       # コメント投稿フォーム
+│   └── Sidebar.tsx           # サイドバー
+├── data/                     # JSONデータ
+│   └── people.json           # 人物プロフィール
+├── lib/                      # ユーティリティ
+│   ├── supabase.ts           # Supabaseクライアント
+│   └── ranking.ts            # ランキング計算
+├── supabase/                 # Supabaseスキーマ
+│   └── schema.sql
+├── types/                    # TypeScript型定義
+│   └── person.ts
+└── README.md                 # ドキュメント
+```
+
+## ページ一覧
+
+- `/` - トップページ
+- `/person/jujika` - 十字架の個別ページ
+- `/ranking/popularity` - 好感度ランキング
+- `/ranking/unpopular` - 不人気ランキング
+- `/ranking/trending` - トレンドランキング
+- `/search?q=検索ワード` - 検索結果
+- `/admin` - 管理者コントロールパネル
+
+## 管理者情報
+
+- 管理者パネルURL: `/admin`
+- 管理者パスワード: `6WH_CkHKnsWy`
+
+## SEO最適化
+
+### 実装済みのSEO機能
+
+- ✅ **メタデータ最適化**
+  - タイトル・ディスクリプション・キーワード
+  - OGP（Open Graph Protocol）
+  - Twitter Card
+  - ファビコン（SVG）
+
+- ✅ **構造化データ（JSON-LD）**
+  - WebSite スキーマ
+  - Person スキーマ
+  - BreadcrumbList スキーマ
+  - 評価・投票データ
+
+- ✅ **サイトマップ**
+  - 自動生成（`/sitemap.xml`）
+  - 全ページを含む
+
+- ✅ **robots.txt**
+  - 検索エンジン最適化
+  - 管理画面除外
+
+- ✅ **パフォーマンス**
+  - 画像最適化
+  - フォント最適化
+  - レスポンシブデザイン
+
+### SEO設定手順
+
+詳細は `SEO_SETUP.md` を参照してください。
+
+1. 環境変数 `NEXT_PUBLIC_SITE_URL` を設定
+2. OGP画像を配置（`app/opengraph-image.png`）
+3. Google Search Consoleに登録
+4. サイトマップを送信
+
+### チェックポイント
+
+- [ ] `/sitemap.xml` が正しく生成されているか確認
+- [ ] `/robots.txt` が正しく配置されているか確認
+- [ ] OGP画像（1200x630px）を配置
+- [ ] Google Search Consoleで確認
+
+## ツール
+
+### 人物追加ツール
+
+`add_person_tool.py` - people.jsonに新しい人物を追加するGUIツール
+
+```bash
+python add_person_tool.py
+```
+
+または
+
+```bash
+start_tool.bat  # Windows
+```
+
+詳細は `TOOL_README.md` を参照。

@@ -1,0 +1,45 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Database types
+export type Vote = {
+  id: string;
+  person_id: string;
+  vote_type: 'like' | 'dislike';
+  created_at: string;
+  cookie_id: string;
+};
+
+export type Comment = {
+  id: string;
+  person_id: string;
+  comment_number: number;
+  name: string | null;
+  user_id: string | null;
+  vote_type: 'like' | 'dislike';
+  content: string;
+  created_at: string;
+  good_count: number;
+  bad_count: number;
+  is_hidden: boolean;
+  is_reported: boolean;
+  parent_comment_id: string | null;
+};
+
+export type NgWord = {
+  id: string;
+  word: string;
+  person_id: string | null; // null means global
+  created_at: string;
+};
+
+export type Report = {
+  id: string;
+  comment_id: string;
+  reason: string;
+  created_at: string;
+};

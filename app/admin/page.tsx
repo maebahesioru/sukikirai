@@ -12,7 +12,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [reports, setReports] = useState<(Report & { comment: Comment })[]>([]);
   const [allComments, setAllComments] = useState<Comment[]>([]);
-  const [activeTab, setActiveTab] = useState<'reports' | 'comments'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'comments' | 'votes'>('reports');
 
   useEffect(() => {
     // Check if already logged in
@@ -194,6 +194,47 @@ export default function AdminPage() {
     }
   };
 
+  const handleModifyVotes = async (personId: string, likeCount: number, dislikeCount: number) => {
+    if (!confirm(`票数を変更しますか？\n\n好き: ${likeCount}票\n嫌い: ${dislikeCount}票`)) return;
+
+    try {
+      // Delete existing votes for this person
+      await supabase
+        .from('votes')
+        .delete()
+        .eq('person_id', personId);
+
+      // Insert new votes
+      const votes = [];
+      for (let i = 0; i < likeCount; i++) {
+        votes.push({
+          person_id: personId,
+          vote_type: 'like',
+          cookie_id: `admin_like_${i}_${Date.now()}`,
+          ip_address: 'admin_modified',
+        });
+      }
+      for (let i = 0; i < dislikeCount; i++) {
+        votes.push({
+          person_id: personId,
+          vote_type: 'dislike',
+          cookie_id: `admin_dislike_${i}_${Date.now()}`,
+          ip_address: 'admin_modified',
+        });
+      }
+
+      const { error } = await supabase.from('votes').insert(votes);
+
+      if (error) throw error;
+
+      alert('票数を変更しました\n\nページをリロードします');
+      window.location.reload();
+    } catch (error) {
+      console.error('票数変更エラー:', error);
+      alert('票数の変更に失敗しました');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -272,6 +313,16 @@ export default function AdminPage() {
               }`}
             >
               コメント削除
+            </button>
+            <button
+              onClick={() => setActiveTab('votes')}
+              className={`flex-1 py-4 px-6 font-bold transition ${
+                activeTab === 'votes'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              票数管理
             </button>
           </div>
         </div>
@@ -413,7 +464,89 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* Votes Tab */}
+        {activeTab === 'votes' && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">票数管理</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              人物IDを入力して、好き/嫌いの票数を設定できます。
+            </p>
+            <VoteManagementForm onSubmit={handleModifyVotes} />
+          </div>
+        )}
       </main>
     </div>
+  );
+}
+
+function VoteManagementForm({ onSubmit }: { onSubmit: (personId: string, likeCount: number, dislikeCount: number) => void }) {
+  const [personId, setPersonId] = useState('');
+  const [likeCount, setLikeCount] = useState(0);
+  const [dislikeCount, setDislikeCount] = useState(0);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!personId.trim()) {
+      alert('人物IDを入力してください');
+      return;
+    }
+    if (likeCount < 0 || dislikeCount < 0) {
+      alert('票数は0以上で入力してください');
+      return;
+    }
+    onSubmit(personId, likeCount, dislikeCount);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          人物ID
+        </label>
+        <input
+          type="text"
+          value={personId}
+          onChange={(e) => setPersonId(e.target.value)}
+          placeholder="例: jujika"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500"
+          required
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            好き票数
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={likeCount}
+            onChange={(e) => setLikeCount(parseInt(e.target.value) || 0)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            嫌い票数
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={dislikeCount}
+            onChange={(e) => setDislikeCount(parseInt(e.target.value) || 0)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+            required
+          />
+        </div>
+      </div>
+      <button
+        type="submit"
+        className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-purple-700 transition"
+      >
+        票数を変更
+      </button>
+    </form>
   );
 }

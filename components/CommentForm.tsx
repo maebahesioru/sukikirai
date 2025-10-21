@@ -2,8 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import Cookies from 'js-cookie';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 type CommentFormProps = {
   personId: string;
@@ -22,7 +21,7 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
   const [tweetEnabled, setTweetEnabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const MAX_CHARS = 280;
 

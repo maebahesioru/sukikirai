@@ -305,11 +305,21 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
   };
 
   const handleReport = async () => {
-    await supabase.from('reports').insert({
+    if (!confirm('このコメントを通報しますか？\n\n不適切な内容や規約違反のコメントを通報できます。')) {
+      return;
+    }
+    
+    const { error } = await supabase.from('reports').insert({
       comment_id: comment.id,
       reason: 'ユーザー通報',
     });
-    alert('通報しました');
+    
+    if (error) {
+      alert('通報に失敗しました');
+      console.error('通報エラー:', error);
+    } else {
+      alert('通報を受け付けました。\n\nご協力ありがとうございます。');
+    }
   };
 
   const handleHide = () => {
@@ -501,11 +511,21 @@ function ReplyItem({
   };
 
   const handleReport = async () => {
-    await supabase.from('reports').insert({
+    if (!confirm('この返信を通報しますか？\n\n不適切な内容や規約違反のコメントを通報できます。')) {
+      return;
+    }
+    
+    const { error } = await supabase.from('reports').insert({
       comment_id: reply.id,
       reason: 'ユーザー通報',
     });
-    alert('通報しました');
+    
+    if (error) {
+      alert('通報に失敗しました');
+      console.error('通報エラー:', error);
+    } else {
+      alert('通報を受け付けました。\n\nご協力ありがとうございます。');
+    }
   };
 
   const handleHide = () => {
@@ -611,11 +631,31 @@ function ReplyForm({
   
   const MAX_CHARS = 280;
 
+  // 全角文字を2、半角文字を1としてカウント
+  const getCharCount = (text: string): number => {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) {
+      const charCode = text.charCodeAt(i);
+      count += charCode <= 0x7F ? 1 : 2;
+    }
+    return count;
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    const charCount = getCharCount(newContent);
+    
+    if (charCount <= MAX_CHARS) {
+      setContent(newContent);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (content.length > MAX_CHARS) {
-      alert(`返信は${MAX_CHARS}文字以内で入力してください`);
+    const charCount = getCharCount(content);
+    if (charCount > MAX_CHARS) {
+      alert(`返信は全角${Math.floor(MAX_CHARS / 2)}文字（半角${MAX_CHARS}文字）以内で入力してください`);
       return;
     }
     
@@ -710,19 +750,21 @@ function ReplyForm({
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-xs text-gray-600">返信内容</label>
-          <span className={`text-xs ${content.length > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-            {content.length} / {MAX_CHARS}
+          <span className={`text-xs ${getCharCount(content) > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            {getCharCount(content)} / {MAX_CHARS}
           </span>
         </div>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           placeholder={`>>${parentCommentNumber}\n返信内容を入力...`}
           rows={4}
-          maxLength={MAX_CHARS}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
           required
         />
+        <p className="text-xs text-gray-500 mt-1">
+          ※全角{Math.floor(MAX_CHARS / 2)}文字（半角{MAX_CHARS}文字）まで
+        </p>
       </div>
 
       <div className="flex gap-2">

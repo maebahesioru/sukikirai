@@ -90,7 +90,20 @@ export default function AdminPage() {
     if (!confirm('このコメントを削除しますか？\n\n※削除後、ページがリロードされます')) return;
 
     try {
-      // Delete child comments (replies) first
+      // Step 1: Delete all reports for this comment and its replies
+      const { data: childComments } = await supabase
+        .from('comments')
+        .select('id')
+        .eq('parent_comment_id', commentId);
+      
+      const commentIds = [commentId, ...(childComments?.map(c => c.id) || [])];
+      
+      await supabase
+        .from('reports')
+        .delete()
+        .in('comment_id', commentIds);
+
+      // Step 2: Delete child comments (replies)
       const { error: repliesError } = await supabase
         .from('comments')
         .delete()
@@ -98,28 +111,26 @@ export default function AdminPage() {
       
       if (repliesError) {
         console.error('返信削除エラー:', repliesError);
+        throw repliesError;
       }
 
-      // Delete the comment itself
+      // Step 3: Delete the parent comment itself
       const { error: commentError } = await supabase
         .from('comments')
         .delete()
         .eq('id', commentId);
 
-      if (commentError) throw commentError;
+      if (commentError) {
+        console.error('コメント削除エラー:', commentError);
+        throw commentError;
+      }
 
-      // Delete associated reports if reportId is provided
+      // Step 4: Delete the specific report if reportId is provided
       if (reportId) {
         await supabase
           .from('reports')
           .delete()
           .eq('id', reportId);
-      } else {
-        // Delete all reports for this comment
-        await supabase
-          .from('reports')
-          .delete()
-          .eq('comment_id', commentId);
       }
       
       alert('コメントを削除しました\n\nページをリロードします');
@@ -127,7 +138,7 @@ export default function AdminPage() {
       window.location.reload();
     } catch (error) {
       console.error('削除エラー:', error);
-      alert('削除に失敗しました');
+      alert(`削除に失敗しました\n\nエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     }
   };
 

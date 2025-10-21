@@ -11,6 +11,7 @@ export type RankingPerson = Person & {
     content: string;
     name: string;
     createdAt: string;
+    voteType?: 'like' | 'dislike';
   };
 };
 
@@ -169,12 +170,11 @@ export async function getTrendingRanking(): Promise<RankingPerson[]> {
     .select('person_id, vote_type, created_at')
     .gte('created_at', sevenDaysAgo.toISOString());
 
-  // 過去7日間の全コメントを一度に取得
+  // 過去7日間の全コメントを一度に取得（好き派・嫌い派両方）
   const { data: allComments } = await supabase
     .from('comments')
     .select('person_id, content, name, created_at, vote_type')
     .eq('is_hidden', false)
-    .eq('vote_type', 'like')
     .gte('created_at', sevenDaysAgo.toISOString())
     .order('created_at', { ascending: false });
 
@@ -190,11 +190,19 @@ export async function getTrendingRanking(): Promise<RankingPerson[]> {
     voteStats.set(vote.person_id, stats);
   });
 
-  // コメントをperson_idでグルーピング
-  const commentMap = new Map<string, typeof allComments>();
+  // コメントをperson_idと派閥でグルーピング
+  const likeCommentsMap = new Map<string, typeof allComments>();
+  const dislikeCommentsMap = new Map<string, typeof allComments>();
+  
   allComments?.forEach((comment) => {
-    if (!commentMap.has(comment.person_id)) {
-      commentMap.set(comment.person_id, [comment]);
+    if (comment.vote_type === 'like') {
+      if (!likeCommentsMap.has(comment.person_id)) {
+        likeCommentsMap.set(comment.person_id, [comment]);
+      }
+    } else {
+      if (!dislikeCommentsMap.has(comment.person_id)) {
+        dislikeCommentsMap.set(comment.person_id, [comment]);
+      }
     }
   });
 
@@ -206,12 +214,17 @@ export async function getTrendingRanking(): Promise<RankingPerson[]> {
     const totalVotes = likeCount + dislikeCount;
     const likePercentage = totalVotes > 0 ? (likeCount / totalVotes) * 100 : 0;
 
-    const comments = commentMap.get(person.id);
-    const latestComment = comments?.[0]
+    // 好き派のコメントを優先、なければ嫌い派のコメント
+    const likeComments = likeCommentsMap.get(person.id);
+    const dislikeComments = dislikeCommentsMap.get(person.id);
+    const selectedComment = likeComments?.[0] || dislikeComments?.[0];
+    
+    const latestComment = selectedComment
       ? {
-          content: comments[0].content,
-          name: comments[0].name || '匿名',
-          createdAt: comments[0].created_at,
+          content: selectedComment.content,
+          name: selectedComment.name || '匿名',
+          createdAt: selectedComment.created_at,
+          voteType: selectedComment.vote_type,
         }
       : undefined;
 

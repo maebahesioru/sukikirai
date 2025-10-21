@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { format } from 'date-fns';
 
 type CommentSectionProps = {
@@ -630,7 +630,7 @@ function ReplyForm({
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>('like');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   
   const MAX_CHARS = 280;
 

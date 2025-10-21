@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 type VoteButtonProps = {
   personId: string;
@@ -19,7 +19,7 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
   const [dislikeCount, setDislikeCount] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const turnstileRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     checkVoteStatus();

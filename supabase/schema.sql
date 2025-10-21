@@ -81,6 +81,10 @@ CREATE POLICY "Allow public update on comments"
   ON comments FOR UPDATE
   USING (true);
 
+CREATE POLICY "Allow public delete on comments"
+  ON comments FOR DELETE
+  USING (true);
+
 CREATE POLICY "Allow public read access on ng_words"
   ON ng_words FOR SELECT
   USING (true);
@@ -91,4 +95,8 @@ CREATE POLICY "Allow public insert on reports"
 
 CREATE POLICY "Allow public read access on reports"
   ON reports FOR SELECT
+  USING (true);
+
+CREATE POLICY "Allow public delete on reports"
+  ON reports FOR DELETE
   USING (true);

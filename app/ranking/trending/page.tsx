@@ -96,9 +96,19 @@ export default async function TrendingRankingPage() {
 
                       {/* Latest Comment */}
                       {person.latestComment && (
-                        <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                        <div className={`rounded-lg p-3 ${
+                          person.latestComment.voteType === 'dislike'
+                            ? 'bg-purple-50 border border-purple-200'
+                            : 'bg-pink-50 border border-pink-200'
+                        }`}>
                           <p className="text-sm text-gray-700 mb-1">
-                            <span className="font-bold text-pink-600">好き派の最新コメント：</span>
+                            <span className={`font-bold ${
+                              person.latestComment.voteType === 'dislike'
+                                ? 'text-purple-600'
+                                : 'text-pink-600'
+                            }`}>
+                              {person.latestComment.voteType === 'dislike' ? '嫌い派' : '好き派'}の最新コメント：
+                            </span>
                           </p>
                           <p className="text-sm text-gray-700 mb-1">
                             {person.latestComment.content}

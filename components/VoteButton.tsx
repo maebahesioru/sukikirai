@@ -8,22 +8,36 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 type VoteButtonProps = {
   personId: string;
+  initialLikeCount?: number;
+  initialDislikeCount?: number;
   onVote: (voteType: 'like' | 'dislike', likeCount: number, dislikeCount: number) => void;
   onCountsLoaded?: (likeCount: number, dislikeCount: number) => void;
 };
 
-export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteButtonProps) {
+export default function VoteButton({ 
+  personId, 
+  initialLikeCount,
+  initialDislikeCount,
+  onVote, 
+  onCountsLoaded 
+}: VoteButtonProps) {
   const [hasVoted, setHasVoted] = useState(false);
   const [voteType, setVoteType] = useState<'like' | 'dislike' | null>(null);
-  const [likeCount, setLikeCount] = useState(0);
-  const [dislikeCount, setDislikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialLikeCount ?? 0);
+  const [dislikeCount, setDislikeCount] = useState(initialDislikeCount ?? 0);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     checkVoteStatus();
-    fetchVoteCounts();
+    // 初期値が提供されていない場合のみfetch
+    if (initialLikeCount === undefined || initialDislikeCount === undefined) {
+      fetchVoteCounts();
+    } else if (onCountsLoaded) {
+      // 初期値がある場合は親に通知
+      onCountsLoaded(initialLikeCount, initialDislikeCount);
+    }
   }, [personId]);
 
   const checkVoteStatus = () => {
@@ -47,20 +61,14 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
   };
 
   const fetchVoteCounts = async () => {
-    const { data: likes } = await supabase
+    // 最適化：1回のクエリで全投票を取得し、クライアント側で集計
+    const { data: votes } = await supabase
       .from('votes')
-      .select('id', { count: 'exact' })
-      .eq('person_id', personId)
-      .eq('vote_type', 'like');
-    
-    const { data: dislikes } = await supabase
-      .from('votes')
-      .select('id', { count: 'exact' })
-      .eq('person_id', personId)
-      .eq('vote_type', 'dislike');
+      .select('vote_type')
+      .eq('person_id', personId);
 
-    const newLikeCount = likes?.length || 0;
-    const newDislikeCount = dislikes?.length || 0;
+    const newLikeCount = votes?.filter(v => v.vote_type === 'like').length || 0;
+    const newDislikeCount = votes?.filter(v => v.vote_type === 'dislike').length || 0;
     
     setLikeCount(newLikeCount);
     setDislikeCount(newDislikeCount);

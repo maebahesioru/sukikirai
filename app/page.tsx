@@ -3,11 +3,32 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { getTrendingRanking } from '@/lib/ranking';
 import PeopleList from '@/components/PeopleList';
+import { supabase } from '@/lib/supabase';
+import { Person } from '@/types/person';
+import peopleData from '@/data/people.json';
+import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const trendingPeople = await getTrendingRanking();
+  
+  // 新着コメントを取得
+  const { data: latestComments } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('is_hidden', false)
+    .is('parent_comment_id', null)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const commentsWithPerson = latestComments?.map((comment) => {
+    const person = (peopleData as Person[]).find((p) => p.id === comment.person_id);
+    return {
+      ...comment,
+      personName: person?.name || '不明',
+    };
+  }) || [];
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -58,7 +79,47 @@ export default async function Home() {
             {/* Latest Comments */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-2xl font-bold mb-4 text-gray-800">新着コメント</h2>
-              <p className="text-gray-600 text-sm">まだコメントがありません</p>
+              {commentsWithPerson.length > 0 ? (
+                <div className="space-y-4">
+                  {commentsWithPerson.map((comment) => (
+                    <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Link 
+                          href={`/person/${comment.person_id}`}
+                          prefetch={false}
+                          className="text-purple-600 hover:underline font-bold"
+                        >
+                          {comment.personName}
+                        </Link>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            comment.vote_type === 'like'
+                              ? 'bg-pink-100 text-pink-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {comment.vote_type === 'like' ? '好き派' : '嫌い派'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {comment.name || '匿名'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {format(new Date(comment.created_at), 'yyyy/MM/dd HH:mm')}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                        {comment.content}
+                      </p>
+                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                        <span>👍 {comment.good_count}</span>
+                        <span>👎 {comment.bad_count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 text-sm">まだコメントがありません</p>
+              )}
             </div>
           </div>
 

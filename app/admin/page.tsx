@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Trash2, AlertCircle } from 'lucide-react';
 import { supabase, type Comment, type Report } from '@/lib/supabase';
-import { format } from 'date-fns';
+import { formatJST } from '@/lib/date-utils';
 
 const ADMIN_PASSWORD = '6WH_CkHKnsWy';
 
@@ -355,7 +355,7 @@ export default function AdminPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <p className="text-sm text-gray-500 mb-1">
-                            通報日時: {format(new Date(report.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                            通報日時: {formatJST(report.created_at, 'yyyy-MM-dd HH:mm:ss')}
                           </p>
                           <p className="text-sm text-gray-700">
                             理由: {report.reason || '不明'}
@@ -445,7 +445,7 @@ export default function AdminPage() {
                       </span>
                     </div>
                     <span className="text-xs text-gray-500">
-                      {format(new Date(comment.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                      {formatJST(comment.created_at, 'yyyy-MM-dd HH:mm:ss')}
                     </span>
                   </div>
                   <p className="text-gray-800 mb-4">{comment.content}</p>

@@ -12,12 +12,15 @@ import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
+import { TrendingPerson, CommentWithPerson } from '@/lib/sidebar-data';
 
 interface PersonPageClientProps {
   personId: string;
+  trendingPeople: TrendingPerson[];
+  latestComments: CommentWithPerson[];
 }
 
-export default function PersonPageClient({ personId }: PersonPageClientProps) {
+export default function PersonPageClient({ personId, trendingPeople, latestComments }: PersonPageClientProps) {
   const [person, setPerson] = useState<Person | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voteType, setVoteType] = useState<'like' | 'dislike' | null>(null);
@@ -283,7 +286,10 @@ export default function PersonPageClient({ personId }: PersonPageClientProps) {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Sidebar />
+            <Sidebar 
+              trendingPeople={trendingPeople}
+              latestComments={latestComments}
+            />
           </div>
         </div>
       </main>

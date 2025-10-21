@@ -1,6 +1,8 @@
 import PersonPageClient from './PersonPageClient';
+import { getSidebarData } from '@/lib/sidebar-data';
 
 export const dynamicParams = true;
+export const dynamic = 'force-dynamic';
 
 interface PersonPageProps {
   params: {
@@ -8,6 +10,15 @@ interface PersonPageProps {
   };
 }
 
-export default function PersonPage({ params }: PersonPageProps) {
-  return <PersonPageClient personId={params.id} />;
+export default async function PersonPage({ params }: PersonPageProps) {
+  // サイドバー用のデータを取得
+  const { trendingPeople, latestComments } = await getSidebarData();
+
+  return (
+    <PersonPageClient 
+      personId={params.id}
+      trendingPeople={trendingPeople}
+      latestComments={latestComments}
+    />
+  );
 }

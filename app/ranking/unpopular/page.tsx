@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { getUnpopularRanking } from '@/lib/ranking';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { format } from 'date-fns';
+import { formatJST } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,7 +106,7 @@ export default async function UnpopularRankingPage() {
                           </p>
                           <p className="text-xs text-gray-500">
                             {person.latestComment.name} -{' '}
-                            {format(new Date(person.latestComment.createdAt), 'yyyy-MM-dd HH:mm')}
+                            {formatJST(person.latestComment.createdAt, 'yyyy-MM-dd HH:mm')}
                           </p>
                         </div>
                       )}

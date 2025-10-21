@@ -11,24 +11,38 @@ import { format } from 'date-fns';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const trendingPeople = await getTrendingRanking();
-  
-  // 新着コメントを取得
-  const { data: latestComments } = await supabase
-    .from('comments')
-    .select('*')
-    .eq('is_hidden', false)
-    .is('parent_comment_id', null)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  // データを並列取得して最適化
+  const [trendingPeople, { data: comments }] = await Promise.all([
+    getTrendingRanking(),
+    supabase
+      .from('comments')
+      .select('*')
+      .eq('is_hidden', false)
+      .is('parent_comment_id', null)
+      .order('created_at', { ascending: false })
+      .limit(10), // 10件取得して両方で使用
+  ]);
 
-  const commentsWithPerson = latestComments?.map((comment) => {
+  // コメントに人物名を追加
+  const commentsWithPerson = comments?.map((comment) => {
     const person = (peopleData as Person[]).find((p) => p.id === comment.person_id);
     return {
       ...comment,
       personName: person?.name || '不明',
     };
   }) || [];
+
+  // トップページ用（10件全て）
+  const mainCommentsWithPerson = commentsWithPerson;
+
+  // サイドバー用（最初の5件のみ）
+  const sidebarCommentsWithPerson = commentsWithPerson.slice(0, 5);
+
+  // サイドバー用のトレンド人物（上位20人）
+  const sidebarTrendingPeople = trendingPeople.slice(0, 20).map((person) => ({
+    ...person,
+    voteCount: person.totalVotes,
+  }));
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,9 +93,9 @@ export default async function Home() {
             {/* Latest Comments */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-2xl font-bold mb-4 text-gray-800">新着コメント</h2>
-              {commentsWithPerson.length > 0 ? (
+              {mainCommentsWithPerson.length > 0 ? (
                 <div className="space-y-4">
-                  {commentsWithPerson.map((comment) => (
+                  {mainCommentsWithPerson.map((comment) => (
                     <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-center gap-2 mb-2">
                         <Link 
@@ -125,7 +139,10 @@ export default async function Home() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Sidebar />
+            <Sidebar 
+              trendingPeople={sidebarTrendingPeople}
+              latestComments={sidebarCommentsWithPerson}
+            />
           </div>
         </div>
       </main>

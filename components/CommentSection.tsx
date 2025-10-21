@@ -45,17 +45,48 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
       query = query.eq('vote_type', filter);
     }
 
-    const { data, count, error } = await query;
+    const { data: mainComments, count, error } = await query;
 
-    if (!error && data) {
+    if (!error && mainComments && mainComments.length > 0) {
+      // 一括で全返信を取得（最適化）
+      const commentIds = mainComments.map(c => c.id);
+      const { data: allReplies } = await supabase
+        .from('comments')
+        .select('*')
+        .in('parent_comment_id', commentIds)
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: true });
+
+      // 返信をコメントごとにグループ化
+      const repliesByComment = new Map<string, Comment[]>();
+      allReplies?.forEach((reply) => {
+        const parentId = reply.parent_comment_id;
+        if (parentId) {
+          if (!repliesByComment.has(parentId)) {
+            repliesByComment.set(parentId, []);
+          }
+          repliesByComment.get(parentId)!.push(reply);
+        }
+      });
+
+      // コメントに返信データを付与
+      const commentsWithReplies = mainComments.map(comment => ({
+        ...comment,
+        _replies: repliesByComment.get(comment.id) || []
+      }));
+
       // Filter out hidden comments
-      const filteredData = data.filter(c => !hiddenComments.includes(c.id));
+      const filteredData = commentsWithReplies.filter(c => !hiddenComments.includes(c.id));
       setComments(filteredData);
       setTotalComments(count || 0);
       
       // Get hidden comments data
-      const hiddenData = data.filter(c => hiddenComments.includes(c.id));
+      const hiddenData = commentsWithReplies.filter(c => hiddenComments.includes(c.id));
       setHiddenCommentData(hiddenData);
+    } else if (!error) {
+      setComments([]);
+      setTotalComments(count || 0);
+      setHiddenCommentData([]);
     }
   }, [personId, filter, page, hiddenComments]);
 
@@ -224,14 +255,20 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
   );
 }
 
-function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: (id: string) => void; onUpdate: () => void }) {
+type CommentWithReplies = Comment & { _replies?: Comment[] };
+
+function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplies; onHide: (id: string) => void; onUpdate: () => void }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replies, setReplies] = useState<Comment[]>([]);
   const [localComment, setLocalComment] = useState(comment);
   const [hasVoted, setHasVoted] = useState<'good' | 'bad' | null>(null);
 
+  // 返信データをpropsから取得（最適化）
+  const [replies, setReplies] = useState<Comment[]>(comment._replies || []);
+
   useEffect(() => {
     setLocalComment(comment);
+    // 返信データを更新
+    setReplies(comment._replies || []);
     
     // Check if user has already voted on this comment
     const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
@@ -239,26 +276,6 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
       setHasVoted(votedComments[comment.id]);
     }
   }, [comment]);
-
-  useEffect(() => {
-    fetchReplies();
-  }, [comment.id]);
-
-  const fetchReplies = async () => {
-    const { data } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('parent_comment_id', comment.id)
-      .eq('is_hidden', false)
-      .order('created_at', { ascending: true });
-
-    if (data) {
-      // Filter out locally hidden replies
-      const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
-      const filteredData = data.filter(r => !hidden.includes(r.id));
-      setReplies(filteredData);
-    }
-  };
 
   const handleGoodBad = async (type: 'good' | 'bad') => {
     const cookieId = Cookies.get('voter_id') || '';
@@ -436,8 +453,7 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
             parentCommentNumber={comment.comment_number}
             onReplyPosted={() => {
               setShowReplyForm(false);
-              fetchReplies();
-              onUpdate();
+              onUpdate(); // 親コンポーネントで全データを再取得
             }}
           />
         </div>
@@ -451,7 +467,7 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
               key={reply.id} 
               reply={reply} 
               parentCommentNumber={comment.comment_number}
-              onUpdate={fetchReplies}
+              onUpdate={onUpdate}
             />
           ))}
         </div>
@@ -693,17 +709,10 @@ function ReplyForm({
     setIsSubmitting(true);
 
     try {
-      // Verify Turnstile token
-      const verifyResponse = await fetch('/api/verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
-
-      const verifyData = await verifyResponse.json();
-
-      if (!verifyData.success) {
-        alert('認証に失敗しました。ページをリロードして再度お試しください。');
+      // Check if user has agreed to terms
+      const userToken = Cookies.get('user_token');
+      if (!userToken) {
+        alert('返信投稿には利用規約への同意が必要です。ページをリロードして利用規約に同意してください。');
         setIsSubmitting(false);
         return;
       }
@@ -716,22 +725,34 @@ function ReplyForm({
 
       const commentNumber = (count || 0) + 1;
 
-      // Insert reply
-      const { error } = await supabase.from('comments').insert({
-        person_id: personId,
-        parent_comment_id: parentCommentId,
-        comment_number: commentNumber,
-        name: name.trim() || null,
-        user_id: userId.trim() || null,
-        vote_type: selectedVoteType,
-        content: content.trim(),
-        good_count: 0,
-        bad_count: 0,
-        is_hidden: false,
-        is_reported: false,
+      // Post reply via API (server-side Turnstile verification)
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personId,
+          commentNumber,
+          name: name.trim(),
+          userId: userId.trim(),
+          voteType: selectedVoteType,
+          content: content.trim(),
+          parentCommentId,
+          userToken,
+          turnstileToken,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!data.success) {
+        if (response.status === 400 && data.error === 'Turnstile verification failed') {
+          alert('認証に失敗しました。ページをリロードして再度お試しください。');
+        } else {
+          alert('返信の投稿に失敗しました');
+        }
+        setIsSubmitting(false);
+        return;
+      }
 
       // Reset form and close
       setName('');

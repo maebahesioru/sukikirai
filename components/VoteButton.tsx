@@ -82,19 +82,22 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
     setIsVerifying(true);
 
     try {
-      const cookieId = Cookies.get('user_id') || generateUserId();
-      if (!Cookies.get('user_id')) {
-        Cookies.set('user_id', cookieId, { expires: 365 });
+      // Check if user has agreed to terms
+      const userToken = Cookies.get('user_token');
+      if (!userToken) {
+        alert('投票するには利用規約への同意が必要です。ページをリロードして利用規約に同意してください。');
+        setIsVerifying(false);
+        return;
       }
 
-      // Call vote API with Turnstile token and IP check
+      // Call vote API with Turnstile token
       const voteResponse = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personId,
           voteType: type,
-          cookieId,
+          userToken,
           turnstileToken,
         }),
       });
@@ -103,7 +106,7 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
 
       if (!voteData.success) {
         if (voteResponse.status === 429) {
-          alert('このIPアドレスから本日既に投票されています。\n投票は1日1回までです。');
+          alert('既に投票済みです。');
         } else {
           alert('投票に失敗しました。もう一度お試しください。');
         }
@@ -137,9 +140,6 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
     }
   };
 
-  const generateUserId = () => {
-    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  };
 
   const likePercentage = likeCount + dislikeCount > 0
     ? (likeCount / (likeCount + dislikeCount)) * 100

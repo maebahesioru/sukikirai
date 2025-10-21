@@ -53,12 +53,12 @@ CREATE INDEX idx_comments_is_hidden ON comments(is_hidden);
 -- Enable RLS
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 
--- Allow anyone to read and insert comments (UPDATEとDELETEは管理者のみ)
+-- Allow anyone to read comments
 CREATE POLICY "Enable read access for all users" ON comments
   FOR SELECT USING (true);
 
-CREATE POLICY "Enable insert access for all users" ON comments
-  FOR INSERT WITH CHECK (true);
+-- INSERT is only allowed via server-side API using Service Role Key
+-- クライアント側からの直接INSERTは禁止（セキュリティ強化）
 
 -- Create comment_reactions table for secure vote tracking
 CREATE TABLE IF NOT EXISTS comment_reactions (

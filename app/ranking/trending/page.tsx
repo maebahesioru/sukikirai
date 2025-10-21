@@ -2,12 +2,16 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { getTrendingRanking } from '@/lib/ranking';
+import { getSidebarData } from '@/lib/sidebar-data';
 import { format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TrendingRankingPage() {
-  const rankings = await getTrendingRanking();
+  const [rankings, sidebarData] = await Promise.all([
+    getTrendingRanking(),
+    getSidebarData(),
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -134,7 +138,10 @@ export default async function TrendingRankingPage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Sidebar />
+            <Sidebar 
+              trendingPeople={sidebarData.trendingPeople}
+              latestComments={sidebarData.latestComments}
+            />
           </div>
         </div>
       </main>

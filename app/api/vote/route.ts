@@ -3,11 +3,19 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { personId, voteType, cookieId, turnstileToken } = await request.json();
+    const { personId, voteType, userToken, turnstileToken } = await request.json();
 
-    if (!personId || !voteType || !cookieId || !turnstileToken) {
+    if (!personId || !voteType || !userToken || !turnstileToken) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate user token format (64 hex characters)
+    if (!/^[a-f0-9]{64}$/i.test(userToken)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user token' },
         { status: 400 }
       );
     }
@@ -36,34 +44,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get IP address
-    const forwarded = request.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || 'unknown';
-
-    // Check if IP has already voted today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    // Check if user has already voted for this person
     const { data: existingVotes } = await supabase
       .from('votes')
       .select('id')
       .eq('person_id', personId)
-      .eq('ip_address', ip)
-      .gte('created_at', today.toISOString());
+      .eq('cookie_id', userToken);
 
     if (existingVotes && existingVotes.length > 0) {
       return NextResponse.json(
-        { success: false, error: 'Already voted today from this IP' },
+        { success: false, error: 'Already voted' },
         { status: 429 }
       );
     }
 
-    // Save vote to database
+    // Save vote to database (using user token)
     const { error } = await supabase.from('votes').insert({
       person_id: personId,
       vote_type: voteType,
-      cookie_id: cookieId,
-      ip_address: ip,
+      cookie_id: userToken,
+      ip_address: null,
     });
 
     if (error) {
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, ip });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Vote API error:', error);
     return NextResponse.json(

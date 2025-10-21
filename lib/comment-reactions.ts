@@ -47,8 +47,7 @@ export async function getUserCommentReaction(commentId: string, cookieId: string
 export async function toggleCommentReaction(
   commentId: string,
   reactionType: 'good' | 'bad',
-  cookieId: string,
-  ipAddress?: string
+  cookieId: string
 ) {
   // 既存の評価を確認
   const { data: existing } = await supabase
@@ -79,7 +78,7 @@ export async function toggleCommentReaction(
         comment_id: commentId,
         reaction_type: reactionType,
         cookie_id: cookieId,
-        ip_address: ipAddress,
+        ip_address: null,
       });
       return reactionType;
     }
@@ -89,7 +88,7 @@ export async function toggleCommentReaction(
       comment_id: commentId,
       reaction_type: reactionType,
       cookie_id: cookieId,
-      ip_address: ipAddress,
+      ip_address: null,
     });
     return reactionType;
   }

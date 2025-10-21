@@ -13,6 +13,21 @@ CREATE INDEX idx_votes_cookie_id ON votes(cookie_id);
 CREATE INDEX idx_votes_ip_address ON votes(ip_address);
 CREATE INDEX idx_votes_created_at ON votes(created_at);
 
+-- Enable RLS
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+
+-- Allow anyone to select votes
+CREATE POLICY "Enable read access for all users" ON votes
+  FOR SELECT USING (true);
+
+-- Allow anyone to insert votes
+CREATE POLICY "Enable insert access for all users" ON votes
+  FOR INSERT WITH CHECK (true);
+
+-- Allow anyone to delete votes
+CREATE POLICY "Enable delete access for all users" ON votes
+  FOR DELETE USING (true);
+
 -- Create comments table
 CREATE TABLE IF NOT EXISTS comments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -35,6 +50,22 @@ CREATE INDEX idx_comments_parent_id ON comments(parent_comment_id);
 CREATE INDEX idx_comments_created_at ON comments(created_at);
 CREATE INDEX idx_comments_is_hidden ON comments(is_hidden);
 
+-- Enable RLS
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+
+-- Allow anyone to read, insert, update, delete comments
+CREATE POLICY "Enable read access for all users" ON comments
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert access for all users" ON comments
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Enable update access for all users" ON comments
+  FOR UPDATE USING (true);
+
+CREATE POLICY "Enable delete access for all users" ON comments
+  FOR DELETE USING (true);
+
 -- Create ng_words table
 CREATE TABLE IF NOT EXISTS ng_words (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -56,49 +87,20 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX idx_reports_comment_id ON reports(comment_id);
 CREATE INDEX idx_reports_created_at ON reports(created_at);
 
--- Enable Row Level Security
-ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+-- Enable RLS for ng_words and reports
 ALTER TABLE ng_words ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
--- Create policies for public access
-CREATE POLICY "Allow public read access on votes"
-  ON votes FOR SELECT
-  USING (true);
+-- RLS policies for ng_words
+CREATE POLICY "Enable read access for all users" ON ng_words
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow public insert on votes"
-  ON votes FOR INSERT
-  WITH CHECK (true);
+-- RLS policies for reports
+CREATE POLICY "Enable read access for all users" ON reports
+  FOR SELECT USING (true);
 
-CREATE POLICY "Allow public read access on comments"
-  ON comments FOR SELECT
-  USING (true);
+CREATE POLICY "Enable insert access for all users" ON reports
+  FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Allow public insert on comments"
-  ON comments FOR INSERT
-  WITH CHECK (true);
-
-CREATE POLICY "Allow public update on comments"
-  ON comments FOR UPDATE
-  USING (true);
-
-CREATE POLICY "Allow public delete on comments"
-  ON comments FOR DELETE
-  USING (true);
-
-CREATE POLICY "Allow public read access on ng_words"
-  ON ng_words FOR SELECT
-  USING (true);
-
-CREATE POLICY "Allow public insert on reports"
-  ON reports FOR INSERT
-  WITH CHECK (true);
-
-CREATE POLICY "Allow public read access on reports"
-  ON reports FOR SELECT
-  USING (true);
-
-CREATE POLICY "Allow public delete on reports"
-  ON reports FOR DELETE
-  USING (true);
+CREATE POLICY "Enable delete access for all users" ON reports
+  FOR DELETE USING (true);

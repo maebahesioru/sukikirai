@@ -199,10 +199,16 @@ export default function AdminPage() {
 
     try {
       // Delete existing votes for this person
-      await supabase
+      const { error: deleteError } = await supabase
         .from('votes')
         .delete()
         .eq('person_id', personId);
+
+      if (deleteError) {
+        console.error('削除エラー:', deleteError);
+        alert(`既存の票の削除に失敗しました: ${deleteError.message}`);
+        return;
+      }
 
       // Insert new votes
       const votes = [];
@@ -223,15 +229,22 @@ export default function AdminPage() {
         });
       }
 
-      const { error } = await supabase.from('votes').insert(votes);
+      // Only insert if there are votes to insert
+      if (votes.length > 0) {
+        const { error: insertError } = await supabase.from('votes').insert(votes);
 
-      if (error) throw error;
+        if (insertError) {
+          console.error('挿入エラー:', insertError);
+          alert(`新しい票の挿入に失敗しました: ${insertError.message}`);
+          return;
+        }
+      }
 
-      alert('票数を変更しました\n\nページをリロードします');
+      alert(`票数を変更しました\n\n好き: ${likeCount}票\n嫌い: ${dislikeCount}票\n\nページをリロードします`);
       window.location.reload();
     } catch (error) {
       console.error('票数変更エラー:', error);
-      alert('票数の変更に失敗しました');
+      alert(`票数の変更に失敗しました: ${error}`);
     }
   };
 

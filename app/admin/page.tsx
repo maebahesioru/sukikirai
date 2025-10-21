@@ -87,96 +87,98 @@ export default function AdminPage() {
   };
 
   const handleDeleteComment = async (commentId: string, reportId?: string) => {
-    if (!confirm('このコメントを削除しますか？')) return;
+    if (!confirm('このコメントを削除しますか？\n\n※削除後、ページがリロードされます')) return;
 
-    const { error: commentError } = await supabase
-      .from('comments')
-      .delete()
-      .eq('id', commentId);
+    try {
+      // Delete child comments (replies) first
+      const { error: repliesError } = await supabase
+        .from('comments')
+        .delete()
+        .eq('parent_comment_id', commentId);
+      
+      if (repliesError) {
+        console.error('返信削除エラー:', repliesError);
+      }
 
-    if (!commentError) {
+      // Delete the comment itself
+      const { error: commentError } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (commentError) throw commentError;
+
       // Delete associated reports if reportId is provided
       if (reportId) {
-        const { error: reportError } = await supabase
+        await supabase
           .from('reports')
           .delete()
           .eq('id', reportId);
-        
-        if (reportError) {
-          console.error('通報削除エラー:', reportError);
-        }
       } else {
         // Delete all reports for this comment
-        const { error: reportsError } = await supabase
+        await supabase
           .from('reports')
           .delete()
           .eq('comment_id', commentId);
-        
-        if (reportsError) {
-          console.error('通報削除エラー:', reportsError);
-        }
       }
       
-      alert('コメントを削除しました');
-      // Wait a bit before fetching to ensure DB is updated
-      await new Promise(resolve => setTimeout(resolve, 300));
-      fetchReports();
-      fetchAllComments();
-    } else {
+      alert('コメントを削除しました\n\nページをリロードします');
+      // Force page reload to ensure changes are reflected
+      window.location.reload();
+    } catch (error) {
+      console.error('削除エラー:', error);
       alert('削除に失敗しました');
     }
   };
 
   const handleHideComment = async (commentId: string, reportId?: string) => {
-    const { error: commentError } = await supabase
-      .from('comments')
-      .update({ is_hidden: true })
-      .eq('id', commentId);
+    if (!confirm('このコメントを非表示にしますか？\n\n※非表示後、ページがリロードされます')) return;
 
-    if (!commentError) {
+    try {
+      const { error: commentError } = await supabase
+        .from('comments')
+        .update({ is_hidden: true })
+        .eq('id', commentId);
+
+      if (commentError) throw commentError;
+
       // Delete the report after hiding the comment
       if (reportId) {
-        const { error: reportError } = await supabase
+        await supabase
           .from('reports')
           .delete()
           .eq('id', reportId);
-        
-        if (reportError) {
-          console.error('通報削除エラー:', reportError);
-        }
       } else {
         // Delete all reports for this comment
-        const { error: reportsError } = await supabase
+        await supabase
           .from('reports')
           .delete()
           .eq('comment_id', commentId);
-        
-        if (reportsError) {
-          console.error('通報削除エラー:', reportsError);
-        }
       }
       
-      alert('コメントを非表示にしました');
-      // Wait a bit before fetching to ensure DB is updated
-      await new Promise(resolve => setTimeout(resolve, 300));
-      fetchReports();
-      fetchAllComments();
-    } else {
+      alert('コメントを非表示にしました\n\nページをリロードします');
+      window.location.reload();
+    } catch (error) {
+      console.error('非表示エラー:', error);
       alert('非表示に失敗しました');
     }
   };
 
   const handleDismissReport = async (reportId: string) => {
-    const { error } = await supabase
-      .from('reports')
-      .delete()
-      .eq('id', reportId);
+    if (!confirm('この通報を却下しますか？')) return;
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', reportId);
+
+      if (error) throw error;
+
       alert('通報を却下しました');
-      await new Promise(resolve => setTimeout(resolve, 300));
       fetchReports();
-    } else {
+    } catch (error) {
+      console.error('却下エラー:', error);
       alert('却下に失敗しました');
     }
   };

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 import Cookies from 'js-cookie';
 
 type CommentFormProps = {
@@ -255,14 +255,14 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
         </div>
 
         <div className="flex justify-center my-4">
-          <Turnstile
-            ref={turnstileRef}
-            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-            onSuccess={(token) => setTurnstileToken(token)}
-            onError={() => {
-              alert('認証に失敗しました。ページをリロードしてください。');
-            }}
-          />
+            <DynamicTurnstile
+              ref={turnstileRef}
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
+              onSuccess={(token: string) => setTurnstileToken(token)}
+              onError={() => {
+                alert('認証に失敗しました。ページをリロードしてください。');
+              }}
+            />
         </div>
 
         <button

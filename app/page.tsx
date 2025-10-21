@@ -8,7 +8,8 @@ import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
 import { formatJST } from '@/lib/date-utils';
 
-export const dynamic = 'force-dynamic';
+// ISRで60秒ごとに再検証（トップページはアクセスが多いのでキャッシュ活用）
+export const revalidate = 60;
 
 export default async function Home() {
   // データを並列取得して最適化
@@ -66,6 +67,7 @@ export default async function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Link
                 href="/ranking/popularity"
+                prefetch={false}
                 className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
               >
                 <h2 className="text-xl font-bold text-pink-600 mb-2">好感度ランキング</h2>
@@ -73,6 +75,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/ranking/unpopular"
+                prefetch={false}
                 className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
               >
                 <h2 className="text-xl font-bold text-purple-600 mb-2">不人気ランキング</h2>
@@ -80,6 +83,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/ranking/trending"
+                prefetch={false}
                 className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
               >
                 <h2 className="text-xl font-bold text-blue-600 mb-2">トレンドランキング</h2>

@@ -80,33 +80,32 @@ export default function PersonPageClient({
       p.tags.some(tag => person.tags.includes(tag)) && p.id !== person.id
     );
 
-    // Get vote counts for each person
-    const rankingData = await Promise.all(
-      peopleWithSameTags.map(async (p) => {
-        const { data: likes } = await supabase
-          .from('votes')
-          .select('id', { count: 'exact' })
-          .eq('person_id', p.id)
-          .eq('vote_type', 'like');
+    if (peopleWithSameTags.length === 0) {
+      setTagRanking([]);
+      return;
+    }
 
-        const { data: dislikes } = await supabase
-          .from('votes')
-          .select('id', { count: 'exact' })
-          .eq('person_id', p.id)
-          .eq('vote_type', 'dislike');
+    // 最適化：1回のクエリで全person_idの投票を取得
+    const personIds = peopleWithSameTags.map(p => p.id);
+    const { data: allVotes } = await supabase
+      .from('votes')
+      .select('person_id, vote_type')
+      .in('person_id', personIds);
 
-        const likeCount = likes?.length || 0;
-        const dislikeCount = dislikes?.length || 0;
-        const total = likeCount + dislikeCount;
-        const likePercentage = total > 0 ? (likeCount / total) * 100 : 0;
+    // 各人物の投票数を集計
+    const rankingData = peopleWithSameTags.map(p => {
+      const personVotes = allVotes?.filter(v => v.person_id === p.id) || [];
+      const likeCount = personVotes.filter(v => v.vote_type === 'like').length;
+      const dislikeCount = personVotes.filter(v => v.vote_type === 'dislike').length;
+      const total = likeCount + dislikeCount;
+      const likePercentage = total > 0 ? (likeCount / total) * 100 : 0;
 
-        return {
-          name: p.name,
-          id: p.id,
-          likePercentage
-        };
-      })
-    );
+      return {
+        name: p.name,
+        id: p.id,
+        likePercentage
+      };
+    });
 
     // Sort by like percentage (descending)
     const sorted = rankingData.sort((a, b) => b.likePercentage - a.likePercentage);

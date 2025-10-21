@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
 import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
 
@@ -850,10 +850,10 @@ function ReplyForm({
       </div>
 
       <div className="flex justify-center my-3">
-        <Turnstile
+        <DynamicTurnstile
           ref={turnstileRef}
           siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-          onSuccess={(token) => setTurnstileToken(token)}
+          onSuccess={(token: string) => setTurnstileToken(token)}
           onError={() => {
             alert('認証に失敗しました。ページをリロードしてください。');
           }}

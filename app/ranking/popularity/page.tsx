@@ -5,7 +5,8 @@ import { getPopularityRanking } from '@/lib/ranking';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { formatJST } from '@/lib/date-utils';
 
-export const dynamic = 'force-dynamic';
+// ISRで60秒ごとに再検証
+export const revalidate = 60;
 
 export default async function PopularityRankingPage() {
   const [rankings, sidebarData] = await Promise.all([

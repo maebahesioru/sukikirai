@@ -217,7 +217,7 @@ export default function AdminPage() {
           person_id: personId,
           vote_type: 'like',
           cookie_id: `admin_like_${i}_${Date.now()}`,
-          ip_address: 'admin_modified',
+          ip_address: null,
         });
       }
       for (let i = 0; i < dislikeCount; i++) {
@@ -225,7 +225,7 @@ export default function AdminPage() {
           person_id: personId,
           vote_type: 'dislike',
           cookie_id: `admin_dislike_${i}_${Date.now()}`,
-          ip_address: 'admin_modified',
+          ip_address: null,
         });
       }
 

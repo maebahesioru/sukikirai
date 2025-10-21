@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import Cookies from 'js-cookie';
 
 type CommentFormProps = {
   personId: string;
@@ -67,17 +68,10 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
     setIsSubmitting(true);
 
     try {
-      // Verify Turnstile token
-      const verifyResponse = await fetch('/api/verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
-
-      const verifyData = await verifyResponse.json();
-
-      if (!verifyData.success) {
-        alert('認証に失敗しました。ページをリロードして再度お試しください。');
+      // Check if user has agreed to terms
+      const userToken = Cookies.get('user_token');
+      if (!userToken) {
+        alert('コメント投稿には利用規約への同意が必要です。ページをリロードして利用規約に同意してください。');
         setIsSubmitting(false);
         return;
       }
@@ -90,21 +84,33 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
 
       const commentNumber = (count || 0) + 1;
 
-      // Insert comment
-      const { error } = await supabase.from('comments').insert({
-        person_id: personId,
-        comment_number: commentNumber,
-        name: name.trim() || null,
-        user_id: userId.trim() || null,
-        vote_type: selectedVoteType,
-        content: content.trim(),
-        good_count: 0,
-        bad_count: 0,
-        is_hidden: false,
-        is_reported: false,
+      // Post comment via API (server-side Turnstile verification)
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personId,
+          commentNumber,
+          name: name.trim(),
+          userId: userId.trim(),
+          voteType: selectedVoteType,
+          content: content.trim(),
+          userToken,
+          turnstileToken,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!data.success) {
+        if (response.status === 400 && data.error === 'Turnstile verification failed') {
+          alert('認証に失敗しました。ページをリロードして再度お試しください。');
+        } else {
+          alert('コメントの投稿に失敗しました');
+        }
+        setIsSubmitting(false);
+        return;
+      }
 
       // Open Twitter if enabled
       if (tweetEnabled) {

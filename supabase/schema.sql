@@ -53,17 +53,37 @@ CREATE INDEX idx_comments_is_hidden ON comments(is_hidden);
 -- Enable RLS
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 
--- Allow anyone to read, insert, update, delete comments
+-- Allow anyone to read and insert comments (UPDATEとDELETEは管理者のみ)
 CREATE POLICY "Enable read access for all users" ON comments
   FOR SELECT USING (true);
 
 CREATE POLICY "Enable insert access for all users" ON comments
   FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Enable update access for all users" ON comments
-  FOR UPDATE USING (true);
+-- Create comment_reactions table for secure vote tracking
+CREATE TABLE IF NOT EXISTS comment_reactions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  reaction_type TEXT NOT NULL CHECK (reaction_type IN ('good', 'bad')),
+  cookie_id TEXT NOT NULL,
+  ip_address TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(comment_id, cookie_id)
+);
 
-CREATE POLICY "Enable delete access for all users" ON comments
+CREATE INDEX idx_comment_reactions_comment_id ON comment_reactions(comment_id);
+CREATE INDEX idx_comment_reactions_cookie_id ON comment_reactions(cookie_id);
+
+-- Enable RLS for comment_reactions
+ALTER TABLE comment_reactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Enable read access for all users" ON comment_reactions
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert access for all users" ON comment_reactions
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Enable delete access for all users" ON comment_reactions
   FOR DELETE USING (true);
 
 -- Create ng_words table

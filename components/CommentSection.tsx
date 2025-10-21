@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
+import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { format } from 'date-fns';
+import Cookies from 'js-cookie';
 
 type CommentSectionProps = {
   personId: string;
@@ -259,18 +261,16 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
   };
 
   const handleGoodBad = async (type: 'good' | 'bad') => {
+    const cookieId = Cookies.get('voter_id') || '';
     const field = type === 'good' ? 'good_count' : 'bad_count';
     
     // If clicking the same button again, cancel the vote
     if (hasVoted === type) {
-      const newValue = Math.max(0, localComment[field] - 1);
-      
-      await supabase
-        .from('comments')
-        .update({ [field]: newValue })
-        .eq('id', comment.id);
+      // 新システム: comment_reactionsから削除
+      await toggleCommentReaction(comment.id, type, cookieId);
       
       // Update local state
+      const newValue = Math.max(0, localComment[field] - 1);
       setLocalComment({ ...localComment, [field]: newValue });
       
       // Remove from localStorage
@@ -283,17 +283,30 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: Comment; onHide: 
     
     // If already voted for the opposite, prevent changing vote
     if (hasVoted) {
-      alert('評価を変更する場合は、先に現在の評価を取り消してください');
+      // 新システム: comment_reactionsで評価を切り替え
+      await toggleCommentReaction(comment.id, type, cookieId);
+      
+      // Update local state
+      const oppositeField = type === 'good' ? 'bad_count' : 'good_count';
+      setLocalComment({ 
+        ...localComment, 
+        [field]: localComment[field] + 1,
+        [oppositeField]: Math.max(0, localComment[oppositeField] - 1)
+      });
+      
+      // Update localStorage
+      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
+      votedComments[comment.id] = type;
+      localStorage.setItem('votedComments', JSON.stringify(votedComments));
+      setHasVoted(type);
       return;
     }
 
     // Add new vote
     const newValue = localComment[field] + 1;
     
-    await supabase
-      .from('comments')
-      .update({ [field]: newValue })
-      .eq('id', comment.id);
+    // 新システム: comment_reactionsに追加
+    await toggleCommentReaction(comment.id, type, cookieId);
     
     // Update local state
     setLocalComment({ ...localComment, [field]: newValue });
@@ -471,16 +484,15 @@ function ReplyItem({
   }, [reply]);
 
   const handleGoodBad = async (type: 'good' | 'bad') => {
+    const cookieId = Cookies.get('voter_id') || '';
     const field = type === 'good' ? 'good_count' : 'bad_count';
     
     // If clicking the same button again, cancel the vote
     if (hasVoted === type) {
       const newValue = Math.max(0, localReply[field] - 1);
       
-      await supabase
-        .from('comments')
-        .update({ [field]: newValue })
-        .eq('id', reply.id);
+      // 新システム: comment_reactionsから削除
+      await toggleCommentReaction(reply.id, type, cookieId);
       
       setLocalReply({ ...localReply, [field]: newValue });
       
@@ -492,16 +504,27 @@ function ReplyItem({
     }
     
     if (hasVoted) {
-      alert('評価を変更する場合は、先に現在の評価を取り消してください');
+      // 新システム: comment_reactionsで評価を切り替え
+      await toggleCommentReaction(reply.id, type, cookieId);
+      
+      const oppositeField = type === 'good' ? 'bad_count' : 'good_count';
+      setLocalReply({ 
+        ...localReply, 
+        [field]: localReply[field] + 1,
+        [oppositeField]: Math.max(0, localReply[oppositeField] - 1)
+      });
+      
+      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
+      votedComments[reply.id] = type;
+      localStorage.setItem('votedComments', JSON.stringify(votedComments));
+      setHasVoted(type);
       return;
     }
 
     const newValue = localReply[field] + 1;
     
-    await supabase
-      .from('comments')
-      .update({ [field]: newValue })
-      .eq('id', reply.id);
+    // 新システム: comment_reactionsに追加
+    await toggleCommentReaction(reply.id, type, cookieId);
     
     setLocalReply({ ...localReply, [field]: newValue });
     

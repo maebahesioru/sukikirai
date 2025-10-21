@@ -608,9 +608,17 @@ function ReplyForm({
   const [content, setContent] = useState(`>>${parentCommentNumber}\n`);
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>('like');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const MAX_CHARS = 280;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (content.length > MAX_CHARS) {
+      alert(`返信は${MAX_CHARS}文字以内で入力してください`);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -700,11 +708,18 @@ function ReplyForm({
       </div>
 
       <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs text-gray-600">返信内容</label>
+          <span className={`text-xs ${content.length > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            {content.length} / {MAX_CHARS}
+          </span>
+        </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={`>>${parentCommentNumber}\n返信内容を入力...`}
           rows={4}
+          maxLength={MAX_CHARS}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
           required
         />

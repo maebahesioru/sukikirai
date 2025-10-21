@@ -21,11 +21,18 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
   const [tweetEnabled, setTweetEnabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const MAX_CHARS = 280;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!content.trim()) {
       alert('コメントを入力してください');
+      return;
+    }
+
+    if (content.length > MAX_CHARS) {
+      alert(`コメントは${MAX_CHARS}文字以内で入力してください`);
       return;
     }
 
@@ -147,14 +154,20 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            コメント本文 <span className="text-red-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              コメント本文 <span className="text-red-500">*</span>
+            </label>
+            <span className={`text-sm ${content.length > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+              {content.length} / {MAX_CHARS}
+            </span>
+          </div>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="コメントを入力..."
             rows={5}
+            maxLength={MAX_CHARS}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500"
             required
           />

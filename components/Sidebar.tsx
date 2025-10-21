@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Person } from '@/types/person';
 import { Comment } from '@/lib/supabase';
-import { format } from 'date-fns';
+import { formatJST } from '@/lib/date-utils';
 import RecentlyViewed from './RecentlyViewed';
 import peopleData from '@/data/people.json';
 
@@ -100,7 +100,7 @@ export default function Sidebar({ trendingPeople = [], latestComments = [] }: Si
                   {comment.content}
                 </p>
                 <p className="text-gray-500 text-xs">
-                  {format(new Date(comment.created_at), 'MM/dd HH:mm')}
+                  {formatJST(comment.created_at, 'MM/dd HH:mm')}
                 </p>
               </div>
             ))}

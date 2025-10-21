@@ -5,7 +5,7 @@ import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react'
 import { supabase, type Comment } from '@/lib/supabase';
 import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
-import { format } from 'date-fns';
+import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
 
 type CommentSectionProps = {
@@ -378,7 +378,7 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
             @{comment.vote_type === 'like' ? '好き派' : '嫌い派'}
           </span>
           <span className="text-xs text-gray-500">
-            {format(new Date(comment.created_at), 'yyyy-MM-dd HH:mm:ss')}
+            {formatJST(comment.created_at, 'yyyy-MM-dd HH:mm:ss')}
           </span>
         </div>
         <div className="flex gap-2">
@@ -592,7 +592,7 @@ function ReplyItem({
             @{reply.vote_type === 'like' ? '好き派' : '嫌い派'}
           </span>
           <span className="text-xs text-gray-500">
-            {format(new Date(reply.created_at), 'yyyy-MM-dd HH:mm:ss')}
+            {formatJST(reply.created_at, 'yyyy-MM-dd HH:mm:ss')}
           </span>
         </div>
         <div className="flex gap-2">
@@ -672,6 +672,7 @@ function ReplyForm({
   const turnstileRef = useRef<TurnstileInstance>(null);
   
   const MAX_CHARS = 280;
+  const MAX_NAME_LENGTH = 50;
 
   // 全角文字を2、半角文字を1としてカウント
   const getCharCount = (text: string): number => {
@@ -681,6 +682,13 @@ function ReplyForm({
       count += charCode <= 0x7F ? 1 : 2;
     }
     return count;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    if (newName.length <= MAX_NAME_LENGTH) {
+      setName(newName);
+    }
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -770,11 +778,18 @@ function ReplyForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs text-gray-600">名前（任意）</label>
+          <span className={`text-xs ${name.length > MAX_NAME_LENGTH ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+            {name.length}/{MAX_NAME_LENGTH}
+          </span>
+        </div>
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="名前（任意）"
+          onChange={handleNameChange}
+          placeholder="匿名"
+          maxLength={MAX_NAME_LENGTH}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
         />
       </div>

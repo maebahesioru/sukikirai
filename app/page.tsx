@@ -6,7 +6,7 @@ import PeopleList from '@/components/PeopleList';
 import { supabase } from '@/lib/supabase';
 import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
-import { format } from 'date-fns';
+import { formatJST } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,7 +118,7 @@ export default async function Home() {
                           {comment.name || '匿名'}
                         </span>
                         <span className="text-xs text-gray-400">
-                          {format(new Date(comment.created_at), 'yyyy/MM/dd HH:mm')}
+                          {formatJST(comment.created_at, 'yyyy/MM/dd HH:mm')}
                         </span>
                       </div>
                       <p className="text-gray-700 text-sm whitespace-pre-wrap">

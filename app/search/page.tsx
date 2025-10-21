@@ -7,11 +7,83 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
+import { supabase } from '@/lib/supabase';
 
-function SearchResults() {
+type TrendingPerson = Person & { voteCount: number };
+type CommentWithPerson = {
+  id: string;
+  person_id: string;
+  comment_number: number;
+  name: string | null;
+  user_id: string | null;
+  vote_type: 'like' | 'dislike';
+  content: string;
+  created_at: string;
+  good_count: number;
+  bad_count: number;
+  is_hidden: boolean;
+  is_reported: boolean;
+  parent_comment_id: string | null;
+  personName: string;
+};
+
+type SearchResultsProps = {
+  onDataLoaded: (trending: TrendingPerson[], comments: CommentWithPerson[]) => void;
+};
+
+function SearchResults({ onDataLoaded }: SearchResultsProps) {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<Person[]>([]);
+
+  // サイドバーデータを取得
+  useEffect(() => {
+    const fetchSidebarData = async () => {
+      // 過去7日間のトレンド
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: recentVotes } = await supabase
+        .from('votes')
+        .select('person_id')
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      const voteCounts = new Map<string, number>();
+      recentVotes?.forEach((vote) => {
+        voteCounts.set(vote.person_id, (voteCounts.get(vote.person_id) || 0) + 1);
+      });
+
+      const trending: TrendingPerson[] = (peopleData as Person[])
+        .map((person) => ({
+          ...person,
+          voteCount: voteCounts.get(person.id) || 0,
+        }))
+        .filter((p) => p.voteCount > 0)
+        .sort((a, b) => b.voteCount - a.voteCount)
+        .slice(0, 20);
+
+      // 新着コメント
+      const { data: comments } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('is_hidden', false)
+        .is('parent_comment_id', null)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const commentsWithPerson: CommentWithPerson[] = comments?.map((comment) => {
+        const person = (peopleData as Person[]).find((p) => p.id === comment.person_id);
+        return {
+          ...comment,
+          personName: person?.name || '不明',
+        };
+      }) || [];
+
+      onDataLoaded(trending, commentsWithPerson);
+    };
+
+    fetchSidebarData();
+  }, [onDataLoaded]);
 
   useEffect(() => {
     if (query) {
@@ -96,6 +168,14 @@ function SearchResults() {
 }
 
 export default function SearchPage() {
+  const [trendingPeople, setTrendingPeople] = useState<TrendingPerson[]>([]);
+  const [latestComments, setLatestComments] = useState<CommentWithPerson[]>([]);
+
+  const handleDataLoaded = (trending: TrendingPerson[], comments: CommentWithPerson[]) => {
+    setTrendingPeople(trending);
+    setLatestComments(comments);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -109,13 +189,16 @@ export default function SearchPage() {
                 <p className="text-gray-600">読み込み中...</p>
               </div>
             }>
-              <SearchResults />
+              <SearchResults onDataLoaded={handleDataLoaded} />
             </Suspense>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Sidebar />
+            <Sidebar 
+              trendingPeople={trendingPeople}
+              latestComments={latestComments}
+            />
           </div>
         </div>
       </main>

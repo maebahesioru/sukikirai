@@ -25,6 +25,7 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   const MAX_CHARS = 280;
+  const MAX_NAME_LENGTH = 50;
 
   // 全角文字を2、半角文字を1としてカウント
   const getCharCount = (text: string): number => {
@@ -35,6 +36,13 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       count += charCode <= 0x7F ? 1 : 2;
     }
     return count;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    if (newName.length <= MAX_NAME_LENGTH) {
+      setName(newName);
+    }
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -144,14 +152,20 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            名前（任意）
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              名前（任意）
+            </label>
+            <span className={`text-sm ${name.length > MAX_NAME_LENGTH ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+              {name.length} / {MAX_NAME_LENGTH}
+            </span>
+          </div>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={handleNameChange}
             placeholder="匿名"
+            maxLength={MAX_NAME_LENGTH}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500"
           />
         </div>

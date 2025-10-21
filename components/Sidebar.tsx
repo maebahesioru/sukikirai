@@ -11,10 +11,15 @@ type CommentWithPerson = Comment & {
   personName: string;
 };
 
+type TrendingPerson = Person & {
+  voteCount: number;
+};
+
 export default function Sidebar() {
   const [recentlyViewed, setRecentlyViewed] = useState<Person[]>([]);
   const [latestComments, setLatestComments] = useState<CommentWithPerson[]>([]);
   const [popularTags, setPopularTags] = useState<string[]>([]);
+  const [trendingPeople, setTrendingPeople] = useState<TrendingPerson[]>([]);
 
   useEffect(() => {
     // Load recently viewed from localStorage
@@ -23,6 +28,9 @@ export default function Sidebar() {
     
     // Load latest comments
     fetchLatestComments();
+    
+    // Load trending people
+    fetchTrendingPeople();
     
     // Extract popular tags from people data
     const allTags = (peopleData as Person[]).flatMap(person => person.tags);
@@ -48,6 +56,37 @@ export default function Sidebar() {
         };
       });
       setLatestComments(commentsWithPerson);
+    }
+  };
+
+  const fetchTrendingPeople = async () => {
+    // Get votes from last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const { data: recentVotes } = await supabase
+      .from('votes')
+      .select('person_id')
+      .gte('created_at', sevenDaysAgo.toISOString());
+
+    if (recentVotes) {
+      // Count votes per person
+      const voteCounts = new Map<string, number>();
+      recentVotes.forEach((vote) => {
+        voteCounts.set(vote.person_id, (voteCounts.get(vote.person_id) || 0) + 1);
+      });
+
+      // Create trending people list
+      const trending: TrendingPerson[] = (peopleData as Person[])
+        .map((person) => ({
+          ...person,
+          voteCount: voteCounts.get(person.id) || 0,
+        }))
+        .filter((p) => p.voteCount > 0)
+        .sort((a, b) => b.voteCount - a.voteCount)
+        .slice(0, 20);
+
+      setTrendingPeople(trending);
     }
   };
 
@@ -77,16 +116,21 @@ export default function Sidebar() {
 
       {/* 話題の人物 */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">話題の人物</h3>
-        <ul className="space-y-2">
-          {(peopleData as Person[]).slice(0, 20).map((person) => (
-            <li key={person.id}>
-              <Link href={`/person/${person.id}`} prefetch={false} className="text-purple-600 hover:underline">
-                {person.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <h3 className="text-lg font-bold mb-4 text-gray-800">話題の人物（過去7日）</h3>
+        {trendingPeople.length > 0 ? (
+          <ul className="space-y-2">
+            {trendingPeople.map((person) => (
+              <li key={person.id}>
+                <Link href={`/person/${person.id}`} prefetch={false} className="text-purple-600 hover:underline flex justify-between items-center">
+                  <span>{person.name}</span>
+                  <span className="text-xs text-gray-500">{person.voteCount}票</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-sm">投票データを読み込み中...</p>
+        )}
       </div>
 
       {/* 話題のタグ */}

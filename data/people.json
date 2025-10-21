@@ -5623,5 +5623,41 @@
     ],
     "relatedPeople": [],
     "description": "ダウン症,ヒカキッズ"
+  },
+  {
+    "id": "hiphop-kazuki",
+    "name": "中村かずき(信者)",
+    "tags": [
+      "ヒカマー"
+    ],
+    "relatedPeople": [],
+    "description": "ヒカマー"
+  },
+  {
+    "id": "wibumani",
+    "name": "ヴィブマニ",
+    "tags": [
+      "ヒカマー"
+    ],
+    "relatedPeople": [],
+    "description": "ヒカマー"
+  },
+  {
+    "id": "kamani",
+    "name": "蚊マニ",
+    "tags": [
+      "ヒカマー"
+    ],
+    "relatedPeople": [],
+    "description": "ヒカマー"
+  },
+  {
+    "id": "neonazi-hoshin",
+    "name": "ネオナチホシノ",
+    "tags": [
+      "ヒカマー"
+    ],
+    "relatedPeople": [],
+    "description": "ヒカマー"
   }
 ]

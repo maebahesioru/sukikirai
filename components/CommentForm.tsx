@@ -23,6 +23,26 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
 
   const MAX_CHARS = 280;
 
+  // 全角文字を2、半角文字を1としてカウント
+  const getCharCount = (text: string): number => {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) {
+      const charCode = text.charCodeAt(i);
+      // 半角文字（ASCII）は1、全角文字は2としてカウント
+      count += charCode <= 0x7F ? 1 : 2;
+    }
+    return count;
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    const charCount = getCharCount(newContent);
+    
+    if (charCount <= MAX_CHARS) {
+      setContent(newContent);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -31,8 +51,9 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       return;
     }
 
-    if (content.length > MAX_CHARS) {
-      alert(`コメントは${MAX_CHARS}文字以内で入力してください`);
+    const charCount = getCharCount(content);
+    if (charCount > MAX_CHARS) {
+      alert(`コメントは全角${Math.floor(MAX_CHARS / 2)}文字（半角${MAX_CHARS}文字）以内で入力してください`);
       return;
     }
 
@@ -158,19 +179,21 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
             <label className="block text-sm font-medium text-gray-700">
               コメント本文 <span className="text-red-500">*</span>
             </label>
-            <span className={`text-sm ${content.length > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-              {content.length} / {MAX_CHARS}
+            <span className={`text-sm ${getCharCount(content) > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+              {getCharCount(content)} / {MAX_CHARS}
             </span>
           </div>
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleContentChange}
             placeholder="コメントを入力..."
             rows={5}
-            maxLength={MAX_CHARS}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500"
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            ※全角{Math.floor(MAX_CHARS / 2)}文字（半角{MAX_CHARS}文字）まで入力できます
+          </p>
         </div>
 
         <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200">

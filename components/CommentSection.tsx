@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { ThumbsUp, ThumbsDown, Flag, EyeOff, MessageCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { format } from 'date-fns';
 
 type CommentSectionProps = {
@@ -628,6 +629,8 @@ function ReplyForm({
   const [content, setContent] = useState(`>>${parentCommentNumber}\n`);
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>('like');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<any>(null);
   
   const MAX_CHARS = 280;
 
@@ -658,10 +661,30 @@ function ReplyForm({
       alert(`返信は全角${Math.floor(MAX_CHARS / 2)}文字（半角${MAX_CHARS}文字）以内で入力してください`);
       return;
     }
+
+    if (!turnstileToken) {
+      alert('認証が必要です。少々お待ちください。');
+      return;
+    }
     
     setIsSubmitting(true);
 
     try {
+      // Verify Turnstile token
+      const verifyResponse = await fetch('/api/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyData.success) {
+        alert('認証に失敗しました。ページをリロードして再度お試しください。');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Get next comment number
       const { count } = await supabase
         .from('comments')
@@ -767,10 +790,21 @@ function ReplyForm({
         </p>
       </div>
 
+      <div className="flex justify-center my-3">
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
+          onSuccess={(token) => setTurnstileToken(token)}
+          onError={() => {
+            alert('認証に失敗しました。ページをリロードしてください。');
+          }}
+        />
+      </div>
+
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
         >
           {isSubmitting ? '投稿中...' : '返信を投稿'}

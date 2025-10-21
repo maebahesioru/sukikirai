@@ -21,6 +21,7 @@
   
 - ✅ **個別ページ**（十字架）
   - 好き・嫌いの投票機能（1日1回、Cookieで管理）
+  - Cloudflare Turnstile認証（投票・コメント投稿時）
   - 投票結果の視覚的表示
   - 投票後のシェアボタン（X, Bluesky, LINE, URLコピー）
   - コメント表示・投稿機能
@@ -77,12 +78,22 @@ pnpm install
 
 1. [Supabase](https://supabase.com)でプロジェクトを作成
 2. SQL Editorで `supabase/schema.sql` の内容を実行
-3. `.env.local` ファイルを作成（`.env.example` を参考）
+3. `.env.local` ファイルを作成
 
 ```bash
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Cloudflare Turnstile（スパム対策）
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAB7zVyyT42WhDQqg
+TURNSTILE_SECRET_KEY=0x4AAAAAAB7zV-zLa2ZSh61jOz6DhjfYojQ
 ```
+
+**Vercel環境変数設定:**
+1. Vercel Dashboardでプロジェクトを選択
+2. Settings → Environment Variables
+3. 上記の環境変数を追加
 
 ### 3. 開発サーバーの起動
 

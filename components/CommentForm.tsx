@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Cookies from 'js-cookie';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 type CommentFormProps = {
   personId: string;
@@ -20,6 +21,8 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>(voteType);
   const [tweetEnabled, setTweetEnabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<any>(null);
 
   const MAX_CHARS = 280;
 
@@ -57,9 +60,29 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       return;
     }
 
+    if (!turnstileToken) {
+      alert('認証が必要です。少々お待ちください。');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // Verify Turnstile token
+      const verifyResponse = await fetch('/api/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyData.success) {
+        alert('認証に失敗しました。ページをリロードして再度お試しください。');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Get comment number
       const { count } = await supabase
         .from('comments')
@@ -212,11 +235,22 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
           </label>
         </div>
 
+        <div className="flex justify-center my-4">
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
+            onSuccess={(token) => setTurnstileToken(token)}
+            onError={() => {
+              alert('認証に失敗しました。ページをリロードしてください。');
+            }}
+          />
+        </div>
+
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           className={`w-full py-3 px-6 rounded-lg font-bold text-white transition ${
-            isSubmitting
+            isSubmitting || !turnstileToken
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90'
           }`}

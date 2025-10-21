@@ -528,10 +528,11 @@ function VoteManagementForm({ onSubmit }: { onSubmit: (personId: string, likeCou
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="like-count" className="block text-sm font-medium text-gray-700 mb-2">
             好き票数
           </label>
           <input
+            id="like-count"
             type="number"
             min="0"
             value={likeCount}
@@ -541,10 +542,11 @@ function VoteManagementForm({ onSubmit }: { onSubmit: (personId: string, likeCou
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="dislike-count" className="block text-sm font-medium text-gray-700 mb-2">
             嫌い票数
           </label>
           <input
+            id="dislike-count"
             type="number"
             min="0"
             value={dislikeCount}

@@ -43,3 +43,12 @@ export type Report = {
   reason: string;
   created_at: string;
 };
+
+export type CommentReaction = {
+  id: string;
+  comment_id: string;
+  reaction_type: 'good' | 'bad';
+  cookie_id: string;
+  ip_address: string | null;
+  created_at: string;
+};

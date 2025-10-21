@@ -5,7 +5,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // セッション永続化を無効化（不要なストレージアクセスを削減）
+    persistSession: false, // セッション永続化を無効化
+    autoRefreshToken: false, // 自動トークンリフレッシュを無効化
+    detectSessionInUrl: false, // URL内のセッション検出を無効化
   },
   realtime: {
     params: {
@@ -14,8 +16,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'hikamers-sukikirai', // クライアント識別
+      'X-Client-Info': 'hikamers', // より短いヘッダー
+      'Prefer': 'return=minimal', // 最小限のレスポンスを要求
     },
+  },
+  db: {
+    schema: 'public', // スキーマを明示的に指定
   },
 });
 

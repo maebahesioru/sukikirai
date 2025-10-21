@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 type VoteButtonProps = {
   personId: string;
@@ -16,6 +17,9 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
   const [voteType, setVoteType] = useState<'like' | 'dislike' | null>(null);
   const [likeCount, setLikeCount] = useState(0);
   const [dislikeCount, setDislikeCount] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const turnstileRef = useRef<any>(null);
 
   useEffect(() => {
     checkVoteStatus();
@@ -70,36 +74,67 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
   const handleVote = async (type: 'like' | 'dislike') => {
     if (hasVoted) return;
 
-    const cookieId = Cookies.get('user_id') || generateUserId();
-    if (!Cookies.get('user_id')) {
-      Cookies.set('user_id', cookieId, { expires: 365 });
+    if (!turnstileToken) {
+      alert('認証が必要です。少々お待ちください。');
+      return;
     }
 
-    // Save vote to database
-    await supabase.from('votes').insert({
-      person_id: personId,
-      vote_type: type,
-      cookie_id: cookieId,
-    });
+    setIsVerifying(true);
 
-    // Save vote to cookie
-    const cookieKey = `vote_${personId}`;
-    Cookies.set(
-      cookieKey,
-      JSON.stringify({ type, date: new Date().toISOString() }),
-      { expires: 1 }
-    );
+    try {
+      const cookieId = Cookies.get('user_id') || generateUserId();
+      if (!Cookies.get('user_id')) {
+        Cookies.set('user_id', cookieId, { expires: 365 });
+      }
 
-    setHasVoted(true);
-    setVoteType(type);
-    
-    const newLikeCount = type === 'like' ? likeCount + 1 : likeCount;
-    const newDislikeCount = type === 'dislike' ? dislikeCount + 1 : dislikeCount;
-    
-    setLikeCount(newLikeCount);
-    setDislikeCount(newDislikeCount);
+      // Call vote API with Turnstile token and IP check
+      const voteResponse = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personId,
+          voteType: type,
+          cookieId,
+          turnstileToken,
+        }),
+      });
 
-    onVote(type, newLikeCount, newDislikeCount);
+      const voteData = await voteResponse.json();
+
+      if (!voteData.success) {
+        if (voteResponse.status === 429) {
+          alert('このIPアドレスから本日既に投票されています。\n投票は1日1回までです。');
+        } else {
+          alert('投票に失敗しました。もう一度お試しください。');
+        }
+        setIsVerifying(false);
+        return;
+      }
+
+      // Save vote to cookie
+      const cookieKey = `vote_${personId}`;
+      Cookies.set(
+        cookieKey,
+        JSON.stringify({ type, date: new Date().toISOString() }),
+        { expires: 1 }
+      );
+
+      setHasVoted(true);
+      setVoteType(type);
+      
+      const newLikeCount = type === 'like' ? likeCount + 1 : likeCount;
+      const newDislikeCount = type === 'dislike' ? dislikeCount + 1 : dislikeCount;
+      
+      setLikeCount(newLikeCount);
+      setDislikeCount(newDislikeCount);
+
+      onVote(type, newLikeCount, newDislikeCount);
+    } catch (error) {
+      console.error('投票エラー:', error);
+      alert('投票に失敗しました。もう一度お試しください。');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const generateUserId = () => {
@@ -118,23 +153,37 @@ export default function VoteButton({ personId, onVote, onCountsLoaded }: VoteBut
       
       {!hasVoted ? (
         <>
-          <p className="text-center text-gray-600 mb-6">
+          <p className="text-center text-gray-600 mb-4">
             「好き！」か「嫌い！」に投票して みんなのコメントを見てみよう！
           </p>
+          
+          <div className="flex justify-center mb-6">
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onError={() => {
+                alert('認証に失敗しました。ページをリロードしてください。');
+              }}
+            />
+          </div>
+
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => handleVote('like')}
-              className="flex-1 max-w-xs bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
+              disabled={!turnstileToken || isVerifying}
+              className="flex-1 max-w-xs bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ThumbsUp className="w-6 h-6" />
-              好き！
+              {isVerifying ? '処理中...' : '好き！'}
             </button>
             <button
               onClick={() => handleVote('dislike')}
-              className="flex-1 max-w-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
+              disabled={!turnstileToken || isVerifying}
+              className="flex-1 max-w-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ThumbsDown className="w-6 h-6" />
-              嫌い！
+              {isVerifying ? '処理中...' : '嫌い！'}
             </button>
           </div>
         </>

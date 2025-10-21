@@ -4,11 +4,13 @@ CREATE TABLE IF NOT EXISTS votes (
   person_id TEXT NOT NULL,
   vote_type TEXT NOT NULL CHECK (vote_type IN ('like', 'dislike')),
   cookie_id TEXT NOT NULL,
+  ip_address TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX idx_votes_person_id ON votes(person_id);
 CREATE INDEX idx_votes_cookie_id ON votes(cookie_id);
+CREATE INDEX idx_votes_ip_address ON votes(ip_address);
 CREATE INDEX idx_votes_created_at ON votes(created_at);
 
 -- Create comments table

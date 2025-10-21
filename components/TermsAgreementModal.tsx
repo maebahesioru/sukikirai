@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import { useState } from 'react';
 import Cookies from 'js-cookie';
 
 type TermsAgreementModalProps = {
@@ -9,29 +8,21 @@ type TermsAgreementModalProps = {
 };
 
 export default function TermsAgreementModal({ onAgree }: TermsAgreementModalProps) {
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isAgreeing, setIsAgreeing] = useState(false);
-  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleAgree = async () => {
-    if (!turnstileToken) {
-      alert('認証が必要です。少々お待ちください。');
-      return;
-    }
-
     setIsAgreeing(true);
 
     try {
       const response = await fetch('/api/agree-terms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turnstileToken }),
       });
 
       const data = await response.json();
 
       if (!data.success) {
-        alert('認証に失敗しました。ページをリロードして再度お試しください。');
+        alert('エラーが発生しました。ページをリロードして再度お試しください。');
         setIsAgreeing(false);
         return;
       }
@@ -104,27 +95,16 @@ export default function TermsAgreementModal({ onAgree }: TermsAgreementModalProp
 
           <div className="mb-6">
             <p className="text-sm text-gray-700 mb-4">
-              上記の利用規約をお読みいただき、同意される場合は以下の認証を完了した後、「同意する」ボタンをクリックしてください。
+              上記の利用規約をお読みいただき、同意される場合は「同意する」ボタンをクリックしてください。
             </p>
-            
-            <div className="flex justify-center my-4">
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-                onSuccess={(token) => setTurnstileToken(token)}
-                onError={() => {
-                  alert('認証に失敗しました。ページをリロードしてください。');
-                }}
-              />
-            </div>
           </div>
 
           <div className="flex gap-4">
             <button
               onClick={handleAgree}
-              disabled={isAgreeing || !turnstileToken}
+              disabled={isAgreeing}
               className={`flex-1 py-3 px-6 rounded-lg font-bold text-white transition ${
-                isAgreeing || !turnstileToken
+                isAgreeing
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90'
               }`}

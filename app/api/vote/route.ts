@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { personId, voteType, userToken, turnstileToken } = await request.json();
+    const { personId, voteType, userToken } = await request.json();
 
-    if (!personId || !voteType || !userToken || !turnstileToken) {
+    if (!personId || !voteType || !userToken) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
@@ -16,30 +16,6 @@ export async function POST(request: Request) {
     if (!/^[a-f0-9]{64}$/i.test(userToken)) {
       return NextResponse.json(
         { success: false, error: 'Invalid user token' },
-        { status: 400 }
-      );
-    }
-
-    // Verify Turnstile token
-    const verifyResponse = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: turnstileToken,
-        }),
-      }
-    );
-
-    const verifyData = await verifyResponse.json();
-
-    if (!verifyData.success) {
-      return NextResponse.json(
-        { success: false, error: 'Turnstile verification failed' },
         { status: 400 }
       );
     }

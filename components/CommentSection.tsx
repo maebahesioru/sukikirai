@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
 import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
-import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
 
@@ -668,8 +667,6 @@ function ReplyForm({
   const [content, setContent] = useState(`>>${parentCommentNumber}\n`);
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>('like');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileInstance>(null);
   
   const MAX_CHARS = 280;
   const MAX_NAME_LENGTH = 50;
@@ -709,11 +706,6 @@ function ReplyForm({
       return;
     }
 
-    if (!turnstileToken) {
-      alert('認証が必要です。少々お待ちください。');
-      return;
-    }
-    
     setIsSubmitting(true);
 
     try {
@@ -733,31 +725,24 @@ function ReplyForm({
 
       const commentNumber = (count || 0) + 1;
 
-      // Post reply via API (server-side Turnstile verification)
+      // Post reply via API
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personId,
-          commentNumber,
-          name: name.trim(),
-          userId: userId.trim(),
+          name: name.trim() || null,
           voteType: selectedVoteType,
           content: content.trim(),
           parentCommentId,
           userToken,
-          turnstileToken,
         }),
       });
 
       const data = await response.json();
 
       if (!data.success) {
-        if (response.status === 400 && data.error === 'Turnstile verification failed') {
-          alert('認証に失敗しました。ページをリロードして再度お試しください。');
-        } else {
-          alert('返信の投稿に失敗しました');
-        }
+        alert('返信の投稿に失敗しました');
         setIsSubmitting(false);
         return;
       }
@@ -849,21 +834,11 @@ function ReplyForm({
         </p>
       </div>
 
-      <div className="flex justify-center my-3">
-        <DynamicTurnstile
-          ref={turnstileRef}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-          onSuccess={(token: string) => setTurnstileToken(token)}
-          onError={() => {
-            alert('認証に失敗しました。ページをリロードしてください。');
-          }}
-        />
-      </div>
 
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isSubmitting || !turnstileToken}
+          disabled={isSubmitting}
           className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
         >
           {isSubmitting ? '投稿中...' : '返信を投稿'}

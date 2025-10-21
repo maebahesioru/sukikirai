@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
-import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 
 type VoteButtonProps = {
   personId: string;
@@ -25,9 +24,7 @@ export default function VoteButton({
   const [voteType, setVoteType] = useState<'like' | 'dislike' | null>(null);
   const [likeCount, setLikeCount] = useState(initialLikeCount ?? 0);
   const [dislikeCount, setDislikeCount] = useState(initialDislikeCount ?? 0);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     checkVoteStatus();
@@ -82,11 +79,6 @@ export default function VoteButton({
   const handleVote = async (type: 'like' | 'dislike') => {
     if (hasVoted) return;
 
-    if (!turnstileToken) {
-      alert('認証が必要です。少々お待ちください。');
-      return;
-    }
-
     setIsVerifying(true);
 
     try {
@@ -98,7 +90,7 @@ export default function VoteButton({
         return;
       }
 
-      // Call vote API with Turnstile token
+      // Call vote API
       const voteResponse = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,7 +98,6 @@ export default function VoteButton({
           personId,
           voteType: type,
           userToken,
-          turnstileToken,
         }),
       });
 
@@ -164,22 +155,11 @@ export default function VoteButton({
           <p className="text-center text-gray-600 mb-4">
             「好き！」か「嫌い！」に投票して みんなのコメントを見てみよう！
           </p>
-          
-          <div className="flex justify-center mb-6">
-            <DynamicTurnstile
-              ref={turnstileRef}
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-              onSuccess={(token: string) => setTurnstileToken(token)}
-              onError={() => {
-                alert('認証に失敗しました。ページをリロードしてください。');
-              }}
-            />
-          </div>
 
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => handleVote('like')}
-              disabled={!turnstileToken || isVerifying}
+              disabled={isVerifying}
               className="flex-1 max-w-xs bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ThumbsUp className="w-6 h-6" />
@@ -187,7 +167,7 @@ export default function VoteButton({
             </button>
             <button
               onClick={() => handleVote('dislike')}
-              disabled={!turnstileToken || isVerifying}
+              disabled={isVerifying}
               className="flex-1 max-w-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ThumbsDown className="w-6 h-6" />

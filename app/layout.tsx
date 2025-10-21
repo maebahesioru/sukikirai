@@ -71,9 +71,6 @@ export default function RootLayout({
         {/* DNS Prefetch & Preconnect for Supabase */}
         <link rel="dns-prefetch" href="https://hppzdwxlldhmxjbtcepx.supabase.co" />
         <link rel="preconnect" href="https://hppzdwxlldhmxjbtcepx.supabase.co" crossOrigin="anonymous" />
-        {/* Cloudflare Turnstile */}
-        <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
-        <link rel="preconnect" href="https://challenges.cloudflare.com" crossOrigin="anonymous" />
       </head>
       <body
         className={`${geistSans.variable} antialiased`}

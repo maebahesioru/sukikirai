@@ -25,13 +25,14 @@ export async function getPopularityRanking(): Promise<RankingPerson[]> {
     .from('votes')
     .select('person_id, vote_type');
 
-  // 全コメントを一度に取得
+  // 全コメントを一度に取得（最小限のデータのみ）
   const { data: allComments } = await supabase
     .from('comments')
-    .select('person_id, content, name, created_at, vote_type')
+    .select('person_id, content, created_at')
     .eq('is_hidden', false)
     .eq('vote_type', 'like')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   // 投票数を集計
   const voteStats = new Map<string, { likes: number; dislikes: number }>();
@@ -64,8 +65,8 @@ export async function getPopularityRanking(): Promise<RankingPerson[]> {
     const comments = commentMap.get(person.id);
     const latestComment = comments?.[0]
       ? {
-          content: comments[0].content,
-          name: comments[0].name || '匿名',
+          content: comments[0].content.substring(0, 50) + (comments[0].content.length > 50 ? '...' : ''),
+          name: '匿名',
           createdAt: comments[0].created_at,
         }
       : undefined;
@@ -95,13 +96,14 @@ export async function getUnpopularRanking(): Promise<RankingPerson[]> {
     .from('votes')
     .select('person_id, vote_type');
 
-  // 全コメントを一度に取得（嫌い派）
+  // 全コメントを一度に取得（最小限のデータのみ）
   const { data: allComments } = await supabase
     .from('comments')
-    .select('person_id, content, name, created_at, vote_type')
+    .select('person_id, content, created_at')
     .eq('is_hidden', false)
     .eq('vote_type', 'dislike')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   // 投票数を集計
   const voteStats = new Map<string, { likes: number; dislikes: number }>();
@@ -134,8 +136,8 @@ export async function getUnpopularRanking(): Promise<RankingPerson[]> {
     const comments = commentMap.get(person.id);
     const latestComment = comments?.[0]
       ? {
-          content: comments[0].content,
-          name: comments[0].name || '匿名',
+          content: comments[0].content.substring(0, 50) + (comments[0].content.length > 50 ? '...' : ''),
+          name: '匿名',
           createdAt: comments[0].created_at,
         }
       : undefined;
@@ -170,13 +172,14 @@ export async function getTrendingRanking(): Promise<RankingPerson[]> {
     .select('person_id, vote_type, created_at')
     .gte('created_at', sevenDaysAgo.toISOString());
 
-  // 過去7日間の全コメントを一度に取得（好き派・嫌い派両方）
+  // 過去7日間の全コメントを一度に取得（最小限のデータのみ）
   const { data: allComments } = await supabase
     .from('comments')
-    .select('person_id, content, name, created_at, vote_type')
+    .select('person_id, content, created_at, vote_type')
     .eq('is_hidden', false)
     .gte('created_at', sevenDaysAgo.toISOString())
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   // 投票数を集計
   const voteStats = new Map<string, { likes: number; dislikes: number }>();
@@ -221,8 +224,8 @@ export async function getTrendingRanking(): Promise<RankingPerson[]> {
     
     const latestComment = selectedComment
       ? {
-          content: selectedComment.content,
-          name: selectedComment.name || '匿名',
+          content: selectedComment.content.substring(0, 50) + (selectedComment.content.length > 50 ? '...' : ''),
+          name: '匿名',
           createdAt: selectedComment.created_at,
           voteType: selectedComment.vote_type,
         }

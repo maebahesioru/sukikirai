@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 import Cookies from 'js-cookie';
 
 type CommentFormProps = {
@@ -21,8 +20,6 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
   const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>(voteType);
   const [tweetEnabled, setTweetEnabled] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const MAX_CHARS = 280;
   const MAX_NAME_LENGTH = 50;
@@ -68,11 +65,6 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       return;
     }
 
-    if (!turnstileToken) {
-      alert('認証が必要です。少々お待ちください。');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -92,30 +84,23 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
 
       const commentNumber = (count || 0) + 1;
 
-      // Post comment via API (server-side Turnstile verification)
+      // Post comment via API
       const response = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personId,
-          commentNumber,
-          name: name.trim(),
-          userId: userId.trim(),
+          name: name.trim() || null,
           voteType: selectedVoteType,
           content: content.trim(),
           userToken,
-          turnstileToken,
         }),
       });
 
       const data = await response.json();
 
       if (!data.success) {
-        if (response.status === 400 && data.error === 'Turnstile verification failed') {
-          alert('認証に失敗しました。ページをリロードして再度お試しください。');
-        } else {
-          alert('コメントの投稿に失敗しました');
-        }
+        alert('コメントの投稿に失敗しました');
         setIsSubmitting(false);
         return;
       }
@@ -254,22 +239,12 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
           </label>
         </div>
 
-        <div className="flex justify-center my-4">
-            <DynamicTurnstile
-              ref={turnstileRef}
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-              onSuccess={(token: string) => setTurnstileToken(token)}
-              onError={() => {
-                alert('認証に失敗しました。ページをリロードしてください。');
-              }}
-            />
-        </div>
 
         <button
           type="submit"
-          disabled={isSubmitting || !turnstileToken}
+          disabled={isSubmitting}
           className={`w-full py-3 px-6 rounded-lg font-bold text-white transition ${
-            isSubmitting || !turnstileToken
+            isSubmitting
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90'
           }`}

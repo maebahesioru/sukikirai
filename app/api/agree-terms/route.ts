@@ -1,41 +1,8 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const { turnstileToken } = await request.json();
-
-    if (!turnstileToken) {
-      return NextResponse.json(
-        { success: false, error: 'Turnstile token is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify Turnstile token
-    const verifyResponse = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: turnstileToken,
-        }),
-      }
-    );
-
-    const verifyData = await verifyResponse.json();
-
-    if (!verifyData.success) {
-      return NextResponse.json(
-        { success: false, error: 'Turnstile verification failed' },
-        { status: 400 }
-      );
-    }
-
     // Generate secure user token
     const userToken = randomBytes(32).toString('hex');
     const expiresAt = new Date();

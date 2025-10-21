@@ -17,12 +17,11 @@ export async function POST(request: Request) {
       voteType, 
       content,
       parentCommentId,
-      userToken,
-      turnstileToken 
+      userToken
     } = await request.json();
 
     // Validate required fields
-    if (!personId || !voteType || !content || !userToken || !turnstileToken) {
+    if (!personId || !voteType || !content || !userToken) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
@@ -103,30 +102,6 @@ export async function POST(request: Request) {
           { status: 429 }
         );
       }
-    }
-
-    // Verify Turnstile token on server side
-    const verifyResponse = await fetch(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          secret: process.env.TURNSTILE_SECRET_KEY,
-          response: turnstileToken,
-        }),
-      }
-    );
-
-    const verifyData = await verifyResponse.json();
-
-    if (!verifyData.success) {
-      return NextResponse.json(
-        { success: false, error: 'Turnstile verification failed' },
-        { status: 400 }
-      );
     }
 
     // Insert comment into database (using Service Role Key)

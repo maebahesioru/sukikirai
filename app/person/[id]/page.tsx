@@ -3,7 +3,8 @@ import { getSidebarData } from '@/lib/sidebar-data';
 import { supabase } from '@/lib/supabase';
 
 export const dynamicParams = true;
-export const dynamic = 'force-dynamic';
+// ISRで60秒ごとに再検証（頻繁にアクセスされるページをキャッシュ）
+export const revalidate = 60;
 
 interface PersonPageProps {
   params: {

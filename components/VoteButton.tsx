@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import DynamicTurnstile, { type TurnstileInstance } from '@/components/DynamicTurnstile';
 
 type VoteButtonProps = {
   personId: string;
@@ -166,10 +166,10 @@ export default function VoteButton({
           </p>
           
           <div className="flex justify-center mb-6">
-            <Turnstile
+            <DynamicTurnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAB7zVyyT42WhDQqg'}
-              onSuccess={(token) => setTurnstileToken(token)}
+              onSuccess={(token: string) => setTurnstileToken(token)}
               onError={() => {
                 alert('認証に失敗しました。ページをリロードしてください。');
               }}

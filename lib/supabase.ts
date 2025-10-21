@@ -3,7 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false, // セッション永続化を無効化（不要なストレージアクセスを削減）
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 1, // リアルタイムイベントを制限
+    },
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'hikamers-sukikirai', // クライアント識別
+    },
+  },
+});
 
 // Database types
 export type Vote = {

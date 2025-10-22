@@ -780,7 +780,9 @@ function ReplyForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personId,
+          commentNumber,
           name: name.trim() || null,
+          userId: userId.trim() || null,
           voteType: selectedVoteType,
           content: content.trim(),
           parentCommentId,
@@ -791,7 +793,9 @@ function ReplyForm({
       const data = await response.json();
 
       if (!data.success) {
-        alert('返信の投稿に失敗しました');
+        const errorMsg = data.error || '返信の投稿に失敗しました';
+        alert(errorMsg);
+        console.error('Reply post failed:', data);
         setIsSubmitting(false);
         return;
       }

@@ -90,7 +90,9 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personId,
+          commentNumber,
           name: name.trim() || null,
+          userId: userId.trim() || null,
           voteType: selectedVoteType,
           content: content.trim(),
           userToken,
@@ -100,7 +102,9 @@ export default function CommentForm({ personId, personName, voteType, likeCount,
       const data = await response.json();
 
       if (!data.success) {
-        alert('コメントの投稿に失敗しました');
+        const errorMsg = data.error || 'コメントの投稿に失敗しました';
+        alert(errorMsg);
+        console.error('Comment post failed:', data);
         setIsSubmitting(false);
         return;
       }

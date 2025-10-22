@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
-import { toggleCommentReaction } from '@/lib/comment-reactions';
+import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
 import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
 import ReportModal from './ReportModal';
@@ -69,11 +69,31 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
         }
       });
 
-      // コメントに返信データを付与
-      const commentsWithReplies = mainComments.map(comment => ({
-        ...comment,
-        _replies: repliesByComment.get(comment.id) || []
-      }));
+      // すべてのコメントと返信のIDを収集
+      const allCommentIds = [...mainComments.map(c => c.id), ...(allReplies?.map(r => r.id) || [])];
+      
+      // comment_reactionsから評価数を取得
+      const reactionCounts = await getCommentReactionCounts(allCommentIds);
+
+      // コメントに返信データと評価数を付与
+      const commentsWithReplies = mainComments.map(comment => {
+        const reactions = reactionCounts[comment.id] || { good: 0, bad: 0 };
+        const repliesWithReactions = (repliesByComment.get(comment.id) || []).map(reply => {
+          const replyReactions = reactionCounts[reply.id] || { good: 0, bad: 0 };
+          return {
+            ...reply,
+            good_count: replyReactions.good,
+            bad_count: replyReactions.bad,
+          };
+        });
+        
+        return {
+          ...comment,
+          good_count: reactions.good,
+          bad_count: reactions.bad,
+          _replies: repliesWithReactions,
+        };
+      });
 
       // Filter out hidden comments
       const filteredData = commentsWithReplies.filter(c => !hiddenComments.includes(c.id));

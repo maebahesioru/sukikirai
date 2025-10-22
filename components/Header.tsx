@@ -25,6 +25,9 @@ export default function Header() {
           </Link>
           
           <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/people" className="hover:underline transition">
+              全人物一覧
+            </Link>
             <Link href="/ranking/popularity" className="hover:underline transition">
               好感度ランキング
             </Link>
@@ -57,6 +60,9 @@ export default function Header() {
         
         {/* Mobile Navigation */}
         <nav className="md:hidden flex space-x-4 pb-4 overflow-x-auto">
+          <Link href="/people" className="text-sm whitespace-nowrap hover:underline">
+            全人物
+          </Link>
           <Link href="/ranking/popularity" className="text-sm whitespace-nowrap hover:underline">
             好感度
           </Link>

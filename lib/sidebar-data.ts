@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
+import { getCommentReactionCounts } from './comment-reactions';
 
 export type TrendingPerson = Person & {
   voteCount: number;
@@ -61,11 +62,18 @@ export async function getSidebarData() {
     .order('created_at', { ascending: false })
     .limit(5);
 
+  // comment_reactionsから評価数を取得
+  const commentIds = comments?.map(c => c.id) || [];
+  const reactionCounts = await getCommentReactionCounts(commentIds);
+
   const latestComments: CommentWithPerson[] = comments?.map((comment) => {
     const person = (peopleData as Person[]).find((p) => p.id === comment.person_id);
+    const reactions = reactionCounts[comment.id] || { good: 0, bad: 0 };
     return {
       ...comment,
       personName: person?.name || '不明',
+      good_count: reactions.good,
+      bad_count: reactions.bad,
     };
   }) || [];
 

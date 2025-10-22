@@ -24,16 +24,16 @@ interface PersonPageClientProps {
 
 export default function PersonPageClient({ 
   personId, 
-  initialLikeCount,
-  initialDislikeCount,
+  initialLikeCount = 0,
+  initialDislikeCount = 0,
   trendingPeople, 
   latestComments 
 }: PersonPageClientProps) {
   const [person, setPerson] = useState<Person | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voteType, setVoteType] = useState<'like' | 'dislike' | null>(null);
-  const [likeCount, setLikeCount] = useState(0);
-  const [dislikeCount, setDislikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialLikeCount);
+  const [dislikeCount, setDislikeCount] = useState(initialDislikeCount);
   const [refreshComments, setRefreshComments] = useState(0);
   const [tagRanking, setTagRanking] = useState<Array<{ name: string; id: string; likePercentage: number }>>([]);
 

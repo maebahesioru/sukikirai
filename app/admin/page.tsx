@@ -357,9 +357,16 @@ export default function AdminPage() {
                           <p className="text-sm text-gray-500 mb-1">
                             通報日時: {formatJST(report.created_at, 'yyyy-MM-dd HH:mm:ss')}
                           </p>
-                          <p className="text-sm text-gray-700">
-                            理由: {report.reason || '不明'}
+                          <p className="text-sm text-gray-700 mb-1">
+                            <span className="font-bold">理由:</span> {report.reason || '不明'}
                           </p>
+                          {report.details && (
+                            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                              <p className="text-sm text-gray-700">
+                                <span className="font-bold">詳細:</span> {report.details}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
 

@@ -7,19 +7,22 @@ export const dynamicParams = true;
 export const revalidate = 60;
 
 interface PersonPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function PersonPage({ params }: PersonPageProps) {
+  // Next.js 15: paramsを先にawait
+  const { id } = await params;
+  
   // サイドバー用のデータとvote数を並列取得
   const [{ trendingPeople, latestComments }, { data: votes }] = await Promise.all([
     getSidebarData(),
     supabase
       .from('votes')
       .select('vote_type')
-      .eq('person_id', params.id)
+      .eq('person_id', id)
   ]);
 
   // vote数を集計
@@ -28,7 +31,7 @@ export default async function PersonPage({ params }: PersonPageProps) {
 
   return (
     <PersonPageClient 
-      personId={params.id}
+      personId={id}
       initialLikeCount={likeCount}
       initialDislikeCount={dislikeCount}
       trendingPeople={trendingPeople}

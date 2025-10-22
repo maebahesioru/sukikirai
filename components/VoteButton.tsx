@@ -26,6 +26,16 @@ export default function VoteButton({
   const [dislikeCount, setDislikeCount] = useState(initialDislikeCount ?? 0);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  // 初期値が変更された時に状態を更新
+  useEffect(() => {
+    if (initialLikeCount !== undefined) {
+      setLikeCount(initialLikeCount);
+    }
+    if (initialDislikeCount !== undefined) {
+      setDislikeCount(initialDislikeCount);
+    }
+  }, [initialLikeCount, initialDislikeCount]);
+
   useEffect(() => {
     checkVoteStatus();
     // 初期値が提供されていない場合のみfetch

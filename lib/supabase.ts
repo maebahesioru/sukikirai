@@ -61,6 +61,7 @@ export type Report = {
   id: string;
   comment_id: string;
   reason: string;
+  details: string | null;
   created_at: string;
 };
 

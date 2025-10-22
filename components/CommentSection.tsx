@@ -6,6 +6,7 @@ import { supabase, type Comment } from '@/lib/supabase';
 import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
 import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
+import ReportModal from './ReportModal';
 
 type CommentSectionProps = {
   personId: string;
@@ -260,6 +261,8 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [localComment, setLocalComment] = useState(comment);
   const [hasVoted, setHasVoted] = useState<'good' | 'bad' | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
 
   // 返信データをpropsから取得（最適化）
   const [replies, setReplies] = useState<Comment[]>(comment._replies || []);
@@ -334,21 +337,35 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
     setHasVoted(type);
   };
 
-  const handleReport = async () => {
-    if (!confirm('このコメントを通報しますか？\n\n不適切な内容や規約違反のコメントを通報できます。')) {
-      return;
+  const handleReport = async (reason: string, details: string) => {
+    setIsReportSubmitting(true);
+    
+    // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
+    let insertData: { comment_id: string; reason: string; details?: string | null } = {
+      comment_id: comment.id,
+      reason: reason,
+    };
+    
+    // detailsが空でない場合のみ追加
+    if (details) {
+      insertData.details = details;
     }
     
-    const { error } = await supabase.from('reports').insert({
-      comment_id: comment.id,
-      reason: 'ユーザー通報',
-    });
+    const { error } = await supabase.from('reports').insert(insertData);
+    
+    setIsReportSubmitting(false);
     
     if (error) {
-      alert('通報に失敗しました');
-      console.error('通報エラー:', error);
+      console.error('通報エラー詳細:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      alert(`通報に失敗しました\n\nエラー: ${error.message}`);
     } else {
       alert('通報を受け付けました。\n\nご協力ありがとうございます。');
+      setShowReportModal(false);
     }
   };
 
@@ -382,7 +399,7 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleReport}
+            onClick={() => setShowReportModal(true)}
             className="text-gray-500 hover:text-red-500 transition"
             title="通報"
           >
@@ -471,6 +488,14 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
           ))}
         </div>
       )}
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReport}
+        isSubmitting={isReportSubmitting}
+      />
     </div>
   );
 }
@@ -487,6 +512,8 @@ function ReplyItem({
 }) {
   const [localReply, setLocalReply] = useState(reply);
   const [hasVoted, setHasVoted] = useState<'good' | 'bad' | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
 
   useEffect(() => {
     setLocalReply(reply);
@@ -549,21 +576,35 @@ function ReplyItem({
     setHasVoted(type);
   };
 
-  const handleReport = async () => {
-    if (!confirm('この返信を通報しますか？\n\n不適切な内容や規約違反のコメントを通報できます。')) {
-      return;
+  const handleReport = async (reason: string, details: string) => {
+    setIsReportSubmitting(true);
+    
+    // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
+    let insertData: { comment_id: string; reason: string; details?: string | null } = {
+      comment_id: reply.id,
+      reason: reason,
+    };
+    
+    // detailsが空でない場合のみ追加
+    if (details) {
+      insertData.details = details;
     }
     
-    const { error } = await supabase.from('reports').insert({
-      comment_id: reply.id,
-      reason: 'ユーザー通報',
-    });
+    const { error } = await supabase.from('reports').insert(insertData);
+    
+    setIsReportSubmitting(false);
     
     if (error) {
-      alert('通報に失敗しました');
-      console.error('通報エラー:', error);
+      console.error('通報エラー詳細:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      alert(`通報に失敗しました\n\nエラー: ${error.message}`);
     } else {
       alert('通報を受け付けました。\n\nご協力ありがとうございます。');
+      setShowReportModal(false);
     }
   };
 
@@ -596,7 +637,7 @@ function ReplyItem({
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleReport}
+            onClick={() => setShowReportModal(true)}
             className="text-gray-500 hover:text-red-500 transition"
             title="通報"
           >
@@ -646,6 +687,14 @@ function ReplyItem({
           {localReply.bad_count}
         </button>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReport}
+        isSubmitting={isReportSubmitting}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
 import { formatJST } from '@/lib/date-utils';
+import { getCommentReactionCounts } from '@/lib/comment-reactions';
 
 // ISRで60秒ごとに再検証（トップページはアクセスが多いのでキャッシュ活用）
 export const revalidate = 60;
@@ -24,12 +25,19 @@ export default async function Home() {
       .limit(10), // 10件取得して両方で使用
   ]);
 
-  // コメントに人物名を追加
+  // comment_reactionsから評価数を取得
+  const commentIds = comments?.map(c => c.id) || [];
+  const reactionCounts = await getCommentReactionCounts(commentIds);
+
+  // コメントに人物名と評価数を追加
   const commentsWithPerson = comments?.map((comment) => {
     const person = (peopleData as Person[]).find((p) => p.id === comment.person_id);
+    const reactions = reactionCounts[comment.id] || { good: 0, bad: 0 };
     return {
       ...comment,
       personName: person?.name || '不明',
+      good_count: reactions.good,
+      bad_count: reactions.bad,
     };
   }) || [];
 

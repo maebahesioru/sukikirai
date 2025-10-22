@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // ISRキャッシュを無効化して最新データを反映
+    revalidatePath(`/person/${personId}`);
+    revalidatePath('/');
+    revalidatePath('/ranking/trending');
+    revalidatePath('/ranking/popularity');
 
     return NextResponse.json({ success: true });
   } catch (error) {

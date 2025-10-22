@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { isSpamContent, calculateSimilarity } from '@/lib/spam-filter';
 
@@ -130,6 +131,10 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // ISRキャッシュを無効化して最新データを反映
+    revalidatePath(`/person/${personId}`);
+    revalidatePath('/');
 
     return NextResponse.json({ success: true, comment: data });
   } catch (error) {

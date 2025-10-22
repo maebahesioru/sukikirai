@@ -63,9 +63,9 @@ class PersonAdderApp:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=9, column=0, columnspan=2, pady=(30, 0))
         
-        # 追加ボタン
-        add_button = ttk.Button(button_frame, text="追加", command=self.add_person, width=15)
-        add_button.grid(row=0, column=0, padx=5)
+        # 追加/更新ボタン（動的に変更）
+        self.submit_button = ttk.Button(button_frame, text="追加", command=self.add_person, width=15)
+        self.submit_button.grid(row=0, column=0, padx=5)
         
         # クリアボタン
         clear_button = ttk.Button(button_frame, text="クリア", command=self.clear_fields, width=15)
@@ -78,6 +78,10 @@ class PersonAdderApp:
         # CSVインポートボタン
         csv_button = ttk.Button(button_frame, text="CSV一括追加", command=self.open_csv_import, width=15)
         csv_button.grid(row=1, column=0, columnspan=3, pady=(10, 0))
+        
+        # 編集モードフラグ
+        self.edit_mode = False
+        self.editing_person_id = None
         
         # ステータスバー
         self.status_label = ttk.Label(main_frame, text="準備完了", relief=tk.SUNKEN, anchor=tk.W)
@@ -97,16 +101,20 @@ class PersonAdderApp:
         self.people_listbox = tk.Listbox(main_frame, height=8, font=("Arial", 9))
         self.people_listbox.grid(row=13, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         
+        # ダブルクリックで編集
+        self.people_listbox.bind('<Double-Button-1>', self.on_listbox_double_click)
+        
         scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.people_listbox.yview)
         scrollbar.grid(row=13, column=2, sticky=(tk.N, tk.S))
         self.people_listbox.config(yscrollcommand=scrollbar.set)
         
-        # 削除ボタン
-        delete_button_frame = ttk.Frame(main_frame)
-        delete_button_frame.grid(row=14, column=0, columnspan=2, pady=(5, 0))
+        # 編集・削除ボタン
+        action_button_frame = ttk.Frame(main_frame)
+        action_button_frame.grid(row=14, column=0, columnspan=2, pady=(5, 0))
         
-        ttk.Button(delete_button_frame, text="選択した人物を削除", command=self.delete_person, width=20).pack(side=tk.LEFT, padx=5)
-        ttk.Label(delete_button_frame, text="（リストから人物を選択してください）", font=("Arial", 8), foreground="gray").pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_button_frame, text="選択した人物を編集", command=self.edit_person, width=20).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_button_frame, text="選択した人物を削除", command=self.delete_person, width=20).pack(side=tk.LEFT, padx=5)
+        ttk.Label(action_button_frame, text="（ダブルクリックでも編集可）", font=("Arial", 8), foreground="gray").pack(side=tk.LEFT, padx=5)
         
         # 既存データを読み込み
         self.people_data = []
@@ -169,9 +177,113 @@ class PersonAdderApp:
         self.name_entry.delete(0, tk.END)
         self.id_entry.delete(0, tk.END)
         self.tags_entry.delete(0, tk.END)
+        self.tags_entry.insert(0, "ヒカマー")  # デフォルト値に戻す
         self.related_entry.delete(0, tk.END)
         self.description_text.delete('1.0', tk.END)
+        self.description_text.insert('1.0', "ヒカマー")  # デフォルト値に戻す
+        
+        # 編集モードを解除
+        self.edit_mode = False
+        self.editing_person_id = None
+        self.id_entry.config(state='normal')
+        self.submit_button.config(text="追加", command=self.add_person)
+        
         self.status_label.config(text="入力フィールドをクリアしました")
+    
+    def on_listbox_double_click(self, event):
+        """リストボックスのダブルクリックハンドラー"""
+        self.edit_person()
+    
+    def edit_person(self):
+        """選択した人物を編集モードで読み込む"""
+        selection = self.people_listbox.curselection()
+        
+        if not selection:
+            messagebox.showwarning("警告", "編集する人物を選択してください")
+            return
+        
+        index = selection[0]
+        if index >= len(self.displayed_people):
+            messagebox.showerror("エラー", "無効な選択です")
+            return
+        
+        person = self.displayed_people[index]
+        
+        # 入力フィールドに読み込む
+        self.name_entry.delete(0, tk.END)
+        self.name_entry.insert(0, person['name'])
+        
+        self.id_entry.delete(0, tk.END)
+        self.id_entry.insert(0, person['id'])
+        self.id_entry.config(state='disabled')  # IDは編集不可
+        
+        self.tags_entry.delete(0, tk.END)
+        self.tags_entry.insert(0, ', '.join(person.get('tags', [])))
+        
+        self.related_entry.delete(0, tk.END)
+        self.related_entry.insert(0, ', '.join(person.get('relatedPeople', [])))
+        
+        self.description_text.delete('1.0', tk.END)
+        self.description_text.insert('1.0', person.get('description', ''))
+        
+        # 編集モードに切り替え
+        self.edit_mode = True
+        self.editing_person_id = person['id']
+        self.submit_button.config(text="更新", command=self.update_person)
+        
+        self.status_label.config(text=f"編集モード: {person['name']}")
+    
+    def update_person(self):
+        """人物情報を更新"""
+        if not self.edit_mode or not self.editing_person_id:
+            messagebox.showerror("エラー", "編集モードではありません")
+            return
+        
+        # バリデーション
+        name = self.name_entry.get().strip()
+        
+        if not name:
+            messagebox.showwarning("警告", "名前を入力してください")
+            return
+        
+        try:
+            # 既存データを読み込み
+            people = []
+            if os.path.exists(self.json_path):
+                with open(self.json_path, 'r', encoding='utf-8') as f:
+                    people = json.load(f)
+            
+            # 更新する人物を検索
+            person_index = next((i for i, p in enumerate(people) if p['id'] == self.editing_person_id), None)
+            
+            if person_index is None:
+                messagebox.showerror("エラー", "更新対象の人物が見つかりません")
+                return
+            
+            # 新しいデータを作成（IDは変更しない）
+            updated_person = self.create_person_data()
+            updated_person['id'] = self.editing_person_id  # IDは元のまま
+            
+            # データを更新
+            people[person_index] = updated_person
+            
+            # ファイルに保存
+            with open(self.json_path, 'w', encoding='utf-8') as f:
+                json.dump(people, f, ensure_ascii=False, indent=2)
+            
+            messagebox.showinfo("成功", f"「{name}」を更新しました！")
+            self.status_label.config(text=f"更新成功: {name}")
+            
+            # フィールドをクリア
+            self.clear_fields()
+            
+            # リストを更新
+            self.load_existing_people()
+            self.filter_people_list()
+            
+        except Exception as e:
+            messagebox.showerror("エラー", f"更新に失敗しました:\n{str(e)}")
+            self.status_label.config(text="エラーが発生しました")
     
     def validate_id(self, person_id):
         """IDのバリデーション"""
@@ -230,6 +342,17 @@ class PersonAdderApp:
     
     def add_person(self):
         """人物をpeople.jsonに追加"""
+        # 編集モードの場合は警告
+        if self.edit_mode:
+            result = messagebox.askyesno(
+                "確認",
+                "現在、編集モードです。\n編集をキャンセルして新規追加しますか？"
+            )
+            if result:
+                self.clear_fields()
+            else:
+                return
+        
         # バリデーション
         name = self.name_entry.get().strip()
         person_id = self.id_entry.get().strip()

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
 import { supabase, type Comment } from '@/lib/supabase';
-import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
+import { toggleCommentReaction } from '@/lib/comment-reactions';
 import { formatJST } from '@/lib/date-utils';
 import Cookies from 'js-cookie';
 import ReportModal from './ReportModal';
@@ -341,7 +341,7 @@ function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplie
     setIsReportSubmitting(true);
     
     // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
-    let insertData: { comment_id: string; reason: string; details?: string | null } = {
+    const insertData: { comment_id: string; reason: string; details?: string | null } = {
       comment_id: comment.id,
       reason: reason,
     };
@@ -580,7 +580,7 @@ function ReplyItem({
     setIsReportSubmitting(true);
     
     // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
-    let insertData: { comment_id: string; reason: string; details?: string | null } = {
+    const insertData: { comment_id: string; reason: string; details?: string | null } = {
       comment_id: reply.id,
       reason: reason,
     };

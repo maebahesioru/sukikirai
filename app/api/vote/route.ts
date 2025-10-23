@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     revalidatePath('/');
     revalidatePath('/ranking/trending');
     revalidatePath('/ranking/popularity');
+    revalidatePath('/ranking/unpopular');
 
     return NextResponse.json({ success: true });
   } catch (error) {

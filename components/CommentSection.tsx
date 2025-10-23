@@ -15,9 +15,12 @@ type CommentSectionProps = {
 
 type FilterType = 'all' | 'like' | 'dislike';
 
+type SortType = 'newest' | 'popular';
+
 export default function CommentSection({ personId, hasVoted }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [sortBy, setSortBy] = useState<SortType>('newest');
   const [page, setPage] = useState(1);
   const [totalComments, setTotalComments] = useState(0);
   const [hiddenComments, setHiddenComments] = useState<string[]>([]);
@@ -96,7 +99,17 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
       });
 
       // Filter out hidden comments
-      const filteredData = commentsWithReplies.filter(c => !hiddenComments.includes(c.id));
+      let filteredData = commentsWithReplies.filter(c => !hiddenComments.includes(c.id));
+      
+      // Sort by popularity if selected
+      if (sortBy === 'popular') {
+        filteredData = filteredData.sort((a, b) => {
+          const aTotal = (a.good_count || 0) + (a.bad_count || 0);
+          const bTotal = (b.good_count || 0) + (b.bad_count || 0);
+          return bTotal - aTotal;
+        });
+      }
+      
       setComments(filteredData);
       setTotalComments(count || 0);
       
@@ -108,7 +121,7 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
       setTotalComments(count || 0);
       setHiddenCommentData([]);
     }
-  }, [personId, filter, page, hiddenComments]);
+  }, [personId, filter, page, sortBy, hiddenComments]);
 
   const handleUnhide = (commentId: string) => {
     const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
@@ -132,40 +145,67 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-800">
-          コメント ({totalComments})
-        </h3>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-800">
+            コメント ({totalComments})
+          </h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'all'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              すべて表示
+            </button>
+            <button
+              onClick={() => setFilter('like')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'like'
+                  ? 'bg-pink-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              好き派のみ
+            </button>
+            <button
+              onClick={() => setFilter('dislike')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'dislike'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              嫌い派のみ
+            </button>
+          </div>
+        </div>
+        
+        {/* Sort buttons */}
         <div className="flex gap-2">
+          <span className="text-sm text-gray-600 flex items-center">並び替え：</span>
           <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filter === 'all'
-                ? 'bg-purple-600 text-white'
+            onClick={() => setSortBy('newest')}
+            className={`px-3 py-1 rounded text-sm font-medium transition ${
+              sortBy === 'newest'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            すべて表示
+            新しい順
           </button>
           <button
-            onClick={() => setFilter('like')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filter === 'like'
-                ? 'bg-pink-600 text-white'
+            onClick={() => setSortBy('popular')}
+            className={`px-3 py-1 rounded text-sm font-medium transition ${
+              sortBy === 'popular'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            好き派のみ
-          </button>
-          <button
-            onClick={() => setFilter('dislike')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filter === 'dislike'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            嫌い派のみ
+            人気順
           </button>
         </div>
       </div>

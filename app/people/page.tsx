@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60; // ISR: 60秒ごとに再生成
+export const revalidate = 10; // ISR: 10秒ごとに再生成
 
 export default function PeoplePage() {
   return <PeoplePageClient />;

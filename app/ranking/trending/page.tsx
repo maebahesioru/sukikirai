@@ -5,8 +5,8 @@ import { getTrendingRanking } from '@/lib/ranking';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { formatJST } from '@/lib/date-utils';
 
-// ISRで60秒ごとに再検証
-export const revalidate = 60;
+// 常に最新データを取得（キャッシュなし）
+export const revalidate = 0;
 
 export default async function TrendingRankingPage() {
   const [rankings, sidebarData] = await Promise.all([

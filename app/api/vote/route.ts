@@ -24,13 +24,18 @@ export async function POST(request: Request) {
     // Check if user has already voted for this person
     const { data: existingVotes } = await supabase
       .from('votes')
-      .select('id')
+      .select('id, vote_type')
       .eq('person_id', personId)
       .eq('cookie_id', userToken);
 
     if (existingVotes && existingVotes.length > 0) {
+      const existingVoteType = existingVotes[0].vote_type;
       return NextResponse.json(
-        { success: false, error: 'Already voted' },
+        { 
+          success: false, 
+          error: '既に投票済みです', 
+          voteType: existingVoteType 
+        },
         { status: 429 }
       );
     }

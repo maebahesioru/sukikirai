@@ -115,9 +115,21 @@ export default function VoteButton({
 
       if (!voteData.success) {
         if (voteResponse.status === 429) {
-          alert('既に投票済みです。');
+          alert('既に投票済みです。\n\n投票は1人につき1回のみ可能です。');
+          // 投票済み状態に設定（サーバーから返された投票タイプを使用）
+          const existingVoteType = voteData.voteType || type;
+          setHasVoted(true);
+          setVoteType(existingVoteType);
+          // Cookieにも保存
+          const cookieKey = `vote_${personId}`;
+          Cookies.set(
+            cookieKey,
+            JSON.stringify({ type: existingVoteType, date: new Date().toISOString() }),
+            { expires: 1 }
+          );
         } else {
-          alert('投票に失敗しました。もう一度お試しください。');
+          const errorMsg = voteData.error || '投票に失敗しました。もう一度お試しください。';
+          alert(errorMsg);
         }
         setIsVerifying(false);
         return;

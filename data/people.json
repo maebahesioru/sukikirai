@@ -825,10 +825,11 @@
     "id": "scp-1150-jp",
     "name": "だねまに(だね。いうまでもﾅｲ。)",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "右翼マー"
     ],
     "relatedPeople": [],
-    "description": "ヒカマー"
+    "description": "右翼のヒカマー"
   },
   {
     "id": "chestnutree04",
@@ -978,10 +979,11 @@
     "id": "z3notippai",
     "name": "Z3マニア",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "右翼マー"
     ],
     "relatedPeople": [],
-    "description": "ヒカマー"
+    "description": "右翼のヒカマー"
   },
   {
     "id": "puramadesu-",
@@ -2507,12 +2509,13 @@
   },
   {
     "id": "jpn-seafood",
-    "name": "しゅくせ @高市ーズ制裁",
+    "name": "粛清マニア",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "右翼マー"
     ],
     "relatedPeople": [],
-    "description": "ヒカマー"
+    "description": "右翼のヒカマー"
   },
   {
     "id": "tyrvta17745",
@@ -2579,12 +2582,13 @@
   },
   {
     "id": "sou572942786118",
-    "name": "SOUの避難計定",
+    "name": "SOU",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "左翼マー"
     ],
     "relatedPeople": [],
-    "description": "ヒカマー"
+    "description": "左翼のヒカマー"
   },
   {
     "id": "xdqm2q2x9831462",
@@ -2662,10 +2666,11 @@
     "id": "ikisugi-mani",
     "name": "スギの木_mania",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "左翼マー"
     ],
     "relatedPeople": [],
-    "description": "ヒカマー"
+    "description": "左翼のヒカマー"
   },
   {
     "id": "jokin-mania",
@@ -3184,7 +3189,8 @@
     "id": "crnk-hz",
     "name": "CN(チヌ)@ヒカマー",
     "tags": [
-      "ヒカマー"
+      "ヒカマー",
+      "左翼マー"
     ],
     "relatedPeople": [],
     "description": "ヒカマー"
@@ -5692,5 +5698,36 @@
     ],
     "relatedPeople": [],
     "description": "ヒカマー"
+  },
+  {
+    "id": "catechin-mania",
+    "name": "Catechin_Mania",
+    "tags": [
+      "ヒカマー",
+      "左翼マー"
+    ],
+    "relatedPeople": [],
+    "description": "左翼のヒカマー"
+  },
+  {
+    "id": "ozawa-mania",
+    "name": "小沢キンTV",
+    "tags": [
+      "ヒカマー",
+      "右翼マー"
+    ],
+    "relatedPeople": [],
+    "description": "右翼のヒカマー"
+  },
+  {
+    "id": "forever-mania",
+    "name": "発狂TV",
+    "tags": [
+      "ヒカマー",
+      "タグ荒らしマー",
+      "おぜう派"
+    ],
+    "relatedPeople": [],
+    "description": "表舞台から引退したおぜう派ヒカマー"
   }
 ]

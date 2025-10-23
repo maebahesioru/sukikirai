@@ -21,19 +21,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user has already voted for this person
+    // Check if user has already voted for this person today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
+
     const { data: existingVotes } = await supabase
       .from('votes')
       .select('id, vote_type')
       .eq('person_id', personId)
-      .eq('cookie_id', userToken);
+      .eq('cookie_id', userToken)
+      .gte('created_at', todayISO);
 
     if (existingVotes && existingVotes.length > 0) {
       const existingVoteType = existingVotes[0].vote_type;
       return NextResponse.json(
         { 
           success: false, 
-          error: '既に投票済みです', 
+          error: '今日は既に投票済みです。明日また投票できます。', 
           voteType: existingVoteType 
         },
         { status: 429 }

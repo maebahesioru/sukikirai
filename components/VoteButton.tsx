@@ -47,22 +47,58 @@ export default function VoteButton({
     }
   }, [personId]);
 
-  const checkVoteStatus = () => {
+  const checkVoteStatus = async () => {
+    // まずCookieをチェック
     const cookieKey = `vote_${personId}`;
     const lastVote = Cookies.get(cookieKey);
     if (lastVote) {
-      const voteData = JSON.parse(lastVote);
-      const lastVoteDate = new Date(voteData.date);
+      try {
+        const voteData = JSON.parse(lastVote);
+        const lastVoteDate = new Date(voteData.date);
+        const today = new Date();
+        
+        // Check if vote was today
+        if (
+          lastVoteDate.getFullYear() === today.getFullYear() &&
+          lastVoteDate.getMonth() === today.getMonth() &&
+          lastVoteDate.getDate() === today.getDate()
+        ) {
+          setHasVoted(true);
+          setVoteType(voteData.type);
+          return;
+        }
+      } catch (e) {
+        // Cookie解析エラー時は削除
+        Cookies.remove(cookieKey);
+      }
+    }
+
+    // Cookieがない場合、サーバーから今日の投票を確認
+    const userToken = Cookies.get('user_token');
+    if (userToken) {
+      // 今日の00:00:00のタイムスタンプ
       const today = new Date();
-      
-      // Check if vote was today
-      if (
-        lastVoteDate.getFullYear() === today.getFullYear() &&
-        lastVoteDate.getMonth() === today.getMonth() &&
-        lastVoteDate.getDate() === today.getDate()
-      ) {
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      const { data: existingVotes } = await supabase
+        .from('votes')
+        .select('vote_type, created_at')
+        .eq('person_id', personId)
+        .eq('cookie_id', userToken)
+        .gte('created_at', todayISO)
+        .limit(1);
+
+      if (existingVotes && existingVotes.length > 0) {
+        const voteType = existingVotes[0].vote_type as 'like' | 'dislike';
         setHasVoted(true);
-        setVoteType(voteData.type);
+        setVoteType(voteType);
+        // Cookieにも保存
+        Cookies.set(
+          cookieKey,
+          JSON.stringify({ type: voteType, date: new Date().toISOString() }),
+          { expires: 1 } // 1日間保持
+        );
       }
     }
   };
@@ -115,7 +151,7 @@ export default function VoteButton({
 
       if (!voteData.success) {
         if (voteResponse.status === 429) {
-          alert('既に投票済みです。\n\n投票は1人につき1回のみ可能です。');
+          alert('今日は既に投票済みです。\n\n投票は1日1回可能です。明日また投票してください。');
           // 投票済み状態に設定（サーバーから返された投票タイプを使用）
           const existingVoteType = voteData.voteType || type;
           setHasVoted(true);

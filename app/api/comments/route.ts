@@ -65,19 +65,51 @@ export async function POST(request: Request) {
       );
     }
 
-    // スパム対策: 同じユーザーの過去1分以内のコメントをチェック
+    // スパム対策: 同じユーザーの最近のコメントをチェック
+    // 1分以内のチェック
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-    const { data: recentComments } = await supabaseAdmin
+    const { data: recentUserComments, count: recentCount } = await supabaseAdmin
       .from('comments')
-      .select('content, created_at')
-      .eq('person_id', personId)
+      .select('content, created_at', { count: 'exact' })
+      .eq('cookie_id', userToken)
       .gte('created_at', oneMinuteAgo)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .order('created_at', { ascending: false });
 
-    if (recentComments && recentComments.length > 0) {
-      // 完全一致チェック
-      const duplicateComment = recentComments.find(c => c.content.trim() === content.trim());
+    // 1分以内に2件以上投稿している場合は制限（連投防止）
+    if (recentUserComments && recentUserComments.length >= 2) {
+      return NextResponse.json(
+        { success: false, error: 'コメントの投稿が早すぎます。1分以上間隔をあけてください' },
+        { status: 429 }
+      );
+    }
+
+    // 10分以内のチェック
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { count: tenMinCount } = await supabaseAdmin
+      .from('comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('cookie_id', userToken)
+      .gte('created_at', tenMinutesAgo);
+
+    // 10分以内に5件以上投稿している場合は制限
+    if (tenMinCount && tenMinCount >= 5) {
+      return NextResponse.json(
+        { success: false, error: '投稿が多すぎます。しばらく時間をおいてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
+    // 完全一致チェック（全期間）
+    const { data: allUserComments } = await supabaseAdmin
+      .from('comments')
+      .select('content')
+      .eq('cookie_id', userToken)
+      .eq('person_id', personId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (allUserComments) {
+      const duplicateComment = allUserComments.find(c => c.content.trim() === content.trim());
       if (duplicateComment) {
         return NextResponse.json(
           { success: false, error: '同じ内容のコメントが既に投稿されています' },
@@ -86,22 +118,14 @@ export async function POST(request: Request) {
       }
 
       // 類似コメントチェック（90%以上類似していたらスパム）
-      for (const recentComment of recentComments) {
-        const similarity = calculateSimilarity(recentComment.content, content);
+      for (const userComment of allUserComments) {
+        const similarity = calculateSimilarity(userComment.content, content);
         if (similarity >= 0.9) {
           return NextResponse.json(
             { success: false, error: '類似したコメントが既に投稿されています' },
             { status: 429 }
           );
         }
-      }
-
-      // 1分以内に3件以上投稿している場合は制限
-      if (recentComments.length >= 3) {
-        return NextResponse.json(
-          { success: false, error: '投稿が多すぎます。少し時間をおいてから再度お試しください' },
-          { status: 429 }
-        );
       }
     }
 

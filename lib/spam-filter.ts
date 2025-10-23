@@ -7,6 +7,20 @@ const BLOCKED_STRINGS = [
   '﷽', // Bismillah (スパムに使われることが多い)
 ];
 
+// ブロックするキーワード（大文字小文字区別なし）
+const BLOCKED_KEYWORDS = [
+  'discord.gg',
+  'discord.com/invite',
+  'raid',
+  'join now',
+  't.me/', // Telegram
+  'bit.ly',
+  'tinyurl.com',
+];
+
+// URLパターン
+const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+|[a-z0-9-]+\.(com|net|org|gg|io|me|tv|jp|co\.jp)\/[^\s]*/gi;
+
 // ブロックする文字のUnicodeコードポイント範囲
 const BLOCKED_UNICODE_RANGES = [
   { start: 0xFDFD, end: 0xFDFD }, // ﷽ (U+FDFD)
@@ -16,6 +30,20 @@ const BLOCKED_UNICODE_RANGES = [
  * コメント内容がスパムかどうかをチェック
  */
 export function isSpamContent(content: string): { isSpam: boolean; reason?: string } {
+  const contentLower = content.toLowerCase();
+
+  // URLチェック
+  if (URL_PATTERN.test(content)) {
+    return { isSpam: true, reason: 'URLの投稿は禁止されています' };
+  }
+
+  // ブロックキーワードチェック
+  for (const keyword of BLOCKED_KEYWORDS) {
+    if (contentLower.includes(keyword.toLowerCase())) {
+      return { isSpam: true, reason: '禁止されたキーワードが含まれています' };
+    }
+  }
+
   // ブロックリストの文字列チェック
   for (const blocked of BLOCKED_STRINGS) {
     if (content.includes(blocked)) {
@@ -39,6 +67,18 @@ export function isSpamContent(content: string): { isSpam: boolean; reason?: stri
   const repeatedCharPattern = /(.)\1{4,}/;
   if (repeatedCharPattern.test(content)) {
     return { isSpam: true, reason: '同じ文字の連続使用が検出されました' };
+  }
+
+  // 同じ単語の繰り返しチェック（3回以上）
+  const words = content.split(/\s+/);
+  const wordCount: Record<string, number> = {};
+  for (const word of words) {
+    if (word.length > 2) {
+      wordCount[word] = (wordCount[word] || 0) + 1;
+      if (wordCount[word] >= 3) {
+        return { isSpam: true, reason: '同じ単語の繰り返しが検出されました' };
+      }
+    }
   }
 
   // 極端に短いコメント（空白のみなど）

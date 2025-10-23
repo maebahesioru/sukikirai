@@ -9,8 +9,8 @@ import peopleData from '@/data/people.json';
 import { formatJST } from '@/lib/date-utils';
 import { getCommentReactionCounts } from '@/lib/comment-reactions';
 
-// ISRで60秒ごとに再検証（トップページはアクセスが多いのでキャッシュ活用）
-export const revalidate = 60;
+// ISRで10秒ごとに再検証（トップページはアクセスが多いのでキャッシュ活用）
+export const revalidate = 10;
 
 export default async function Home() {
   // データを並列取得して最適化

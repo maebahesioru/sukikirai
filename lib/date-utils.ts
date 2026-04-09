@@ -1,4 +1,5 @@
 import { format as dateFnsFormat } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 /**
  * UTC文字列を日本時間（JST）に変換してフォーマット
@@ -9,8 +10,8 @@ import { format as dateFnsFormat } from 'date-fns';
 export function formatJST(utcDateString: string, formatString: string): string {
   const date = new Date(utcDateString);
   
-  // UTC時間からJST（UTC+9）に変換
-  const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+  // 正確な日本時間（JST）に変換
+  const jstDate = toZonedTime(date, 'Asia/Tokyo');
   
   return dateFnsFormat(jstDate, formatString);
 }

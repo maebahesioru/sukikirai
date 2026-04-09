@@ -62,40 +62,48 @@ export default async function Home() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg shadow-lg p-8 mb-8">
-              <h1 className="text-4xl font-bold mb-4">ヒカマーズ好き嫌い.com</h1>
-              <p className="text-lg">
+            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
+              <h1 className="text-2xl md:text-4xl font-bold mb-4">ヒカマーズ好き嫌い.com</h1>
+              <p className="text-base md:text-lg leading-relaxed">
                 ヒカマー界隈のあの人のことどう思う？好き？嫌い？
-                <br />
-                みんなの意見を見てみよう！
+                <br className="hidden sm:block" />
+                <span className="block sm:inline">みんなの意見を見てみよう！</span>
               </p>
             </div>
 
             {/* Rankings */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
               <Link
                 href="/ranking/popularity"
                 prefetch={false}
-                className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
+                className="bg-white rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition"
               >
-                <h2 className="text-xl font-bold text-pink-600 mb-2">好感度ランキング</h2>
+                <h2 className="text-lg md:text-xl font-bold text-pink-600 mb-2">好感度ランキング</h2>
                 <p className="text-gray-600 text-sm">人気の高い人物をチェック</p>
               </Link>
               <Link
                 href="/ranking/unpopular"
                 prefetch={false}
-                className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
+                className="bg-white rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition"
               >
-                <h2 className="text-xl font-bold text-purple-600 mb-2">不人気ランキング</h2>
+                <h2 className="text-lg md:text-xl font-bold text-purple-600 mb-2">不人気ランキング</h2>
                 <p className="text-gray-600 text-sm">不人気な人物をチェック</p>
               </Link>
               <Link
                 href="/ranking/trending"
                 prefetch={false}
-                className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition"
+                className="bg-white rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition"
               >
-                <h2 className="text-xl font-bold text-blue-600 mb-2">トレンドランキング</h2>
+                <h2 className="text-lg md:text-xl font-bold text-blue-600 mb-2">トレンドランキング</h2>
                 <p className="text-gray-600 text-sm">今話題の人物をチェック</p>
+              </Link>
+              <Link
+                href="/polls"
+                prefetch={false}
+                className="bg-white rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition"
+              >
+                <h2 className="text-lg md:text-xl font-bold text-green-600 mb-2">投票トーク</h2>
+                <p className="text-gray-600 text-sm">みんなでアンケート投稿</p>
               </Link>
             </div>
 

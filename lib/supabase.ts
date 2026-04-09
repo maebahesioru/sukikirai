@@ -73,3 +73,6 @@ export type CommentReaction = {
   ip_address: string | null;
   created_at: string;
 };
+
+// 投票トーク関連の型をエクスポート
+export type { Poll, PollOption, PollVote, PollComment, PollCommentReaction, PollType } from '@/types/poll';

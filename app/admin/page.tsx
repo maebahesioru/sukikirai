@@ -1,18 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Shield, Trash2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Shield, Trash2, AlertCircle, BarChart3 } from 'lucide-react';
 import { supabase, type Comment, type Report } from '@/lib/supabase';
 import { formatJST } from '@/lib/date-utils';
 
-const ADMIN_PASSWORD = '6WH_CkHKnsWy';
+type AnalyticsData = {
+  date: string;
+  totalComments: number;
+  totalVotes: number;
+  likeVotes: number;
+  dislikeVotes: number;
+  totalReactions: number;
+  goodReactions: number;
+  badReactions: number;
+};
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [reports, setReports] = useState<(Report & { comment: Comment })[]>([]);
   const [allComments, setAllComments] = useState<Comment[]>([]);
-  const [activeTab, setActiveTab] = useState<'reports' | 'comments' | 'votes'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'comments' | 'votes' | 'analytics'>('reports');
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     // Check if already logged in
@@ -22,21 +33,30 @@ export default function AdminPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchReports();
-      fetchAllComments();
-    }
-  }, [isAuthenticated]);
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      localStorage.setItem('adminAuthenticated', 'true');
-      setPassword('');
-    } else {
-      alert('パスワードが間違っています');
+    
+    try {
+      const response = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsAuthenticated(true);
+        localStorage.setItem('adminAuthenticated', 'true');
+        setPassword('');
+      } else {
+        alert(data.error || 'パスワードが間違っています');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('ログインエラーが発生しました');
     }
   };
 
@@ -85,6 +105,30 @@ export default function AdminPage() {
       setAllComments(data);
     }
   };
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/analytics?date=${selectedDate}`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyticsData(data);
+      } else {
+        console.error('アナリティクスデータの取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('アナリティクスデータの取得エラー:', error);
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchReports();
+      fetchAllComments();
+      if (activeTab === 'analytics') {
+        fetchAnalytics();
+      }
+    }
+  }, [isAuthenticated, activeTab, fetchAnalytics]);
 
   const handleDeleteComment = async (commentId: string, reportId?: string) => {
     if (!confirm('このコメントを削除しますか？\n\n※削除後、ページがリロードされます')) return;
@@ -251,7 +295,7 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="bg-gray-50 rounded-lg shadow-lg p-8 max-w-md w-full">
           <div className="flex items-center justify-center mb-6">
             <Shield className="w-12 h-12 text-purple-600" />
           </div>
@@ -273,9 +317,9 @@ export default function AdminPage() {
               />
             </div>
             <button
-              type="submit"
-              className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-purple-700 transition"
-            >
+                type="submit"
+                className="w-full bg-purple-600 text-purple-100 py-2 px-4 rounded-lg font-bold hover:bg-purple-700 hover:text-purple-50 transition"
+              >
               ログイン
             </button>
           </form>
@@ -286,7 +330,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-purple-600 text-white shadow-lg">
+      <header className="bg-purple-600 text-purple-100 shadow-lg">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -294,9 +338,9 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold">管理者コントロールパネル</h1>
             </div>
             <button
-              onClick={handleLogout}
-              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-100 transition"
-            >
+                onClick={handleLogout}
+                className="bg-gray-100 text-purple-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition"
+              >
               ログアウト
             </button>
           </div>
@@ -305,7 +349,7 @@ export default function AdminPage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-lg mb-8">
+        <div className="bg-gray-50 rounded-lg shadow-lg mb-8">
           <div className="flex border-b">
             <button
               onClick={() => setActiveTab('reports')}
@@ -337,6 +381,17 @@ export default function AdminPage() {
             >
               票数管理
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex-1 py-4 px-6 font-bold transition ${
+                activeTab === 'analytics'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 inline mr-2" />
+              アナリティクス
+            </button>
           </div>
         </div>
 
@@ -347,7 +402,7 @@ export default function AdminPage() {
               reports.map((report) => (
                 <div
                   key={report.id}
-                  className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500"
+                  className="bg-gray-50 rounded-lg shadow-lg p-6 border-l-4 border-red-500"
                 >
                   <div className="flex items-start gap-4">
                     <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
@@ -394,20 +449,20 @@ export default function AdminPage() {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleDeleteComment(report.comment.id, report.id)}
-                          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+                          className="flex items-center gap-2 bg-red-600 text-red-100 px-4 py-2 rounded-lg hover:bg-red-700 hover:text-red-50 transition"
                         >
                           <Trash2 className="w-4 h-4" />
                           コメント削除
                         </button>
                         <button
                           onClick={() => handleHideComment(report.comment.id, report.id)}
-                          className="flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
+                          className="flex items-center gap-2 bg-yellow-600 text-yellow-100 px-4 py-2 rounded-lg hover:bg-yellow-700 hover:text-yellow-50 transition"
                         >
                           非表示にする
                         </button>
                         <button
                           onClick={() => handleDismissReport(report.id)}
-                          className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+                          className="flex items-center gap-2 bg-gray-600 text-gray-100 px-4 py-2 rounded-lg hover:bg-gray-700 hover:text-gray-50 transition"
                         >
                           通報を却下
                         </button>
@@ -417,7 +472,7 @@ export default function AdminPage() {
                 </div>
               ))
             ) : (
-              <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+              <div className="bg-gray-50 rounded-lg shadow-lg p-12 text-center">
                 <p className="text-gray-600">通報はありません</p>
               </div>
             )}
@@ -431,7 +486,7 @@ export default function AdminPage() {
               allComments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="bg-white rounded-lg shadow-lg p-6"
+                  className="bg-gray-50 rounded-lg shadow-lg p-6"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -462,23 +517,23 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-3 mt-4">
                     <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-                    >
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="flex items-center gap-2 bg-red-600 text-red-100 px-4 py-2 rounded-lg hover:bg-red-700 hover:text-red-50 transition"
+                  >
                       <Trash2 className="w-4 h-4" />
                       削除
                     </button>
                     <button
-                      onClick={() => handleHideComment(comment.id)}
-                      className="flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition"
-                    >
+                    onClick={() => handleHideComment(comment.id)}
+                    className="flex items-center gap-2 bg-yellow-600 text-yellow-100 px-4 py-2 rounded-lg hover:bg-yellow-700 hover:text-yellow-50 transition"
+                  >
                       非表示にする
                     </button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+              <div className="bg-gray-50 rounded-lg shadow-lg p-12 text-center">
                 <p className="text-gray-600">コメントはありません</p>
               </div>
             )}
@@ -487,12 +542,88 @@ export default function AdminPage() {
 
         {/* Votes Tab */}
         {activeTab === 'votes' && (
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-gray-50 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">票数管理</h2>
             <p className="text-sm text-gray-600 mb-6">
               人物IDを入力して、好き/嫌いの票数を設定できます。
             </p>
             <VoteManagementForm onSubmit={handleModifyVotes} />
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6" />
+                  アナリティクス
+                </h2>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="date-picker" className="text-sm font-medium text-gray-700">
+                    日付:
+                  </label>
+                  <input
+                    id="date-picker"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-100 text-black"
+                  />
+                </div>
+              </div>
+
+              {analyticsData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">コメント数</h3>
+                    <p className="text-3xl font-bold text-blue-700">{analyticsData.totalComments}</p>
+                    <p className="text-sm text-blue-700">1日の累計コメント数</p>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-green-900 mb-2">総投票数</h3>
+                    <p className="text-3xl font-bold text-green-700">{analyticsData.totalVotes}</p>
+                    <p className="text-sm text-green-700">1日の累計投票数</p>
+                  </div>
+
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-pink-900 mb-2">好き投票数</h3>
+                    <p className="text-3xl font-bold text-pink-700">{analyticsData.likeVotes}</p>
+                    <p className="text-sm text-pink-700">1日の累計好き投票数</p>
+                  </div>
+
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-purple-900 mb-2">嫌い投票数</h3>
+                    <p className="text-3xl font-bold text-purple-700">{analyticsData.dislikeVotes}</p>
+                    <p className="text-sm text-purple-700">1日の累計嫌い投票数</p>
+                  </div>
+
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-orange-900 mb-2">コメントリアクション数</h3>
+                    <p className="text-3xl font-bold text-orange-700">{analyticsData.totalReactions}</p>
+                    <p className="text-sm text-orange-700">1日の累計グッド・バッド数</p>
+                  </div>
+
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-emerald-900 mb-2">グッドリアクション数</h3>
+                    <p className="text-3xl font-bold text-emerald-700">{analyticsData.goodReactions}</p>
+                    <p className="text-sm text-emerald-700">1日の累計グッド数</p>
+                  </div>
+
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-red-900 mb-2">バッドリアクション数</h3>
+                    <p className="text-3xl font-bold text-red-700">{analyticsData.badReactions}</p>
+                    <p className="text-sm text-red-700">1日の累計バッド数</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">データを読み込み中...</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -565,7 +696,7 @@ function VoteManagementForm({ onSubmit }: { onSubmit: (personId: string, likeCou
       </div>
       <button
         type="submit"
-        className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-purple-700 transition"
+        className="w-full bg-purple-600 text-purple-100 py-3 px-6 rounded-lg font-bold hover:bg-purple-700 hover:text-purple-50 transition"
       >
         票数を変更
       </button>

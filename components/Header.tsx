@@ -19,6 +19,7 @@ export default function Header() {
   return (
     <header className="bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg">
       <div className="container mx-auto px-4">
+        {/* Top row: Logo and Desktop Navigation */}
         <div className="flex items-center justify-between py-4">
           <Link href="/" className="text-2xl font-bold hover:opacity-80 transition">
             ヒカマーズ好き嫌い.com
@@ -27,6 +28,9 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-6">
             <Link href="/people" className="hover:underline transition">
               全人物一覧
+            </Link>
+            <Link href="/polls" className="hover:underline transition">
+              投票トーク
             </Link>
             <Link href="/ranking/popularity" className="hover:underline transition">
               好感度ランキング
@@ -38,14 +42,17 @@ export default function Header() {
               トレンドランキング
             </Link>
           </nav>
-          
-          <form onSubmit={handleSearch} className="flex items-stretch shadow-lg">
+        </div>
+        
+        {/* Search bar row */}
+        <div className="pb-4">
+          <form onSubmit={handleSearch} className="flex items-stretch shadow-lg max-w-md mx-auto md:mx-0">
             <input
               type="text"
               placeholder="あいまい検索..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2.5 rounded-l-lg text-gray-900 bg-white border-2 border-white focus:outline-none focus:ring-2 focus:ring-yellow-300 w-64 placeholder:text-gray-500"
+              className="flex-1 px-4 py-2.5 rounded-l-lg text-gray-900 bg-white border-2 border-white focus:outline-none focus:ring-2 focus:ring-yellow-300 placeholder:text-gray-500"
             />
             <button
               type="submit"
@@ -62,6 +69,9 @@ export default function Header() {
         <nav className="md:hidden flex space-x-4 pb-4 overflow-x-auto">
           <Link href="/people" className="text-sm whitespace-nowrap hover:underline">
             全人物
+          </Link>
+          <Link href="/polls" className="text-sm whitespace-nowrap hover:underline">
+            投票トーク
           </Link>
           <Link href="/ranking/popularity" className="text-sm whitespace-nowrap hover:underline">
             好感度

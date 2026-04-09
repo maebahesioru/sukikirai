@@ -7,6 +7,7 @@ import ShareButtons from '@/components/ShareButtons';
 import CommentSection from '@/components/CommentSection';
 import CommentForm from '@/components/CommentForm';
 import Sidebar from '@/components/Sidebar';
+import RelatedPolls from '@/components/RelatedPolls';
 import { PersonStructuredData, BreadcrumbStructuredData } from '@/components/StructuredData';
 import { Person } from '@/types/person';
 import peopleData from '@/data/people.json';
@@ -239,6 +240,9 @@ export default function PersonPageClient({
                 )}
               </div>
             )}
+
+            {/* Related Polls */}
+            <RelatedPolls personId={personId} />
 
             {/* Related People */}
             {person.relatedPeople.length > 0 && (

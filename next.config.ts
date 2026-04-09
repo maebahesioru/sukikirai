@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   
   // SWC minifyを有効化（より高速な圧縮）
-  swcMinify: true,
+  // swcMinify: true, // Next.js 13以降では削除されたオプション
   
   // 本番環境ではソースマップを無効化（転送量削減）
   productionBrowserSourceMaps: false,
@@ -40,8 +40,24 @@ const nextConfig: NextConfig = {
   // 本番ビルドの最適化
   poweredByHeader: false,
   
-  // Webpack設定で本番環境のconsole.logを削除
+  // Turbopack設定（Next.js 15.3以降の正しい設定）
+  turbopack: {
+    root: __dirname, // プロジェクトルートディレクトリを明示的に設定
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+
+  // Webpack設定（Turbopack使用時は無効化）
   webpack: (config, { isServer, dev }) => {
+    // Turbopack使用時はWebpack設定をスキップ
+    if (process.env.TURBOPACK) {
+      return config;
+    }
+    
     if (!dev && !isServer) {
       config.optimization.minimize = true;
     }

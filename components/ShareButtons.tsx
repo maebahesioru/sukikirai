@@ -1,6 +1,6 @@
 'use client';
 
-import { Twitter, Share2, Copy, Check } from 'lucide-react';
+import { Twitter, Share2, Copy, Check, Facebook, Bookmark, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 type ShareButtonsProps = {
@@ -33,6 +33,32 @@ export default function ShareButtons({ personName, voteType, likeCount, dislikeC
   const handleLineShare = () => {
     const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText + ' ' + currentUrl)}`;
     window.open(lineUrl, '_blank');
+  };
+
+  const handleFacebookShare = () => {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareText)}`;
+    window.open(facebookUrl, '_blank');
+  };
+
+  const handleHatenaBookmarkShare = () => {
+    const hatenaUrl = `https://b.hatena.ne.jp/entry/panel/?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareText)}`;
+    window.open(hatenaUrl, '_blank');
+  };
+
+  const handleMastodonShare = () => {
+    const mastodonText = encodeURIComponent(shareText);
+    const mastodonUrl = encodeURIComponent(currentUrl);
+    // ユーザー指定の技術を使用：ポップアップウィンドウでシェア
+    const shareUrl = `https://donshare.net/share.html?text=${mastodonText}&url=${mastodonUrl}`;
+    window.open(shareUrl, 'mastodon-share', 'width=500,height=400');
+  };
+
+  const handleMisskeyShare = () => {
+    const mastodonText = encodeURIComponent(shareText);
+    const mastodonUrl = encodeURIComponent(currentUrl);
+    // ユーザー指定の技術を使用：misskeyshare.linkを使用
+    const shareUrl = `https://misskeyshare.link/share.html?text=${mastodonText}&url=${mastodonUrl}`;
+    window.open(shareUrl, 'misskey-share', 'width=500,height=400');
   };
 
   const handleCopyUrl = async () => {
@@ -69,6 +95,34 @@ export default function ShareButtons({ personName, voteType, likeCount, dislikeC
         >
           <Share2 className="w-5 h-5" />
           LINE
+        </button>
+        <button
+          onClick={handleFacebookShare}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          <Facebook className="w-5 h-5" />
+          Facebook
+        </button>
+        <button
+          onClick={handleHatenaBookmarkShare}
+          className="flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition"
+        >
+          <Bookmark className="w-5 h-5" />
+          はてブ
+        </button>
+        <button
+          onClick={handleMastodonShare}
+          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+        >
+          <MessageCircle className="w-5 h-5" />
+          Mastodon
+        </button>
+        <button
+          onClick={handleMisskeyShare}
+          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+        >
+          <MessageCircle className="w-5 h-5" />
+          Misskey
         </button>
         <button
           onClick={handleCopyUrl}

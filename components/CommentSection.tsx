@@ -146,63 +146,63 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-800">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-gray-800 mb-3">
             コメント ({totalComments})
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
                 filter === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
               }`}
             >
-              すべて表示
+              すべて
             </button>
             <button
               onClick={() => setFilter('like')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
                 filter === 'like'
-                  ? 'bg-pink-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-pink-500 text-white shadow-md'
+                  : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
               }`}
             >
-              好き派のみ
+              好き派
             </button>
             <button
               onClick={() => setFilter('dislike')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
                 filter === 'dislike'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-purple-500 text-white shadow-md'
+                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
               }`}
             >
-              嫌い派のみ
+              嫌い派
             </button>
           </div>
         </div>
         
         {/* Sort buttons */}
-        <div className="flex gap-2">
-          <span className="text-sm text-gray-600 flex items-center">並び替え：</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-600">並び替え：</span>
           <button
             onClick={() => setSortBy('newest')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
               sortBy === 'newest'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
             }`}
           >
             新しい順
           </button>
           <button
             onClick={() => setSortBy('popular')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
               sortBy === 'popular'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
             }`}
           >
             人気順
@@ -235,21 +235,21 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
+            <div className="flex justify-center items-center gap-2 mt-6 px-2">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+                className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition text-sm sm:text-base"
               >
                 前へ
               </button>
-              <span className="px-4 py-2 text-gray-700">
+              <span className="px-2 sm:px-4 py-2 text-gray-700 text-sm sm:text-base whitespace-nowrap">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+                className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition text-sm sm:text-base"
               >
                 次へ
               </button>

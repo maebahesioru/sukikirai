@@ -76,26 +76,26 @@ export default function PeopleList({ people }: { people: RankingPerson[] }) {
       </div>
       
       {/* Pagination */}
-      <div className="flex justify-center items-center gap-2 mt-6">
+      <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 px-2 overflow-x-auto">
         <button
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="前のページ"
-          className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-shrink-0 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
         
         {getPageNumbers()[0] > 1 && (
           <>
             <button
               onClick={() => goToPage(1)}
-              className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+              className="flex-shrink-0 px-2 sm:px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm sm:text-base"
             >
               1
             </button>
             {getPageNumbers()[0] > 2 && (
-              <span className="px-2 text-gray-500">...</span>
+              <span className="px-1 sm:px-2 text-gray-500 text-sm">...</span>
             )}
           </>
         )}
@@ -104,7 +104,7 @@ export default function PeopleList({ people }: { people: RankingPerson[] }) {
           <button
             key={page}
             onClick={() => goToPage(page)}
-            className={`px-4 py-2 rounded-lg border transition ${
+            className={`flex-shrink-0 px-2 sm:px-4 py-2 rounded-lg border transition text-sm sm:text-base ${
               currentPage === page
                 ? 'bg-purple-600 text-white border-purple-600'
                 : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
@@ -117,11 +117,11 @@ export default function PeopleList({ people }: { people: RankingPerson[] }) {
         {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
           <>
             {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
-              <span className="px-2 text-gray-500">...</span>
+              <span className="px-1 sm:px-2 text-gray-500 text-sm">...</span>
             )}
             <button
               onClick={() => goToPage(totalPages)}
-              className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition"
+              className="flex-shrink-0 px-2 sm:px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition text-sm sm:text-base"
             >
               {totalPages}
             </button>
@@ -132,9 +132,9 @@ export default function PeopleList({ people }: { people: RankingPerson[] }) {
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="次のページ"
-          className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-shrink-0 px-2 sm:px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { supabase } from '@/lib/supabase';
@@ -26,28 +26,7 @@ export default function VoteButton({
   const [dislikeCount, setDislikeCount] = useState(initialDislikeCount ?? 0);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // 初期値が変更された時に状態を更新
-  useEffect(() => {
-    if (initialLikeCount !== undefined) {
-      setLikeCount(initialLikeCount);
-    }
-    if (initialDislikeCount !== undefined) {
-      setDislikeCount(initialDislikeCount);
-    }
-  }, [initialLikeCount, initialDislikeCount]);
-
-  useEffect(() => {
-    checkVoteStatus();
-    // 初期値が提供されていない場合のみfetch
-    if (initialLikeCount === undefined || initialDislikeCount === undefined) {
-      fetchVoteCounts();
-    } else if (onCountsLoaded) {
-      // 初期値がある場合は親に通知
-      onCountsLoaded(initialLikeCount, initialDislikeCount);
-    }
-  }, [personId]);
-
-  const checkVoteStatus = async () => {
+  const checkVoteStatus = useCallback(async () => {
     // まずCookieをチェック
     const cookieKey = `vote_${personId}`;
     const lastVote = Cookies.get(cookieKey);
@@ -67,7 +46,7 @@ export default function VoteButton({
           setVoteType(voteData.type);
           return;
         }
-      } catch (e) {
+      } catch {
         // Cookie解析エラー時は削除
         Cookies.remove(cookieKey);
       }
@@ -101,9 +80,9 @@ export default function VoteButton({
         );
       }
     }
-  };
+  }, [personId]);
 
-  const fetchVoteCounts = async () => {
+  const fetchVoteCounts = useCallback(async () => {
     // 最適化：1回のクエリで全投票を取得し、クライアント側で集計
     const { data: votes } = await supabase
       .from('votes')
@@ -120,7 +99,28 @@ export default function VoteButton({
     if (onCountsLoaded) {
       onCountsLoaded(newLikeCount, newDislikeCount);
     }
-  };
+  }, [personId, onCountsLoaded]);
+
+  // 初期値が変更された時に状態を更新
+  useEffect(() => {
+    if (initialLikeCount !== undefined) {
+      setLikeCount(initialLikeCount);
+    }
+    if (initialDislikeCount !== undefined) {
+      setDislikeCount(initialDislikeCount);
+    }
+  }, [initialLikeCount, initialDislikeCount]);
+
+  useEffect(() => {
+    checkVoteStatus();
+    // 初期値が提供されていない場合のみfetch
+    if (initialLikeCount === undefined || initialDislikeCount === undefined) {
+      fetchVoteCounts();
+    } else if (onCountsLoaded) {
+      // 初期値がある場合は親に通知
+      onCountsLoaded(initialLikeCount, initialDislikeCount);
+    }
+  }, [personId, checkVoteStatus, fetchVoteCounts, initialLikeCount, initialDislikeCount, onCountsLoaded]);
 
   const handleVote = async (type: 'like' | 'dislike') => {
     if (hasVoted) return;
@@ -210,26 +210,30 @@ export default function VoteButton({
       
       {!hasVoted ? (
         <>
-          <p className="text-center text-gray-600 mb-4">
-            「好き！」か「嫌い！」に投票して みんなのコメントを見てみよう！
+          <p className="text-center text-gray-600 mb-6">
+            投票してみんなのコメントを見てみよう！
           </p>
 
-          <div className="flex gap-4 justify-center">
+          {/* reCAPTCHA */}
+          <div className="flex justify-center mb-4">
+          </div>
+
+          <div className="flex gap-3 justify-center max-w-md mx-auto">
             <button
               onClick={() => handleVote('like')}
               disabled={isVerifying}
-              className="flex-1 max-w-xs bg-gradient-to-r from-pink-500 to-red-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-gradient-to-br from-pink-400 via-pink-500 to-rose-500 text-white py-3 px-6 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <ThumbsUp className="w-6 h-6" />
-              {isVerifying ? '処理中...' : '好き！'}
+              <ThumbsUp className="w-5 h-5" />
+              {isVerifying ? '処理中...' : '好き'}
             </button>
             <button
               onClick={() => handleVote('dislike')}
               disabled={isVerifying}
-              className="flex-1 max-w-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-8 rounded-lg font-bold text-xl hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-gradient-to-br from-indigo-400 via-purple-500 to-purple-600 text-white py-3 px-6 rounded-xl font-semibold text-lg hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <ThumbsDown className="w-6 h-6" />
-              {isVerifying ? '処理中...' : '嫌い！'}
+              <ThumbsDown className="w-5 h-5" />
+              {isVerifying ? '処理中...' : '嫌い'}
             </button>
           </div>
         </>
@@ -253,8 +257,8 @@ export default function VoteButton({
           </div>
           <p className="text-center text-gray-600 mt-4">
             あなたは「
-            <span className={voteType === 'like' ? 'text-pink-600 font-bold' : 'text-purple-600 font-bold'}>
-              {voteType === 'like' ? '好き！' : '嫌い！'}
+            <span className={voteType === 'like' ? 'text-pink-500 font-semibold' : 'text-purple-500 font-semibold'}>
+              {voteType === 'like' ? '好き' : '嫌い'}
             </span>
             」に投票しました
           </p>

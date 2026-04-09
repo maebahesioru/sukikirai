@@ -19,12 +19,11 @@ export async function POST(request: Request) {
       userToken
     } = await request.json();
 
-    if (!pollId || !content || !userToken || !recaptchaToken) {
+    if (!pollId || !content || !userToken) {
       return NextResponse.json(
         { success: false, error: '必須項目が不足しています' },
         { status: 400 }
       );
-    }      );
     }
 
     if (!/^[a-f0-9]{64}$/i.test(userToken)) {

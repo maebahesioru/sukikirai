@@ -91,13 +91,6 @@ export default function CreatePollPage() {
     setIsSubmitting(true);
 
     try {
-      const recaptchaToken = await recaptchaRef.current?.executeAsync();
-      if (!recaptchaToken) {
-        setError('reCAPTCHA認証に失敗しました。もう一度お試しください。');
-        setIsSubmitting(false);
-        return;
-      }
-      recaptchaRef.current?.reset();
 
       const response = await fetch('/api/polls/create', {
         method: 'POST',
@@ -109,7 +102,6 @@ export default function CreatePollPage() {
           options: validOptions,
           relatedPersonIds,
           userToken,
-          recaptchaToken,
         }),
       });
 
@@ -156,11 +148,6 @@ export default function CreatePollPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            size="invisible"
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-          />
 
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">

@@ -56,14 +56,6 @@ export default function PollVoteSection({ poll, options: initialOptions }: PollV
     setError('');
 
     try {
-      // reCAPTCHA認証
-      const recaptchaToken = await recaptchaRef.current?.executeAsync();
-      if (!recaptchaToken) {
-        setError('reCAPTCHA認証に失敗しました。もう一度お試しください。');
-        setIsVoting(false);
-        return;
-      }
-      recaptchaRef.current?.reset();
 
       const response = await fetch('/api/polls/vote', {
         method: 'POST',
@@ -72,7 +64,6 @@ export default function PollVoteSection({ poll, options: initialOptions }: PollV
           pollId: poll.id,
           optionId,
           userToken,
-          recaptchaToken,
         }),
       });
 
@@ -103,14 +94,6 @@ export default function PollVoteSection({ poll, options: initialOptions }: PollV
     setError('');
 
     try {
-      // reCAPTCHA認証
-      const recaptchaToken = await addOptionRecaptchaRef.current?.executeAsync();
-      if (!recaptchaToken) {
-        setError('reCAPTCHA認証に失敗しました。もう一度お試しください。');
-        setIsAddingOption(false);
-        return;
-      }
-      addOptionRecaptchaRef.current?.reset();
 
       const response = await fetch('/api/polls/add-option', {
         method: 'POST',
@@ -119,7 +102,6 @@ export default function PollVoteSection({ poll, options: initialOptions }: PollV
           pollId: poll.id,
           optionText: newOptionText.trim(),
           userToken,
-          recaptchaToken,
         }),
       });
 
@@ -144,16 +126,6 @@ export default function PollVoteSection({ poll, options: initialOptions }: PollV
       <h2 className="text-xl font-bold mb-4 text-gray-800">投票する</h2>
 
       {/* reCAPTCHA */}
-      <ReCAPTCHA
-        ref={recaptchaRef}
-        size="invisible"
-        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-      />
-      <ReCAPTCHA
-        ref={addOptionRecaptchaRef}
-        size="invisible"
-        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-      />
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

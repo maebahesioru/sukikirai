@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { WebsiteStructuredData } from "@/components/StructuredData";
@@ -78,6 +78,7 @@ export default function RootLayout({
         <ClientLayout>
           {children}
         </ClientLayout>
+              <script src="https://hikakinmaniacoin.hikamer.f5.si/ad.js" async></script>
       </body>
     </html>
   );

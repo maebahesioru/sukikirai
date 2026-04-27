@@ -12,6 +12,7 @@ const geistSans = Geist({
   fallback: ['system-ui', 'arial'], // フォールバック追加
 });
 
+// rebuild trigger
 export const metadata: Metadata = {
   metadataBase: new URL('https://hikamerssukikirai.hikamer.f5.si'),
   title: {

@@ -13,7 +13,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL('https://hikamerssukikirai.hikamer.f5.si'),
   title: {
     default: "ヒカマーズ好き嫌い.com - ヒカマー界隈の好き嫌い投票サイト",
     template: "%s | ヒカマーズ好き嫌い.com"
@@ -32,6 +32,7 @@ export const metadata: Metadata = {
     title: "ヒカマーズ好き嫌い.com - ヒカマー界隈の好き嫌い投票サイト",
     description: "ヒカマー界隈のあの人のこと好き？嫌い？みんなの意見を見てコメントしよう！",
     siteName: "ヒカマーズ好き嫌い.com",
+    images: ["/opengraph-image.png"],
   },
   twitter: {
     card: "summary_large_image",
@@ -39,6 +40,7 @@ export const metadata: Metadata = {
     description: "ヒカマー界隈のあの人のこと好き？嫌い？",
     creator: "@hikamers",
     site: "@hikamers",
+    images: ["/opengraph-image.png"],
   },
   robots: {
     index: true,

@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   },
   description: "ヒカマー界隈のあの人のこと好き？嫌い？みんなの意見を見てコメントしよう！",
   keywords: ["ヒカマー", "好き嫌い", "投票", "ランキング"],
+  icons: { icon: "/icon" },
   formatDetection: {
     email: false,
     address: false,

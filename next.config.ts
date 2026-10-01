@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
 
+  // Docker 実行に必要最小限のファイルだけを .next/standalone に吐く（イメージ縮小・コピー高速化）
+  output: "standalone",
+
   // 本番最適化
   reactStrictMode: false,
   productionBrowserSourceMaps: false,

@@ -8,6 +8,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const pollId = str(body.pollId, 40);
     const optionText = str(body.optionText, 100).trim();
+    const rawUrl = body.imageUrl ? str(body.imageUrl, 500).trim() : "";
+    const imageUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : null;
     const userToken = body.userToken;
 
     if (!isUuid(pollId) || !optionText || !isValidToken(userToken)) {
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "リクエストが多すぎます" }, { status: 429 });
     }
 
-    const r = await addPollOption(pollId, optionText, userToken);
+    const r = await addPollOption(pollId, optionText, imageUrl, userToken);
     if (!r.ok) {
       return NextResponse.json({ success: false, error: r.error }, { status: r.status });
     }

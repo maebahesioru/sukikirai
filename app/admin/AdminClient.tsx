@@ -32,6 +32,20 @@ type Report = {
   person_name: string | null;
 };
 
+type PollReport = {
+  id: string;
+  poll_comment_id: string;
+  reason: string | null;
+  details: string | null;
+  created_at: string;
+  comment_content: string;
+  comment_name: string | null;
+  comment_number: number;
+  poll_id: string;
+  poll_title: string | null;
+  voted_option: string | null;
+};
+
 type AdminComment = {
   id: string;
   person_id: string;
@@ -211,6 +225,7 @@ export default function AdminClient() {
 
 function ReportsTab() {
   const [reports, setReports] = useState<Report[]>([]);
+  const [pollReports, setPollReports] = useState<PollReport[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -218,7 +233,10 @@ function ReportsTab() {
     try {
       const res = await fetch("/api/admin/reports");
       const data = await res.json();
-      if (data.success) setReports(data.reports);
+      if (data.success) {
+        setReports(data.reports);
+        setPollReports(data.pollReports ?? []);
+      }
     } finally {
       setLoading(false);
     }
@@ -240,7 +258,8 @@ function ReportsTab() {
   };
 
   if (loading) return <p className="text-mut">読み込み中...</p>;
-  if (reports.length === 0) return <p className="text-mut py-10 text-center">通報はありません</p>;
+  if (reports.length === 0 && pollReports.length === 0)
+    return <p className="text-mut py-10 text-center">通報はありません</p>;
 
   return (
     <div className="space-y-4">
@@ -301,6 +320,71 @@ function ReportsTab() {
           </div>
         </div>
       ))}
+
+      {pollReports.length > 0 && (
+        <div className="pt-2">
+          <h3 className="font-bold text-sm mb-3 text-mut">投票トークの通報</h3>
+          <div className="space-y-4">
+            {pollReports.map((r) => (
+              <div key={r.id} className="bg-panel border border-line border-l-4 border-l-bad rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-bad shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-mut mb-1">通報日時: {formatJST(r.created_at, "yyyy-MM-dd HH:mm:ss")}</p>
+                    <p className="text-sm mb-1">
+                      <span className="font-bold">理由:</span> {r.reason || "不明"}
+                    </p>
+                    {r.details && (
+                      <p className="text-sm text-mut mb-2 bg-panel2 rounded-lg px-3 py-2">詳細: {r.details}</p>
+                    )}
+                    <div className="bg-panel2 rounded-lg p-3 mb-3 text-sm">
+                      <div className="flex items-center gap-2 flex-wrap mb-1 text-xs text-mut">
+                        <Link href={`/polls/${r.poll_id}`} className="text-x hover:underline">
+                          {r.poll_title ?? "投票トーク"}
+                        </Link>
+                        <span>#{r.comment_number}</span>
+                        <span>{r.comment_name || "匿名"}</span>
+                        {r.voted_option && <span className="text-x">「{r.voted_option}」に投票</span>}
+                      </div>
+                      <p className="whitespace-pre-wrap">{r.comment_content}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          if (confirm("このコメントを削除しますか？"))
+                            act("deletePollComment", { pollCommentId: r.poll_comment_id, reportId: r.id });
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-bad text-white text-xs font-bold hover:opacity-90 transition flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        コメント削除
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("このコメントを非表示にしますか？"))
+                            act("hidePollComment", { pollCommentId: r.poll_comment_id });
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-bold hover:opacity-90 transition flex items-center gap-1"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                        非表示にする
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("この通報を却下しますか？")) act("dismissPollReport", { reportId: r.id });
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-panel2 border border-line text-xs text-mut hover:text-txt transition"
+                      >
+                        通報を却下
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

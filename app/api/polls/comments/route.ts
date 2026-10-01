@@ -10,7 +10,8 @@ export async function GET(request: Request) {
     if (!pollId) {
       return NextResponse.json({ success: false, error: "pollId required" }, { status: 400 });
     }
-    const { comments, total } = await getPollComments(pollId);
+    const sort = searchParams.get("sort") === "new" ? "new" : "number";
+    const { comments, total } = await getPollComments(pollId, sort);
     return NextResponse.json({ success: true, comments, total });
   } catch (e) {
     console.error("poll comments GET error:", e);

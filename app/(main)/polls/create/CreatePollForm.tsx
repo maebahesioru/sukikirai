@@ -7,6 +7,7 @@ import { Plus, X, Search } from "lucide-react";
 import type { PollType } from "@/lib/types";
 
 type RelatedPerson = { id: string; name: string; handle: string | null; avatar_url: string | null };
+type OptionDraft = { text: string; imageUrl: string };
 
 const POLL_TYPES: { key: PollType; label: string; desc: string }[] = [
   { key: "two_choice", label: "2択", desc: "選択肢2つ。他の人は追加できません" },
@@ -19,7 +20,10 @@ export default function CreatePollForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [pollType, setPollType] = useState<PollType>("two_choice");
-  const [options, setOptions] = useState<string[]>(["", ""]);
+  const [options, setOptions] = useState<OptionDraft[]>([
+    { text: "", imageUrl: "" },
+    { text: "", imageUrl: "" },
+  ]);
   const [related, setRelated] = useState<RelatedPerson[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<RelatedPerson[]>([]);
@@ -27,14 +31,19 @@ export default function CreatePollForm() {
 
   const minOptions = pollType === "two_choice" ? 2 : 3;
 
-  const setOption = (i: number, v: string) => {
+  const setOptionText = (i: number, v: string) => {
     const next = [...options];
-    next[i] = v;
+    next[i] = { ...next[i], text: v };
+    setOptions(next);
+  };
+  const setOptionImage = (i: number, v: string) => {
+    const next = [...options];
+    next[i] = { ...next[i], imageUrl: v };
     setOptions(next);
   };
   const addOption = () => {
     if (options.length >= 10) return;
-    setOptions([...options, ""]);
+    setOptions([...options, { text: "", imageUrl: "" }]);
   };
   const removeOption = (i: number) => {
     if (options.length <= minOptions) return;
@@ -64,7 +73,9 @@ export default function CreatePollForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = options.map((o) => o.trim()).filter(Boolean);
+    const cleaned = options
+      .map((o) => ({ text: o.text.trim(), imageUrl: o.imageUrl.trim() }))
+      .filter((o) => o.text);
     if (!title.trim()) {
       alert("タイトルを入力してください");
       return;
@@ -87,7 +98,7 @@ export default function CreatePollForm() {
           title: title.trim(),
           description: description.trim() || null,
           pollType,
-          options: cleaned,
+          options: cleaned.map((o) => ({ text: o.text, imageUrl: o.imageUrl || null })),
           relatedPersonIds: related.map((r) => r.id),
           userToken: token,
         }),
@@ -149,7 +160,7 @@ export default function CreatePollForm() {
                 onChange={() => {
                   setPollType(t.key);
                   if (t.key !== "two_choice" && options.length < 3) {
-                    setOptions([...options, ""].slice(0, 3));
+                    setOptions([...options, { text: "", imageUrl: "" }].slice(0, 3));
                   }
                 }}
                 className="mt-0.5 accent-sky-500"
@@ -167,26 +178,38 @@ export default function CreatePollForm() {
         <label className="block text-sm font-bold mb-2">
           選択肢 <span className="text-bad">*</span>
         </label>
+        <p className="text-xs text-mut mb-2">
+          画像URL（任意）を入れると画像付きに。2択で両方に入れると横並びの「どっち？」形式になります
+        </p>
         <div className="space-y-2">
           {options.map((o, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={i} className="bg-panel2 border border-line rounded-xl p-3 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={o.text}
+                  onChange={(e) => setOptionText(i, e.target.value.slice(0, 100))}
+                  placeholder={`選択肢 ${i + 1}`}
+                  className="flex-1 px-3 py-2 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
+                />
+                {options.length > minOptions && (
+                  <button
+                    type="button"
+                    onClick={() => removeOption(i)}
+                    className="px-2.5 rounded-xl border border-line text-mut hover:text-bad transition"
+                    aria-label="削除"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
-                value={o}
-                onChange={(e) => setOption(i, e.target.value.slice(0, 100))}
-                placeholder={`選択肢 ${i + 1}`}
-                className="flex-1 px-3 py-2 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
+                value={o.imageUrl}
+                onChange={(e) => setOptionImage(i, e.target.value.slice(0, 500))}
+                placeholder="画像URL（任意・https://…）"
+                className="w-full px-3 py-1.5 rounded-lg border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-xs text-mut"
               />
-              {options.length > minOptions && (
-                <button
-                  type="button"
-                  onClick={() => removeOption(i)}
-                  className="px-2.5 rounded-xl border border-line text-mut hover:text-bad transition"
-                  aria-label="削除"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
           ))}
         </div>

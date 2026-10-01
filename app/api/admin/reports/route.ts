@@ -1,14 +1,23 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
-import { adminDeleteComment, adminDismissReport, adminHideComment, adminListReports } from "@/lib/queries";
+import {
+  adminDeleteComment,
+  adminDeletePollComment,
+  adminDismissPollReport,
+  adminDismissReport,
+  adminHideComment,
+  adminHidePollComment,
+  adminListPollReports,
+  adminListReports,
+} from "@/lib/queries";
 import { isUuid, str } from "@/lib/validate";
 
 export async function GET() {
   if (!(await isAdmin())) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
-  const reports = await adminListReports();
-  return NextResponse.json({ success: true, reports });
+  const [reports, pollReports] = await Promise.all([adminListReports(), adminListPollReports()]);
+  return NextResponse.json({ success: true, reports, pollReports });
 }
 
 export async function POST(request: Request) {
@@ -20,6 +29,7 @@ export async function POST(request: Request) {
     const action = str(body.action, 30);
     const reportId = body.reportId ? str(body.reportId, 40) : null;
     const commentId = body.commentId ? str(body.commentId, 40) : null;
+    const pollCommentId = body.pollCommentId ? str(body.pollCommentId, 40) : null;
 
     if (action === "dismiss") {
       if (!isUuid(reportId)) {
@@ -40,6 +50,27 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "commentId required" }, { status: 400 });
       }
       await adminDeleteComment(commentId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === "hidePollComment") {
+      if (!isUuid(pollCommentId)) {
+        return NextResponse.json({ success: false, error: "pollCommentId required" }, { status: 400 });
+      }
+      await adminHidePollComment(pollCommentId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === "deletePollComment") {
+      if (!isUuid(pollCommentId)) {
+        return NextResponse.json({ success: false, error: "pollCommentId required" }, { status: 400 });
+      }
+      await adminDeletePollComment(pollCommentId);
+      return NextResponse.json({ success: true });
+    }
+    if (action === "dismissPollReport") {
+      if (!isUuid(reportId)) {
+        return NextResponse.json({ success: false, error: "reportId required" }, { status: 400 });
+      }
+      await adminDismissPollReport(reportId);
       return NextResponse.json({ success: true });
     }
     return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });

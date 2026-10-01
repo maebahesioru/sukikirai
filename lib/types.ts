@@ -48,6 +48,8 @@ export type CommentRow = {
   is_hidden: boolean;
   is_reported: boolean;
   parent_comment_id: string | null;
+  /** 投票トーク用: このコメント主が投票した選択肢のラベル */
+  voted_option?: string | null;
 };
 
 export type CommentWithReplies = CommentRow & { replies: CommentRow[] };
@@ -58,6 +60,7 @@ export type PollOption = {
   id: string;
   poll_id: string;
   option_text: string;
+  image_url: string | null;
   option_order: number;
   vote_count: number;
   created_by_creator: boolean;

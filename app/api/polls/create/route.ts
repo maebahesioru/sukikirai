@@ -13,9 +13,19 @@ export async function POST(request: Request) {
     const title = str(body.title, 200).trim();
     const description = body.description ? str(body.description, 500).trim() : null;
     const pollType = body.pollType as PollType;
-    const options = Array.isArray(body.options)
-      ? body.options.map((o: unknown) => str(o, 100).trim()).filter(Boolean).slice(0, 10)
-      : [];
+    // options: [{ text, imageUrl }]（文字列も後方互換で受ける）
+    const rawOptions: unknown[] = Array.isArray(body.options) ? body.options : [];
+    const options = rawOptions
+      .map((o) => {
+        if (typeof o === "string") return { text: str(o, 100).trim(), imageUrl: null as string | null };
+        const obj = o as { text?: unknown; imageUrl?: unknown };
+        const text = str(obj?.text, 100).trim();
+        const rawUrl = obj?.imageUrl ? str(obj.imageUrl, 500).trim() : "";
+        const imageUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : null;
+        return { text, imageUrl };
+      })
+      .filter((o) => o.text)
+      .slice(0, 10);
     const relatedPersonIds = Array.isArray(body.relatedPersonIds)
       ? body.relatedPersonIds.filter((v: unknown) => typeof v === "string").slice(0, 5)
       : [];
@@ -38,7 +48,7 @@ export async function POST(request: Request) {
       );
     }
     for (const o of options) {
-      const s = isSpamContent(o);
+      const s = isSpamContent(o.text);
       if (s.isSpam) {
         return NextResponse.json(
           { success: false, error: `選択肢に不適切な内容が含まれています: ${s.reason}` },

@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS poll_options (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   poll_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
   option_text TEXT NOT NULL,
+  image_url TEXT,
   option_order INTEGER NOT NULL,
   vote_count INTEGER NOT NULL DEFAULT 0,
   created_by_creator BOOLEAN NOT NULL DEFAULT TRUE,
@@ -170,6 +171,15 @@ CREATE TABLE IF NOT EXISTS poll_comment_reactions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (poll_comment_id, cookie_id)
 );
+
+CREATE TABLE IF NOT EXISTS poll_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  poll_comment_id UUID NOT NULL REFERENCES poll_comments(id) ON DELETE CASCADE,
+  reason TEXT,
+  details TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_poll_reports_comment ON poll_reports(poll_comment_id);
 
 -- updated_at triggers
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$

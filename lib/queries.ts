@@ -775,7 +775,7 @@ export async function createPoll(input: {
   title: string;
   description: string | null;
   pollType: PollType;
-  options: string[];
+  options: { text: string; imageUrl: string | null }[];
   relatedPersonIds: string[];
   creatorCookieId: string;
 }): Promise<string> {
@@ -787,11 +787,10 @@ export async function createPoll(input: {
     );
     const pollId = p.rows[0].id;
     for (let i = 0; i < input.options.length; i++) {
-      await c.query("INSERT INTO poll_options (poll_id, option_text, option_order) VALUES ($1,$2,$3)", [
-        pollId,
-        input.options[i],
-        i,
-      ]);
+      await c.query(
+        "INSERT INTO poll_options (poll_id, option_text, image_url, option_order) VALUES ($1,$2,$3,$4)",
+        [pollId, input.options[i].text, input.options[i].imageUrl, i]
+      );
     }
     return pollId;
   });
@@ -850,6 +849,7 @@ export async function votePoll(
 export async function addPollOption(
   pollId: string,
   optionText: string,
+  imageUrl: string | null,
   cookieId: string
 ): Promise<{ ok: true; option: PollOption } | { ok: false; error: string; status: number }> {
   const spam = isSpamContent(optionText);
@@ -882,11 +882,40 @@ export async function addPollOption(
       return { ok: false as const, error: "1つの投票に追加できる選択肢は3つまでです", status: 400 };
     }
     const opt = await c.query<PollOption>(
-      `INSERT INTO poll_options (poll_id, option_text, option_order, created_by_creator, created_by_cookie_id)
-       VALUES ($1,$2,$3,FALSE,$4) RETURNING *`,
-      [pollId, optionText, count.rows[0]?.c ?? 0, cookieId]
+      `INSERT INTO poll_options (poll_id, option_text, image_url, option_order, created_by_creator, created_by_cookie_id)
+       VALUES ($1,$2,$3,$4,FALSE,$5) RETURNING *`,
+      [pollId, optionText, imageUrl, count.rows[0]?.c ?? 0, cookieId]
     );
     return { ok: true as const, option: opt.rows[0] };
+  });
+}
+
+export async function insertPollReport(input: {
+  pollCommentId: string;
+  reason: string | null;
+  details: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  return withTx(async (c) => {
+    const cm = await c.query("SELECT id FROM poll_comments WHERE id = $1 AND NOT is_hidden", [
+      input.pollCommentId,
+    ]);
+    if (cm.rowCount === 0) {
+      return { ok: false as const, error: "コメントが見つかりません", status: 404 };
+    }
+    const dup = await c.query(
+      "SELECT 1 FROM poll_reports WHERE poll_comment_id = $1 AND created_at >= now() - interval '1 hour' LIMIT 1",
+      [input.pollCommentId]
+    );
+    if (dup.rowCount && dup.rowCount > 0) {
+      return { ok: false as const, error: "このコメントは通報済みです", status: 429 };
+    }
+    await c.query("INSERT INTO poll_reports (poll_comment_id, reason, details) VALUES ($1,$2,$3)", [
+      input.pollCommentId,
+      input.reason,
+      input.details,
+    ]);
+    await c.query("UPDATE poll_comments SET is_reported = TRUE WHERE id = $1", [input.pollCommentId]);
+    return { ok: true as const };
   });
 }
 
@@ -898,15 +927,22 @@ const POLL_REACTION_JOIN = `LEFT JOIN (
 ) r ON r.poll_comment_id = c.id`;
 
 export async function getPollComments(
-  pollId: string
+  pollId: string,
+  sort: "number" | "new" = "number"
 ): Promise<{ comments: CommentWithReplies[]; total: number }> {
-  const rows = await sql<PollCommentRow & { good_count: number; bad_count: number }>(
+  const order = sort === "new" ? "c.created_at DESC" : "c.comment_number ASC";
+  const rows = await sql<
+    PollCommentRow & { good_count: number; bad_count: number; voted_option: string | null }
+  >(
     `SELECT c.id, c.poll_id, c.comment_number, c.name, c.user_id, c.content, c.created_at,
             c.is_hidden, c.is_reported, c.parent_comment_id,
-            COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count
+            COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count,
+            o.option_text AS voted_option
      FROM poll_comments c ${POLL_REACTION_JOIN}
+     LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
+     LEFT JOIN poll_options o ON o.id = v.option_id
      WHERE c.poll_id = $1 AND NOT c.is_hidden
-     ORDER BY c.created_at ASC`,
+     ORDER BY ${order}`,
     [pollId]
   );
   const mains = rows.filter((r) => !r.parent_comment_id);
@@ -1099,6 +1135,48 @@ export async function adminHideComment(id: string): Promise<void> {
 
 export async function adminDismissReport(id: string): Promise<void> {
   await sql("DELETE FROM reports WHERE id = $1", [id]);
+}
+
+export async function adminListPollReports() {
+  return sql<{
+    id: string;
+    poll_comment_id: string;
+    reason: string | null;
+    details: string | null;
+    created_at: string;
+    comment_content: string;
+    comment_name: string | null;
+    comment_number: number;
+    poll_id: string;
+    poll_title: string | null;
+    voted_option: string | null;
+  }>(
+    `SELECT r.id, r.poll_comment_id, r.reason, r.details, r.created_at,
+            c.content AS comment_content, c.name AS comment_name, c.comment_number,
+            c.poll_id, p.title AS poll_title, o.option_text AS voted_option
+     FROM poll_reports r
+     JOIN poll_comments c ON c.id = r.poll_comment_id
+     LEFT JOIN polls p ON p.id = c.poll_id
+     LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
+     LEFT JOIN poll_options o ON o.id = v.option_id
+     ORDER BY r.created_at DESC LIMIT 200`
+  );
+}
+
+export async function adminHidePollComment(id: string): Promise<void> {
+  await withTx(async (c) => {
+    await c.query("UPDATE poll_comments SET is_hidden = TRUE WHERE id = $1", [id]);
+    await c.query("DELETE FROM poll_reports WHERE poll_comment_id = $1", [id]);
+  });
+}
+
+export async function adminDeletePollComment(id: string): Promise<boolean> {
+  const r = await sql("DELETE FROM poll_comments WHERE id = $1 RETURNING id", [id]);
+  return r.length > 0;
+}
+
+export async function adminDismissPollReport(id: string): Promise<void> {
+  await sql("DELETE FROM poll_reports WHERE id = $1", [id]);
 }
 
 export async function adminSetVotes(personId: string, likes: number, dislikes: number): Promise<void> {

@@ -2,8 +2,22 @@
 
 import { useState } from "react";
 import Cookies from "js-cookie";
-import { Plus } from "lucide-react";
+import { Crown, Plus } from "lucide-react";
 import type { PollOption, PollType } from "@/lib/types";
+
+function OptionImage({ url }: { url: string | null }) {
+  if (!url) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      className="w-full max-h-72 object-cover rounded-lg border border-line bg-panel2"
+    />
+  );
+}
 
 export default function PollVoteSection({
   pollId,
@@ -20,9 +34,17 @@ export default function PollVoteSection({
   const [myChoice, setMyChoice] = useState<string | null>(initialVoteOptionId);
   const [busy, setBusy] = useState(false);
   const [addText, setAddText] = useState("");
+  const [addImage, setAddImage] = useState("");
   const [addBusy, setAddBusy] = useState(false);
 
   const total = options.reduce((a, o) => a + Number(o.vote_count), 0);
+  const maxCount = options.reduce((m, o) => Math.max(m, Number(o.vote_count)), 0);
+
+  // 2択かつ両方に画像 → tohyotalk風の横並び「どっち？」レイアウト
+  const twoImage =
+    pollType === "two_choice" && options.length === 2 && options.every((o) => !!o.image_url);
+  // 結果は票数順（tuber-review風の順位表示）
+  const ranked = [...options].sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
 
   const vote = async (optionId: string) => {
     if (myChoice || busy) return;
@@ -69,12 +91,18 @@ export default function PollVoteSection({
       const res = await fetch("/api/polls/add-option", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pollId, optionText: text, userToken: token }),
+        body: JSON.stringify({
+          pollId,
+          optionText: text,
+          imageUrl: addImage.trim() || null,
+          userToken: token,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setOptions([...options, data.option]);
         setAddText("");
+        setAddImage("");
       } else {
         alert(data.error || "追加に失敗しました");
       }
@@ -89,46 +117,58 @@ export default function PollVoteSection({
     <section className="bg-panel border border-line rounded-2xl p-6">
       <h2 className="font-bold mb-4">{myChoice ? "投票結果" : "あなたの一票を投じよう"}</h2>
 
-      <div className="space-y-2">
-        {options.map((o) => {
-          const count = Number(o.vote_count);
-          const pct = total > 0 ? (count / total) * 100 : 0;
-          const isMine = myChoice === o.id;
-          if (!myChoice) {
-            return (
-              <button
-                key={o.id}
-                onClick={() => vote(o.id)}
-                disabled={busy}
-                className="w-full text-left px-4 py-3 rounded-xl border border-line bg-panel2 hover:border-x hover:bg-xsoft transition font-medium text-sm disabled:opacity-60"
-              >
-                {o.option_text}
-              </button>
-            );
-          }
-          return (
-            <div
+      {!myChoice ? (
+        <div className={twoImage ? "grid grid-cols-2 gap-3" : "space-y-2"}>
+          {options.map((o) => (
+            <button
               key={o.id}
-              className={`px-4 py-3 rounded-xl border ${
-                isMine ? "border-x bg-xsoft" : "border-line bg-panel2"
-              }`}
+              onClick={() => vote(o.id)}
+              disabled={busy}
+              className="w-full text-left px-4 py-3 rounded-xl border border-line bg-panel2 hover:border-x hover:bg-xsoft transition font-medium text-sm disabled:opacity-60 space-y-2"
             >
-              <div className="flex justify-between text-sm mb-1.5">
-                <span className="font-medium">
-                  {o.option_text}
-                  {isMine && <span className="text-x text-xs ml-2">← あなたの投票</span>}
-                </span>
-                <span className="text-mut shrink-0 ml-3">
-                  {count}票（{pct.toFixed(1)}%）
-                </span>
+              <OptionImage url={o.image_url} />
+              <span className="block">{o.option_text}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className={twoImage ? "grid grid-cols-2 gap-3" : "space-y-2"}>
+          {(twoImage ? options : ranked).map((o, i) => {
+            const count = Number(o.vote_count);
+            const pct = total > 0 ? (count / total) * 100 : 0;
+            const isMine = myChoice === o.id;
+            const isTop = maxCount > 0 && count === maxCount;
+            return (
+              <div
+                key={o.id}
+                className={`relative px-4 py-3 rounded-xl border space-y-2 ${
+                  isMine ? "border-x bg-xsoft" : "border-line bg-panel2"
+                }`}
+              >
+                {isTop && (
+                  <span className="absolute -top-2.5 right-3 z-10 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-black shadow">
+                    <Crown className="w-3 h-3" />
+                  </span>
+                )}
+                <OptionImage url={o.image_url} />
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">
+                    {!twoImage && <span className="text-mut mr-1.5">{i + 1}位</span>}
+                    {o.option_text}
+                    {isMine && <span className="text-x text-xs ml-2">← あなたの投票</span>}
+                  </span>
+                  <span className="text-mut shrink-0 ml-3">
+                    {count}票（{pct.toFixed(1)}%）
+                  </span>
+                </div>
+                <div className="w-full bg-panel rounded-full h-2 overflow-hidden">
+                  <div className="bg-x h-full bar-anim" style={{ width: `${pct}%` }} />
+                </div>
               </div>
-              <div className="w-full bg-panel rounded-full h-2 overflow-hidden">
-                <div className="bg-x h-full bar-anim" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {pollType === "three_plus_open" && (
         <div className="mt-5 pt-4 border-t border-line">
@@ -154,7 +194,16 @@ export default function PollVoteSection({
               追加
             </button>
           </div>
-          <p className="text-xs text-mut mt-1.5">※ 追加できるのは投稿者以外・1人3個まで・全体で20個まで</p>
+          <input
+            type="text"
+            value={addImage}
+            onChange={(e) => setAddImage(e.target.value.slice(0, 500))}
+            placeholder="画像URL（任意・https://…）"
+            className="mt-2 w-full px-3 py-2 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+          <p className="text-xs text-mut mt-1.5">
+            ※ 追加できるのは投稿者以外・1人3個まで・全体で20個まで
+          </p>
         </div>
       )}
     </section>

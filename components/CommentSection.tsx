@@ -1,208 +1,120 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { MessageCircle, ThumbsUp, ThumbsDown, Flag, EyeOff } from 'lucide-react';
-import { supabase, type Comment } from '@/lib/supabase';
-import { toggleCommentReaction, getCommentReactionCounts } from '@/lib/comment-reactions';
-import { formatJST } from '@/lib/date-utils';
-import Cookies from 'js-cookie';
-import ReportModal from './ReportModal';
+import { useCallback, useEffect, useState } from "react";
+import Cookies from "js-cookie";
+import {
+  Flag,
+  EyeOff,
+  ThumbsUp,
+  ThumbsDown,
+  MessageCircle,
+  Send,
+} from "lucide-react";
+import type { CommentRow, CommentWithReplies } from "@/lib/types";
+import { REPORT_REASONS, type ReportReason, GENDERS, AGE_GROUPS, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
+import ReportModal from "./ReportModal";
+import { timeAgo } from "@/lib/format";
+import Avatar from "./Avatar";
 
-type CommentSectionProps = {
+type FilterType = "all" | "like" | "dislike";
+type SortType = "newest" | "popular";
+
+function getCharCount(text: string): number {
+  let count = 0;
+  for (let i = 0; i < text.length; i++) {
+    count += text.charCodeAt(i) <= 0x7f ? 1 : 2;
+  }
+  return count;
+}
+
+export default function CommentSection({
+  personId,
+  hasVoted,
+}: {
   personId: string;
   hasVoted: boolean;
-};
-
-type FilterType = 'all' | 'like' | 'dislike';
-
-type SortType = 'newest' | 'popular';
-
-export default function CommentSection({ personId, hasVoted }: CommentSectionProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [sortBy, setSortBy] = useState<SortType>('newest');
+}) {
+  const [comments, setComments] = useState<CommentWithReplies[]>([]);
+  const [total, setTotal] = useState(0);
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [sort, setSort] = useState<SortType>("newest");
   const [page, setPage] = useState(1);
-  const [totalComments, setTotalComments] = useState(0);
-  const [hiddenComments, setHiddenComments] = useState<string[]>([]);
-  const [hiddenCommentData, setHiddenCommentData] = useState<Comment[]>([]);
-  const [showHiddenComments, setShowHiddenComments] = useState(false);
-  const commentsPerPage = 20;
-
-  useEffect(() => {
-    // Load hidden comments from localStorage
-    const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
-    setHiddenComments(hidden);
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   const fetchComments = useCallback(async () => {
-    let query = supabase
-      .from('comments')
-      .select('*', { count: 'exact' })
-      .eq('person_id', personId)
-      .eq('is_hidden', false)
-      .is('parent_comment_id', null)
-      .order('created_at', { ascending: false })
-      .range((page - 1) * commentsPerPage, page * commentsPerPage - 1);
-
-    if (filter !== 'all') {
-      query = query.eq('vote_type', filter);
-    }
-
-    const { data: mainComments, count, error } = await query;
-
-    if (!error && mainComments && mainComments.length > 0) {
-      // 一括で全返信を取得（最適化）
-      const commentIds = mainComments.map(c => c.id);
-      const { data: allReplies } = await supabase
-        .from('comments')
-        .select('*')
-        .in('parent_comment_id', commentIds)
-        .eq('is_hidden', false)
-        .order('created_at', { ascending: true });
-
-      // 返信をコメントごとにグループ化
-      const repliesByComment = new Map<string, Comment[]>();
-      allReplies?.forEach((reply) => {
-        const parentId = reply.parent_comment_id;
-        if (parentId) {
-          if (!repliesByComment.has(parentId)) {
-            repliesByComment.set(parentId, []);
-          }
-          repliesByComment.get(parentId)!.push(reply);
-        }
-      });
-
-      // すべてのコメントと返信のIDを収集
-      const allCommentIds = [...mainComments.map(c => c.id), ...(allReplies?.map(r => r.id) || [])];
-      
-      // comment_reactionsから評価数を取得
-      const reactionCounts = await getCommentReactionCounts(allCommentIds);
-
-      // コメントに返信データと評価数を付与
-      const commentsWithReplies = mainComments.map(comment => {
-        const reactions = reactionCounts[comment.id] || { good: 0, bad: 0 };
-        const repliesWithReactions = (repliesByComment.get(comment.id) || []).map(reply => {
-          const replyReactions = reactionCounts[reply.id] || { good: 0, bad: 0 };
-          return {
-            ...reply,
-            good_count: replyReactions.good,
-            bad_count: replyReactions.bad,
-          };
-        });
-        
-        return {
-          ...comment,
-          good_count: reactions.good,
-          bad_count: reactions.bad,
-          _replies: repliesWithReactions,
-        };
-      });
-
-      // Filter out hidden comments
-      let filteredData = commentsWithReplies.filter(c => !hiddenComments.includes(c.id));
-      
-      // Sort by popularity if selected
-      if (sortBy === 'popular') {
-        filteredData = filteredData.sort((a, b) => {
-          const aTotal = (a.good_count || 0) + (a.bad_count || 0);
-          const bTotal = (b.good_count || 0) + (b.bad_count || 0);
-          return bTotal - aTotal;
-        });
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/comments?personId=${encodeURIComponent(personId)}&filter=${filter}&sort=${sort}&page=${page}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setComments(data.comments);
+        setTotal(data.total);
       }
-      
-      setComments(filteredData);
-      setTotalComments(count || 0);
-      
-      // Get hidden comments data
-      const hiddenData = commentsWithReplies.filter(c => hiddenComments.includes(c.id));
-      setHiddenCommentData(hiddenData);
-    } else if (!error) {
-      setComments([]);
-      setTotalComments(count || 0);
-      setHiddenCommentData([]);
+    } catch {
+      /* noop */
+    } finally {
+      setLoading(false);
     }
-  }, [personId, filter, page, sortBy, hiddenComments]);
-
-  const handleUnhide = (commentId: string) => {
-    const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
-    const updated = hidden.filter((id: string) => id !== commentId);
-    localStorage.setItem('hiddenComments', JSON.stringify(updated));
-    setHiddenComments(updated);
-  };
-
-  const handleClearAllHidden = () => {
-    if (confirm('すべての非表示コメントを再表示しますか？')) {
-      localStorage.setItem('hiddenComments', JSON.stringify([]));
-      setHiddenComments([]);
-    }
-  };
+  }, [personId, filter, sort, page]);
 
   useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+    if (hasVoted) fetchComments();
+  }, [hasVoted, fetchComments]);
 
-  const totalPages = Math.ceil(totalComments / commentsPerPage);
+  const totalPages = Math.max(1, Math.ceil(total / 20));
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <div className="mb-6">
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-800 mb-3">
-            コメント ({totalComments})
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                filter === 'all'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-              }`}
-            >
-              すべて
-            </button>
-            <button
-              onClick={() => setFilter('like')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                filter === 'like'
-                  ? 'bg-pink-500 text-white shadow-md'
-                  : 'bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200'
-              }`}
-            >
-              好き派
-            </button>
-            <button
-              onClick={() => setFilter('dislike')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                filter === 'dislike'
-                  ? 'bg-purple-500 text-white shadow-md'
-                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
-              }`}
-            >
-              嫌い派
-            </button>
-          </div>
-        </div>
-        
-        {/* Sort buttons */}
+    <section className="bg-panel border border-line rounded-2xl p-6">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <h2 className="text-xl font-bold">コメント（{total}）</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-gray-600">並び替え：</span>
+          {(
+            [
+              ["all", "すべて"],
+              ["like", "好き派"],
+              ["dislike", "嫌い派"],
+            ] as [FilterType, string][]
+          ).map(([f, label]) => (
+            <button
+              key={f}
+              onClick={() => {
+                setFilter(f);
+                setPage(1);
+              }}
+              className={`px-3 py-1 rounded-full text-sm font-medium border transition ${
+                filter === f
+                  ? f === "like"
+                    ? "bg-like text-white border-like"
+                    : f === "dislike"
+                    ? "bg-dislike text-white border-dislike"
+                    : "bg-x text-white border-x"
+                  : "bg-panel2 text-mut border-line hover:text-txt"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <span className="text-mut text-sm ml-1">並び:</span>
           <button
-            onClick={() => setSortBy('newest')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              sortBy === 'newest'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+            onClick={() => {
+              setSort("newest");
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              sort === "newest" ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line"
             }`}
           >
-            新しい順
+            新着順
           </button>
           <button
-            onClick={() => setSortBy('popular')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              sortBy === 'popular'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+            onClick={() => {
+              setSort("popular");
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+              sort === "popular" ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line"
             }`}
           >
             人気順
@@ -210,760 +122,489 @@ export default function CommentSection({ personId, hasVoted }: CommentSectionPro
         </div>
       </div>
 
-      {!hasVoted && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <p className="text-yellow-800 text-center">
-            コメントを見るには、まず投票してください
-          </p>
+      {!hasVoted ? (
+        <div className="bg-panel2 border border-line rounded-xl p-6 text-center text-mut">
+          コメントを見るには、まず上の「好き / 嫌い」に投票してください
         </div>
-      )}
-
-      {hasVoted && (
+      ) : (
         <>
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <CommentItem 
-                key={comment.id} 
-                comment={comment} 
-                onHide={(id) => {
-                  setHiddenComments([...hiddenComments, id]);
-                  fetchComments();
-                }}
-                onUpdate={fetchComments}
-              />
+          <CommentForm personId={personId} onPosted={fetchComments} />
+          <div className={`space-y-4 mt-6 ${loading ? "opacity-60" : ""}`}>
+            {comments.map((c) => (
+              <CommentItem key={c.id} comment={c} onUpdate={fetchComments} />
             ))}
+            {comments.length === 0 && !loading && (
+              <p className="text-center text-mut py-8 text-sm">
+                まだコメントがありません。最初のコメントを書いてみよう！
+              </p>
+            )}
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6 px-2">
+            <div className="flex justify-center items-center gap-3 mt-6">
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition text-sm sm:text-base"
+                className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
               >
                 前へ
               </button>
-              <span className="px-2 sm:px-4 py-2 text-gray-700 text-sm sm:text-base whitespace-nowrap">
+              <span className="text-sm text-mut">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
-                className="flex-shrink-0 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition text-sm sm:text-base"
+                className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
               >
                 次へ
               </button>
             </div>
           )}
-
-          {/* Hidden Comments Section */}
-          {hiddenComments.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => setShowHiddenComments(!showHiddenComments)}
-                  className="text-lg font-bold text-gray-800 hover:text-purple-600 transition flex items-center gap-2"
-                >
-                  <EyeOff className="w-5 h-5" />
-                  非表示中のコメント ({hiddenComments.length}件)
-                  <span className="text-sm">{showHiddenComments ? '▼' : '▶'}</span>
-                </button>
-                <button
-                  onClick={handleClearAllHidden}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm"
-                >
-                  すべて再表示
-                </button>
-              </div>
-
-              {showHiddenComments && (
-                <div className="space-y-3">
-                  {hiddenCommentData.map((comment) => (
-                    <div key={comment.id} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-sm text-gray-500">#{comment.comment_number}</span>
-                          <span className="font-medium text-gray-800">{comment.name || '匿名'}</span>
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              comment.vote_type === 'like'
-                                ? 'bg-pink-100 text-pink-700'
-                                : 'bg-purple-100 text-purple-700'
-                            }`}
-                          >
-                            @{comment.vote_type === 'like' ? '好き派' : '嫌い派'}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleUnhide(comment.id)}
-                          className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition flex items-center gap-1"
-                        >
-                          <EyeOff className="w-3 h-3" />
-                          再表示
-                        </button>
-                      </div>
-                      <p className="text-gray-600 text-sm">{comment.content}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </>
       )}
-    </div>
+    </section>
   );
 }
 
-type CommentWithReplies = Comment & { _replies?: Comment[] };
+// ---------------- 投稿フォーム ----------------
 
-function CommentItem({ comment, onHide, onUpdate }: { comment: CommentWithReplies; onHide: (id: string) => void; onUpdate: () => void }) {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [localComment, setLocalComment] = useState(comment);
-  const [hasVoted, setHasVoted] = useState<'good' | 'bad' | null>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+function CommentForm({
+  personId,
+  parentCommentId,
+  parentNumber,
+  onPosted,
+}: {
+  personId: string;
+  parentCommentId?: string;
+  parentNumber?: number;
+  onPosted: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
+  const [ageGroup, setAgeGroup] = useState("");
+  const [voteType, setVoteType] = useState<"like" | "dislike">("like");
+  const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
+  const [tweet, setTweet] = useState(true);
+  const [busy, setBusy] = useState(false);
 
-  // 返信データをpropsから取得（最適化）
-  const [replies, setReplies] = useState<Comment[]>(comment._replies || []);
+  const count = getCharCount(content);
 
-  useEffect(() => {
-    setLocalComment(comment);
-    // 返信データを更新
-    setReplies(comment._replies || []);
-    
-    // Check if user has already voted on this comment
-    const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-    if (votedComments[comment.id]) {
-      setHasVoted(votedComments[comment.id]);
-    }
-  }, [comment]);
-
-  const handleGoodBad = async (type: 'good' | 'bad') => {
-    const cookieId = Cookies.get('voter_id') || '';
-    const field = type === 'good' ? 'good_count' : 'bad_count';
-    
-    // If clicking the same button again, cancel the vote
-    if (hasVoted === type) {
-      // 新システム: comment_reactionsから削除
-      await toggleCommentReaction(comment.id, type, cookieId);
-      
-      // Update local state
-      const newValue = Math.max(0, localComment[field] - 1);
-      setLocalComment({ ...localComment, [field]: newValue });
-      
-      // Remove from localStorage
-      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-      delete votedComments[comment.id];
-      localStorage.setItem('votedComments', JSON.stringify(votedComments));
-      setHasVoted(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) {
+      alert("コメントを入力してください");
       return;
     }
-    
-    // If already voted for the opposite, prevent changing vote
-    if (hasVoted) {
-      // 新システム: comment_reactionsで評価を切り替え
-      await toggleCommentReaction(comment.id, type, cookieId);
-      
-      // Update local state
-      const oppositeField = type === 'good' ? 'bad_count' : 'good_count';
-      setLocalComment({ 
-        ...localComment, 
-        [field]: localComment[field] + 1,
-        [oppositeField]: Math.max(0, localComment[oppositeField] - 1)
-      });
-      
-      // Update localStorage
-      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-      votedComments[comment.id] = type;
-      localStorage.setItem('votedComments', JSON.stringify(votedComments));
-      setHasVoted(type);
+    if (count > MAX_COMMENT_CHARS) {
+      alert(`コメントは全角${Math.floor(MAX_COMMENT_CHARS / 2)}文字（半角${MAX_COMMENT_CHARS}文字）以内です`);
       return;
     }
-
-    // Add new vote
-    const newValue = localComment[field] + 1;
-    
-    // 新システム: comment_reactionsに追加
-    await toggleCommentReaction(comment.id, type, cookieId);
-    
-    // Update local state
-    setLocalComment({ ...localComment, [field]: newValue });
-    
-    // Save to localStorage
-    const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-    votedComments[comment.id] = type;
-    localStorage.setItem('votedComments', JSON.stringify(votedComments));
-    setHasVoted(type);
-  };
-
-  const handleReport = async (reason: string, details: string) => {
-    setIsReportSubmitting(true);
-    
-    // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
-    const insertData: { comment_id: string; reason: string; details?: string | null } = {
-      comment_id: comment.id,
-      reason: reason,
-    };
-    
-    // detailsが空でない場合のみ追加
-    if (details) {
-      insertData.details = details;
+    const token = Cookies.get("user_token");
+    if (!token) {
+      alert("投稿には利用規約への同意が必要です。ページを再読み込みしてください。");
+      return;
     }
-    
-    const { error } = await supabase.from('reports').insert(insertData);
-    
-    setIsReportSubmitting(false);
-    
-    if (error) {
-      console.error('通報エラー詳細:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
+    setBusy(true);
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personId,
+          name: name.trim() || null,
+          gender: gender || null,
+          ageGroup: ageGroup || null,
+          voteType,
+          content: content.trim(),
+          parentCommentId: parentCommentId ?? null,
+          userToken: token,
+        }),
       });
-      alert(`通報に失敗しました\n\nエラー: ${error.message}`);
-    } else {
-      alert('通報を受け付けました。\n\nご協力ありがとうございます。');
-      setShowReportModal(false);
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || "投稿に失敗しました");
+        return;
+      }
+      if (tweet && !parentCommentId) {
+        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】としてコメントを投稿しました！\n\n「${content.trim()}」\n\n#ヒカマーズ好き嫌いcom`;
+        window.open(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
+          "_blank"
+        );
+      }
+      setName("");
+      setContent(parentNumber ? `>>${parentNumber}\n` : "");
+      if (!parentCommentId) alert("コメントを投稿しました");
+      onPosted();
+    } catch {
+      alert("投稿に失敗しました");
+    } finally {
+      setBusy(false);
     }
-  };
-
-  const handleHide = () => {
-    // LocalStorageに隠すコメントのIDを保存
-    const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
-    hidden.push(comment.id);
-    localStorage.setItem('hiddenComments', JSON.stringify(hidden));
-    onHide(comment.id);
-    alert('コメントを非表示にしました');
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">#{comment.comment_number}</span>
-          <span className="font-medium text-gray-800">{comment.name || '匿名'}</span>
-          <span
-            className={`text-xs px-2 py-1 rounded ${
-              comment.vote_type === 'like'
-                ? 'bg-pink-100 text-pink-700'
-                : 'bg-purple-100 text-purple-700'
-            }`}
-          >
-            @{comment.vote_type === 'like' ? '好き派' : '嫌い派'}
-          </span>
-          <span className="text-xs text-gray-500">
-            {formatJST(comment.created_at, 'yyyy-MM-dd HH:mm:ss')}
+    <form onSubmit={submit} className="bg-panel2 border border-line rounded-xl p-4 space-y-3">
+      {parentNumber && (
+        <p className="text-sm font-bold text-mut">&gt;&gt;{parentNumber} への返信</p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, MAX_NAME_LENGTH))}
+          placeholder="名前（任意・未入力で匿名）"
+          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+        />
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+        >
+          <option value="">性別（任意）</option>
+          {GENDERS.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
+        <select
+          value={ageGroup}
+          onChange={(e) => setAgeGroup(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+        >
+          <option value="">年代（任意）</option>
+          {AGE_GROUPS.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setVoteType("like")}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
+            voteType === "like"
+              ? "bg-gradient-to-r from-like to-pink-600 text-white"
+              : "bg-panel text-mut border border-line hover:text-txt"
+          }`}
+        >
+          好き派として投稿
+        </button>
+        <button
+          type="button"
+          onClick={() => setVoteType("dislike")}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
+            voteType === "dislike"
+              ? "bg-gradient-to-r from-dislike to-indigo-600 text-white"
+              : "bg-panel text-mut border border-line hover:text-txt"
+          }`}
+        >
+          嫌い派として投稿
+        </button>
+      </div>
+
+      <div>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={parentNumber ? `>>${parentNumber}\n返信内容を入力...` : "コメントを入力...（全角140文字まで）"}
+          rows={parentNumber ? 3 : 4}
+          className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
+        />
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-mut">URLの投稿はできません</p>
+          <span className={`text-xs ${count > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
+            {count} / {MAX_COMMENT_CHARS}
           </span>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="text-gray-500 hover:text-red-500 transition"
-            title="通報"
+      </div>
+
+      {!parentCommentId && (
+        <label className="flex items-center gap-2 text-sm text-mut cursor-pointer">
+          <input
+            type="checkbox"
+            checked={tweet}
+            onChange={(e) => setTweet(e.target.checked)}
+            className="w-4 h-4 accent-sky-500"
+          />
+          Xでツイートする
+        </label>
+      )}
+
+      <button
+        type="submit"
+        disabled={busy}
+        className={`w-full py-2.5 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 ${
+          busy ? "bg-panel text-mut cursor-not-allowed" : "bg-gradient-to-r from-like to-dislike hover:opacity-90"
+        }`}
+      >
+        <Send className="w-4 h-4" />
+        {busy ? "投稿中..." : parentCommentId ? "返信を投稿" : "コメントを投稿"}
+      </button>
+    </form>
+  );
+}
+
+// ---------------- コメント表示 ----------------
+
+function CommentItem({
+  comment,
+  onUpdate,
+}: {
+  comment: CommentWithReplies;
+  onUpdate: () => void;
+}) {
+  const [local, setLocal] = useState<CommentRow>(comment);
+  const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
+  const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
+  const [showReply, setShowReply] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
+
+  useEffect(() => {
+    setLocal(comment);
+    setReplies(comment.replies);
+    try {
+      const voted = JSON.parse(localStorage.getItem("votedComments") ?? "{}");
+      setMyReaction(voted[comment.id] ?? null);
+    } catch {
+      setMyReaction(null);
+    }
+  }, [comment]);
+
+  const react = async (type: "good" | "bad") => {
+    const token = Cookies.get("user_token") ?? "";
+    try {
+      const res = await fetch("/api/comments/reaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId: comment.id, reactionType: type, userToken: token }),
+      });
+      const data = await res.json();
+      if (!data.success) return;
+      setLocal({ ...local, good_count: data.good, bad_count: data.bad });
+      setMyReaction(data.myReaction);
+      const voted = JSON.parse(localStorage.getItem("votedComments") ?? "{}");
+      if (data.myReaction) voted[comment.id] = data.myReaction;
+      else delete voted[comment.id];
+      localStorage.setItem("votedComments", JSON.stringify(voted));
+    } catch {
+      /* noop */
+    }
+  };
+
+  const hide = () => {
+    const hidden = JSON.parse(localStorage.getItem("hiddenComments") ?? "[]");
+    if (!hidden.includes(comment.id)) hidden.push(comment.id);
+    localStorage.setItem("hiddenComments", JSON.stringify(hidden));
+    onUpdate();
+    alert("コメントを非表示にしました");
+  };
+
+  const report = async (reason: ReportReason, details: string) => {
+    setReportBusy(true);
+    try {
+      const token = Cookies.get("user_token") ?? "";
+      const res = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId: comment.id, reason, details, userToken: token }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("通報を受け付けました。\n\nご協力ありがとうございます。");
+        setShowReport(false);
+      } else {
+        alert(data.error || "通報に失敗しました");
+      }
+    } catch {
+      alert("通報に失敗しました");
+    } finally {
+      setReportBusy(false);
+    }
+  };
+
+  return (
+    <div className="border border-line rounded-xl p-4">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          <span className="text-mut text-xs">#{comment.comment_number}</span>
+          <span className="font-medium">{comment.name || "匿名"}</span>
+          {(comment.gender || comment.age_group) && (
+            <span className="text-xs text-mut">
+              （{[comment.gender, comment.age_group].filter(Boolean).join("・")}）
+            </span>
+          )}
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full ${
+              comment.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
+            }`}
           >
+            {comment.vote_type === "like" ? "好き派" : "嫌い派"}
+          </span>
+          <span className="text-xs text-mut">{timeAgo(comment.created_at)}</span>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title="通報">
             <Flag className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleHide}
-            className="text-gray-500 hover:text-gray-700 transition"
-            title="非表示"
-          >
+          <button onClick={hide} className="text-mut hover:text-txt transition" title="非表示">
             <EyeOff className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <p className="text-gray-800 mb-3">{comment.content}</p>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed mb-3">{comment.content}</p>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 text-sm">
         <button
-          onClick={() => handleGoodBad('good')}
-          disabled={hasVoted !== null && hasVoted !== 'good'}
-          className={`flex items-center gap-1 text-sm transition ${
-            hasVoted === 'good'
-              ? 'text-green-600 font-bold cursor-pointer hover:text-green-700'
-              : hasVoted
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-600 hover:text-green-600'
+          onClick={() => react("good")}
+          className={`flex items-center gap-1 transition ${
+            myReaction === "good" ? "text-good font-bold" : "text-mut hover:text-good"
           }`}
-          title={hasVoted === 'good' ? 'クリックで評価を解除' : hasVoted ? '既に評価済みです' : 'グッド'}
         >
           <ThumbsUp className="w-4 h-4" />
-          {localComment.good_count}
+          {local.good_count}
         </button>
         <button
-          onClick={() => handleGoodBad('bad')}
-          disabled={hasVoted !== null && hasVoted !== 'bad'}
-          className={`flex items-center gap-1 text-sm transition ${
-            hasVoted === 'bad'
-              ? 'text-red-600 font-bold cursor-pointer hover:text-red-700'
-              : hasVoted
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-600 hover:text-red-600'
+          onClick={() => react("bad")}
+          className={`flex items-center gap-1 transition ${
+            myReaction === "bad" ? "text-bad font-bold" : "text-mut hover:text-bad"
           }`}
-          title={hasVoted === 'bad' ? 'クリックで評価を解除' : hasVoted ? '既に評価済みです' : 'バッド'}
         >
           <ThumbsDown className="w-4 h-4" />
-          {localComment.bad_count}
+          {local.bad_count}
         </button>
         <button
-          onClick={() => setShowReplyForm(!showReplyForm)}
-          className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600 transition"
+          onClick={() => setShowReply(!showReply)}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
         >
           <MessageCircle className="w-4 h-4" />
           返信
         </button>
       </div>
 
-      {/* Reply Form */}
-      {showReplyForm && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-bold text-gray-700 mb-3">
-            &gt;&gt;{comment.comment_number} への返信
-          </h4>
-          <ReplyForm
+      {replies.length > 0 && (
+        <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
+          {replies.map((r) => (
+            <ReplyItem key={r.id} reply={r} parentNumber={comment.comment_number} onUpdate={onUpdate} />
+          ))}
+        </div>
+      )}
+
+      {showReply && (
+        <div className="mt-3">
+          <CommentForm
             personId={comment.person_id}
             parentCommentId={comment.id}
-            parentCommentNumber={comment.comment_number}
-            onReplyPosted={() => {
-              setShowReplyForm(false);
-              onUpdate(); // 親コンポーネントで全データを再取得
+            parentNumber={comment.comment_number}
+            onPosted={() => {
+              setShowReply(false);
+              onUpdate();
             }}
           />
         </div>
       )}
 
-      {/* Replies */}
-      {replies.length > 0 && (
-        <div className="mt-4 pl-6 border-l-2 border-gray-300 space-y-3">
-          {replies.map((reply) => (
-            <ReplyItem 
-              key={reply.id} 
-              reply={reply} 
-              parentCommentNumber={comment.comment_number}
-              onUpdate={onUpdate}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Report Modal */}
       <ReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReport}
-        isSubmitting={isReportSubmitting}
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+        onSubmit={report}
+        isSubmitting={reportBusy}
       />
     </div>
   );
 }
 
-// Reply Item Component
-function ReplyItem({ 
-  reply, 
-  parentCommentNumber,
-  onUpdate 
-}: { 
-  reply: Comment; 
-  parentCommentNumber: number;
+function ReplyItem({
+  reply,
+  parentNumber,
+  onUpdate,
+}: {
+  reply: CommentRow;
+  parentNumber: number;
   onUpdate: () => void;
 }) {
-  const [localReply, setLocalReply] = useState(reply);
-  const [hasVoted, setHasVoted] = useState<'good' | 'bad' | null>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [isReportSubmitting, setIsReportSubmitting] = useState(false);
+  const [local, setLocal] = useState(reply);
+  const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
 
   useEffect(() => {
-    setLocalReply(reply);
-    
-    // Check if user has already voted on this reply
-    const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-    if (votedComments[reply.id]) {
-      setHasVoted(votedComments[reply.id]);
+    setLocal(reply);
+    try {
+      const voted = JSON.parse(localStorage.getItem("votedComments") ?? "{}");
+      setMyReaction(voted[reply.id] ?? null);
+    } catch {
+      setMyReaction(null);
     }
   }, [reply]);
 
-  const handleGoodBad = async (type: 'good' | 'bad') => {
-    const cookieId = Cookies.get('voter_id') || '';
-    const field = type === 'good' ? 'good_count' : 'bad_count';
-    
-    // If clicking the same button again, cancel the vote
-    if (hasVoted === type) {
-      const newValue = Math.max(0, localReply[field] - 1);
-      
-      // 新システム: comment_reactionsから削除
-      await toggleCommentReaction(reply.id, type, cookieId);
-      
-      setLocalReply({ ...localReply, [field]: newValue });
-      
-      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-      delete votedComments[reply.id];
-      localStorage.setItem('votedComments', JSON.stringify(votedComments));
-      setHasVoted(null);
-      return;
-    }
-    
-    if (hasVoted) {
-      // 新システム: comment_reactionsで評価を切り替え
-      await toggleCommentReaction(reply.id, type, cookieId);
-      
-      const oppositeField = type === 'good' ? 'bad_count' : 'good_count';
-      setLocalReply({ 
-        ...localReply, 
-        [field]: localReply[field] + 1,
-        [oppositeField]: Math.max(0, localReply[oppositeField] - 1)
-      });
-      
-      const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-      votedComments[reply.id] = type;
-      localStorage.setItem('votedComments', JSON.stringify(votedComments));
-      setHasVoted(type);
-      return;
-    }
-
-    const newValue = localReply[field] + 1;
-    
-    // 新システム: comment_reactionsに追加
-    await toggleCommentReaction(reply.id, type, cookieId);
-    
-    setLocalReply({ ...localReply, [field]: newValue });
-    
-    const votedComments = JSON.parse(localStorage.getItem('votedComments') || '{}');
-    votedComments[reply.id] = type;
-    localStorage.setItem('votedComments', JSON.stringify(votedComments));
-    setHasVoted(type);
-  };
-
-  const handleReport = async (reason: string, details: string) => {
-    setIsReportSubmitting(true);
-    
-    // detailsカラムが存在しない場合に備えて、まず詳細なしで試す
-    const insertData: { comment_id: string; reason: string; details?: string | null } = {
-      comment_id: reply.id,
-      reason: reason,
-    };
-    
-    // detailsが空でない場合のみ追加
-    if (details) {
-      insertData.details = details;
-    }
-    
-    const { error } = await supabase.from('reports').insert(insertData);
-    
-    setIsReportSubmitting(false);
-    
-    if (error) {
-      console.error('通報エラー詳細:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      });
-      alert(`通報に失敗しました\n\nエラー: ${error.message}`);
-    } else {
-      alert('通報を受け付けました。\n\nご協力ありがとうございます。');
-      setShowReportModal(false);
-    }
-  };
-
-  const handleHide = () => {
-    const hidden = JSON.parse(localStorage.getItem('hiddenComments') || '[]');
-    hidden.push(reply.id);
-    localStorage.setItem('hiddenComments', JSON.stringify(hidden));
-    onUpdate();
-    alert('返信を非表示にしました');
-  };
-
-  return (
-    <div className="text-sm border border-gray-200 rounded-lg p-3 bg-white">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-gray-500">&gt;&gt;{parentCommentNumber}</span>
-          <span className="font-medium text-gray-800">{reply.name || '匿名'}</span>
-          <span
-            className={`text-xs px-2 py-1 rounded ${
-              reply.vote_type === 'like'
-                ? 'bg-pink-100 text-pink-700'
-                : 'bg-purple-100 text-purple-700'
-            }`}
-          >
-            @{reply.vote_type === 'like' ? '好き派' : '嫌い派'}
-          </span>
-          <span className="text-xs text-gray-500">
-            {formatJST(reply.created_at, 'yyyy-MM-dd HH:mm:ss')}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="text-gray-500 hover:text-red-500 transition"
-            title="通報"
-          >
-            <Flag className="w-3 h-3" />
-          </button>
-          <button
-            onClick={handleHide}
-            className="text-gray-500 hover:text-gray-700 transition"
-            title="非表示"
-          >
-            <EyeOff className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-
-      <p className="text-gray-700 mb-2">{reply.content}</p>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => handleGoodBad('good')}
-          disabled={hasVoted !== null && hasVoted !== 'good'}
-          className={`flex items-center gap-1 text-xs transition ${
-            hasVoted === 'good'
-              ? 'text-green-600 font-bold cursor-pointer hover:text-green-700'
-              : hasVoted
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-600 hover:text-green-600'
-          }`}
-          title={hasVoted === 'good' ? 'クリックで評価を解除' : hasVoted ? '既に評価済みです' : 'グッド'}
-        >
-          <ThumbsUp className="w-3 h-3" />
-          {localReply.good_count}
-        </button>
-        <button
-          onClick={() => handleGoodBad('bad')}
-          disabled={hasVoted !== null && hasVoted !== 'bad'}
-          className={`flex items-center gap-1 text-xs transition ${
-            hasVoted === 'bad'
-              ? 'text-red-600 font-bold cursor-pointer hover:text-red-700'
-              : hasVoted
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-gray-600 hover:text-red-600'
-          }`}
-          title={hasVoted === 'bad' ? 'クリックで評価を解除' : hasVoted ? '既に評価済みです' : 'バッド'}
-        >
-          <ThumbsDown className="w-3 h-3" />
-          {localReply.bad_count}
-        </button>
-      </div>
-
-      {/* Report Modal */}
-      <ReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        onSubmit={handleReport}
-        isSubmitting={isReportSubmitting}
-      />
-    </div>
-  );
-}
-
-// Reply Form Component
-function ReplyForm({
-  personId,
-  parentCommentId,
-  parentCommentNumber,
-  onReplyPosted,
-}: {
-  personId: string;
-  parentCommentId: string;
-  parentCommentNumber: number;
-  onReplyPosted: () => void;
-}) {
-  const [name, setName] = useState('');
-  const [userId, setUserId] = useState('');
-  const [content, setContent] = useState(`>>${parentCommentNumber}\n`);
-  const [selectedVoteType, setSelectedVoteType] = useState<'like' | 'dislike'>('like');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const MAX_CHARS = 280;
-  const MAX_NAME_LENGTH = 50;
-
-  // 全角文字を2、半角文字を1としてカウント
-  const getCharCount = (text: string): number => {
-    let count = 0;
-    for (let i = 0; i < text.length; i++) {
-      const charCode = text.charCodeAt(i);
-      count += charCode <= 0x7F ? 1 : 2;
-    }
-    return count;
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    if (newName.length <= MAX_NAME_LENGTH) {
-      setName(newName);
-    }
-  };
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    const charCount = getCharCount(newContent);
-    
-    if (charCount <= MAX_CHARS) {
-      setContent(newContent);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const charCount = getCharCount(content);
-    if (charCount > MAX_CHARS) {
-      alert(`返信は全角${Math.floor(MAX_CHARS / 2)}文字（半角${MAX_CHARS}文字）以内で入力してください`);
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const react = async (type: "good" | "bad") => {
+    const token = Cookies.get("user_token") ?? "";
     try {
-      // Check if user has agreed to terms
-      const userToken = Cookies.get('user_token');
-      if (!userToken) {
-        alert('返信投稿には利用規約への同意が必要です。ページをリロードして利用規約に同意してください。');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Get next comment number
-      const { count } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true })
-        .eq('person_id', personId);
-
-      const commentNumber = (count || 0) + 1;
-
-      // Post reply via API
-      const response = await fetch('/api/comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          personId,
-          commentNumber,
-          name: name.trim() || null,
-          userId: userId.trim() || null,
-          voteType: selectedVoteType,
-          content: content.trim(),
-          parentCommentId,
-          userToken,
-        }),
+      const res = await fetch("/api/comments/reaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId: reply.id, reactionType: type, userToken: token }),
       });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        const errorMsg = data.error || '返信の投稿に失敗しました';
-        alert(errorMsg);
-        console.error('Reply post failed:', data);
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Reset form and close
-      setName('');
-      setUserId('');
-      setContent(`>>${parentCommentNumber}\n`);
-      onReplyPosted();
-    } catch (error) {
-      console.error('返信投稿エラー:', error);
-      alert('返信の投稿に失敗しました');
-    } finally {
-      setIsSubmitting(false);
+      const data = await res.json();
+      if (!data.success) return;
+      setLocal({ ...local, good_count: data.good, bad_count: data.bad });
+      setMyReaction(data.myReaction);
+      const voted = JSON.parse(localStorage.getItem("votedComments") ?? "{}");
+      if (data.myReaction) voted[reply.id] = data.myReaction;
+      else delete voted[reply.id];
+      localStorage.setItem("votedComments", JSON.stringify(voted));
+    } catch {
+      /* noop */
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-xs text-gray-600">名前（任意）</label>
-          <span className={`text-xs ${name.length > MAX_NAME_LENGTH ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-            {name.length}/{MAX_NAME_LENGTH}
+    <div className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
+      <div className="flex items-center gap-2 flex-wrap mb-1.5">
+        <span className="text-mut text-xs">&gt;&gt;{parentNumber}</span>
+        <span className="font-medium">{reply.name || "匿名"}</span>
+        {(reply.gender || reply.age_group) && (
+          <span className="text-xs text-mut">
+            （{[reply.gender, reply.age_group].filter(Boolean).join("・")}）
           </span>
-        </div>
-        <input
-          type="text"
-          value={name}
-          onChange={handleNameChange}
-          placeholder="匿名"
-          maxLength={MAX_NAME_LENGTH}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
-        />
-      </div>
-      
-      <div>
-        <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="ID（任意）"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setSelectedVoteType('like')}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition ${
-            selectedVoteType === 'like'
-              ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        )}
+        <span
+          className={`text-xs px-2 py-0.5 rounded-full ${
+            reply.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
           }`}
         >
-          好き派
-        </button>
+          {reply.vote_type === "like" ? "好き派" : "嫌い派"}
+        </span>
+        <span className="text-xs text-mut">{timeAgo(reply.created_at)}</span>
+        <span className="ml-auto" />
+      </div>
+      <p className="whitespace-pre-wrap mb-2">{reply.content}</p>
+      <div className="flex items-center gap-3 text-xs">
         <button
-          type="button"
-          onClick={() => setSelectedVoteType('dislike')}
-          className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition ${
-            selectedVoteType === 'dislike'
-              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          onClick={() => react("good")}
+          className={`flex items-center gap-1 transition ${
+            myReaction === "good" ? "text-good font-bold" : "text-mut hover:text-good"
           }`}
         >
-          嫌い派
-        </button>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-xs text-gray-600">返信内容</label>
-          <span className={`text-xs ${getCharCount(content) > MAX_CHARS ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-            {getCharCount(content)} / {MAX_CHARS}
-          </span>
-        </div>
-        <textarea
-          value={content}
-          onChange={handleContentChange}
-          placeholder={`>>${parentCommentNumber}\n返信内容を入力...`}
-          rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 placeholder:text-gray-500 text-sm"
-          required
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          ※全角{Math.floor(MAX_CHARS / 2)}文字（半角{MAX_CHARS}文字）まで
-        </p>
-      </div>
-
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-        >
-          {isSubmitting ? '投稿中...' : '返信を投稿'}
+          <ThumbsUp className="w-3.5 h-3.5" />
+          {local.good_count}
         </button>
         <button
-          type="button"
-          onClick={onReplyPosted}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition text-sm"
+          onClick={() => react("bad")}
+          className={`flex items-center gap-1 transition ${
+            myReaction === "bad" ? "text-bad font-bold" : "text-mut hover:text-bad"
+          }`}
         >
-          キャンセル
+          <ThumbsDown className="w-3.5 h-3.5" />
+          {local.bad_count}
         </button>
       </div>
-    </form>
+    </div>
   );
 }

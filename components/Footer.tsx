@@ -1,0 +1,28 @@
+import Link from "next/link";
+import { SITE_NAME } from "@/lib/site";
+
+export default function Footer() {
+  return (
+    <footer className="border-t border-line mt-10">
+      <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-mut space-y-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="font-bold text-txt">{SITE_NAME}</span>
+          <Link href="/terms" className="hover:text-txt transition">
+            利用規約
+          </Link>
+          <Link href="/ranking/popularity" className="hover:text-txt transition">
+            ランキング
+          </Link>
+          <Link href="/people" className="hover:text-txt transition">
+            人物一覧
+          </Link>
+        </div>
+        <p className="leading-relaxed">
+          本サイトは誰でも匿名でXユーザーの好き嫌い・評価を書き込める非公式のまとめサイトです。X Corp.
+          および各対象者とは関係ありません。誹謗中傷・個人情報の投稿は禁止です。
+        </p>
+        <p>© {new Date().getFullYear()} {SITE_NAME}</p>
+      </div>
+    </footer>
+  );
+}

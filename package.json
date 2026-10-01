@@ -1,23 +1,24 @@
 {
   "name": "sukikirai",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
+  "packageManager": "pnpm@10.5.2",
   "pnpm": {
     "onlyBuiltDependencies": ["@tailwindcss/oxide", "sharp", "unrs-resolver"]
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.546.0",
     "next": "15.5.6",
+    "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
@@ -26,6 +27,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
+    "@types/pg": "^8.11.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

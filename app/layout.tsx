@@ -1,48 +1,39 @@
-﻿import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+﻿import type { Metadata, Viewport } from "next";
+import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
-import { WebsiteStructuredData } from "@/components/StructuredData";
-import ClientLayout from "@/components/ClientLayout";
+import { SITE_URL, SITE_NAME, SITE_DESC } from "@/lib/site";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
-  display: 'swap', // フォント読み込み最適化
+  weight: ["400", "500", "700", "900"],
+  variable: "--font-noto",
+  display: "swap",
   preload: true,
-  fallback: ['system-ui', 'arial'], // フォールバック追加
 });
 
-// rebuild trigger
 export const metadata: Metadata = {
-  metadataBase: new URL('https://hikamerssukikirai.hikamer.f5.si'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "ヒカマーズ好き嫌い.com - ヒカマー界隈の好き嫌い投票サイト",
-    template: "%s | ヒカマーズ好き嫌い.com"
+    default: `${SITE_NAME} - Xユーザーの好き嫌い・評価サイト`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "ヒカマー界隈のあの人のこと好き？嫌い？みんなの意見を見てコメントしよう！",
-  keywords: ["ヒカマー", "好き嫌い", "投票", "ランキング"],
-  icons: { icon: "/icon" },
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
+  description: SITE_DESC,
+  keywords: ["好き嫌い", "評価", "X", "ヒカマー", "ランキング", "世論調査", "レビュー"],
+  formatDetection: { email: false, address: false, telephone: false },
   openGraph: {
     type: "website",
     locale: "ja_JP",
     url: "/",
-    title: "ヒカマーズ好き嫌い.com - ヒカマー界隈の好き嫌い投票サイト",
-    description: "ヒカマー界隈のあの人のこと好き？嫌い？みんなの意見を見てコメントしよう！",
-    siteName: "ヒカマーズ好き嫌い.com",
-    images: ["/opengraph-image.png"],
+    title: `${SITE_NAME} - Xユーザーの好き嫌い・評価サイト`,
+    description: SITE_DESC,
+    siteName: SITE_NAME,
+    images: ["/og.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ヒカマーズ好き嫌い.com",
-    description: "ヒカマー界隈のあの人のこと好き？嫌い？",
-    creator: "@hikamers",
-    site: "@hikamers",
-    images: ["/opengraph-image.png"],
+    title: SITE_NAME,
+    description: SITE_DESC,
+    images: ["/og.png"],
   },
   robots: {
     index: true,
@@ -50,39 +41,23 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
-  verification: {
-    // Google Search Console
-    // google: 'your-google-verification-code',
-    // Bing Webmaster Tools
-    // other: 'your-bing-verification-code',
-  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0f16",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja">
-      <head>
-        <WebsiteStructuredData />
-        {/* DNS Prefetch & Preconnect for Supabase */}
-        <link rel="dns-prefetch" href="https://hppzdwxlldhmxjbtcepx.supabase.co" />
-        <link rel="preconnect" href="https://hppzdwxlldhmxjbtcepx.supabase.co" crossOrigin="anonymous" />
-      </head>
-      <body
-        className={`${geistSans.variable} antialiased`}
-      >
-        <ClientLayout>
-          {children}
-        </ClientLayout>
-      </body>
+    <html lang="ja" className={notoSansJP.variable}>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

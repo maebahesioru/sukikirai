@@ -1,137 +1,74 @@
-'use client';
+"use client";
 
-import { Twitter, Share2, Copy, Check, Facebook, Bookmark, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState } from "react";
+import { Share2, Link2, Check } from "lucide-react";
 
-type ShareButtonsProps = {
+export default function ShareButtons({
+  personName,
+  voteType,
+  likeCount,
+  dislikeCount,
+}: {
   personName: string;
-  voteType: 'like' | 'dislike';
+  voteType: "like" | "dislike" | null;
   likeCount: number;
   dislikeCount: number;
-};
-
-export default function ShareButtons({ personName, voteType, likeCount, dislikeCount }: ShareButtonsProps) {
+}) {
   const [copied, setCopied] = useState(false);
-  
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const totalVotes = likeCount + dislikeCount;
-  const likePercentage = totalVotes > 0 ? Math.round((likeCount / totalVotes) * 100) : 0;
-  const dislikePercentage = totalVotes > 0 ? 100 - likePercentage : 0;
-  
-  const shareText = `【${voteType === 'like' ? '好き派' : '嫌い派'}】に投票しました！\n\n#${personName} のこと好き？嫌い？\n【好き派】${likePercentage}% vs【嫌い派】${dislikePercentage}%\n\n#ヒカマーズ好き嫌いcom`;
+  const total = likeCount + dislikeCount;
+  const likePct = total > 0 ? Math.round((likeCount / total) * 100) : 0;
+  const dislikePct = 100 - likePct;
+  const url = () => (typeof window !== "undefined" ? window.location.href : "");
 
-  const handleTwitterShare = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`;
-    window.open(twitterUrl, '_blank');
-  };
+  const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${likePct}% vs【嫌い派】${dislikePct}%\n#ヒカマーズ好き嫌いcom`;
 
-  const handleBlueskyShare = () => {
-    const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(shareText + ' ' + currentUrl)}`;
-    window.open(blueskyUrl, '_blank');
-  };
+  const open = (u: string) => window.open(u, "_blank");
 
-  const handleLineShare = () => {
-    const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText + ' ' + currentUrl)}`;
-    window.open(lineUrl, '_blank');
-  };
-
-  const handleFacebookShare = () => {
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareText)}`;
-    window.open(facebookUrl, '_blank');
-  };
-
-  const handleHatenaBookmarkShare = () => {
-    const hatenaUrl = `https://b.hatena.ne.jp/entry/panel/?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareText)}`;
-    window.open(hatenaUrl, '_blank');
-  };
-
-  const handleMastodonShare = () => {
-    const mastodonText = encodeURIComponent(shareText);
-    const mastodonUrl = encodeURIComponent(currentUrl);
-    // ユーザー指定の技術を使用：ポップアップウィンドウでシェア
-    const shareUrl = `https://donshare.net/share.html?text=${mastodonText}&url=${mastodonUrl}`;
-    window.open(shareUrl, 'mastodon-share', 'width=500,height=400');
-  };
-
-  const handleMisskeyShare = () => {
-    const mastodonText = encodeURIComponent(shareText);
-    const mastodonUrl = encodeURIComponent(currentUrl);
-    // ユーザー指定の技術を使用：misskeyshare.linkを使用
-    const shareUrl = `https://misskeyshare.link/share.html?text=${mastodonText}&url=${mastodonUrl}`;
-    window.open(shareUrl, 'misskey-share', 'width=500,height=400');
-  };
-
-  const handleCopyUrl = async () => {
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(url());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } catch {
+      alert("コピーに失敗しました");
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <h3 className="text-lg font-bold mb-4 text-gray-800">投票結果をシェア</h3>
-      <div className="flex gap-3 flex-wrap">
-        <button
-          onClick={handleTwitterShare}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
-        >
-          <Twitter className="w-5 h-5" />
-          X (Twitter)
-        </button>
-        <button
-          onClick={handleBlueskyShare}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-        >
-          <Share2 className="w-5 h-5" />
-          Bluesky
-        </button>
-        <button
-          onClick={handleLineShare}
-          className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
-        >
-          <Share2 className="w-5 h-5" />
-          LINE
-        </button>
-        <button
-          onClick={handleFacebookShare}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          <Facebook className="w-5 h-5" />
-          Facebook
-        </button>
-        <button
-          onClick={handleHatenaBookmarkShare}
-          className="flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition"
-        >
-          <Bookmark className="w-5 h-5" />
-          はてブ
-        </button>
-        <button
-          onClick={handleMastodonShare}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-        >
-          <MessageCircle className="w-5 h-5" />
-          Mastodon
-        </button>
-        <button
-          onClick={handleMisskeyShare}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-        >
-          <MessageCircle className="w-5 h-5" />
-          Misskey
-        </button>
-        <button
-          onClick={handleCopyUrl}
-          className="flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
-        >
-          {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-          {copied ? 'コピー完了！' : 'URLコピー'}
-        </button>
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() =>
+          open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url())}`
+          )
+        }
+        className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition flex items-center justify-center gap-2"
+      >
+        <Share2 className="w-4 h-4" />Xでシェア
+      </button>
+      <button
+        onClick={() =>
+          open(`https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url()}`)}`)
+        }
+        className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition"
+      >
+        Bluesky
+      </button>
+      <button
+        onClick={() =>
+          open(`https://line.me/R/msg/text/?${encodeURIComponent(`${text} ${url()}`)}`)
+        }
+        className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition"
+      >
+        LINE
+      </button>
+      <button
+        onClick={copy}
+        className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition flex items-center justify-center gap-2"
+      >
+        {copied ? <Check className="w-4 h-4 text-good" /> : <Link2 className="w-4 h-4" />}
+        {copied ? "コピー完了" : "リンクをコピー"}
+      </button>
     </div>
   );
 }

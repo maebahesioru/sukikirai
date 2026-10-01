@@ -1,0 +1,134 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Search, UserPlus } from "lucide-react";
+import { findPersonByHandleOrId, normalizeHandle, searchPeople } from "@/lib/queries";
+import PersonCard from "@/components/PersonCard";
+import SearchAutoAdd from "./SearchAutoAdd";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Xユーザーを検索・追加",
+  description:
+    "XのID（@xxx）や名前で検索。未登録のXユーザーはその場でページを作成して、好き嫌い投票・評価を書き込めます。",
+};
+
+type SP = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function SearchPage({ searchParams }: { searchParams: SP }) {
+  const sp = await searchParams;
+  const raw = sp.q;
+  const q = (Array.isArray(raw) ? raw[0] : raw ?? "").trim();
+  const handle = q ? normalizeHandle(q) : null;
+
+  const [exact, results] = await Promise.all([
+    handle ? findPersonByHandleOrId(handle) : Promise.resolve(null),
+    q ? searchPeople(q, 48) : Promise.resolve([]),
+  ]);
+
+  const shouldAutoAdd = !!handle && !exact;
+  const others = exact ? results.filter((r) => r.id !== exact.id) : results;
+
+  return (
+    <div className="space-y-6">
+      <section className="bg-panel border border-line rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <UserPlus className="w-6 h-6 text-x" />
+          <h1 className="text-2xl font-black">Xユーザーを検索・追加</h1>
+        </div>
+        <p className="text-sm text-mut mb-5 leading-relaxed">
+          XのID（例: <span className="text-txt font-mono">@maebahesioru2</span>）を入力すると、
+          未登録のユーザーでもその場でページを作成できます。名前やタグでの検索もOKです。
+        </p>
+        <form method="get" action="/search" className="flex gap-2 max-w-lg">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut" />
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder="@IDまたは名前（例: @maebahesioru2 / ヒカマー）"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
+          >
+            検索
+          </button>
+        </form>
+      </section>
+
+      {exact && (
+        <section>
+          <h2 className="font-bold mb-3">
+            「{q}」が見つかりました
+          </h2>
+          <div className="max-w-md">
+            <PersonCard p={{ ...exact, likes: 0, dislikes: 0, total: 0 }} />
+          </div>
+        </section>
+      )}
+
+      {shouldAutoAdd && <SearchAutoAdd query={q} />}
+
+      {!shouldAutoAdd && others.length > 0 && (
+        <section>
+          <h2 className="font-bold mb-3">
+            検索結果{exact ? "（ほか）" : ""}：{others.length}件
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {others.map((p) => (
+              <PersonCard key={p.id} p={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {q && !shouldAutoAdd && !exact && results.length === 0 && (
+        <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
+          検索結果が見つかりませんでした。
+          <br />
+          <span className="text-sm">
+            Xユーザーを追加するには、ID（@から始まる英数字）を入力してください。
+          </span>
+        </div>
+      )}
+
+      {!q && (
+        <section className="bg-panel border border-line rounded-2xl p-6">
+          <h2 className="font-bold mb-4">追加のしかた</h2>
+          <ol className="space-y-3 text-sm text-mut">
+            <li className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
+                1
+              </span>
+              上の検索欄にXのID（例: @maebahesioru2）を入力して検索
+            </li>
+            <li className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
+                2
+              </span>
+              未登録のユーザーは自動でページが作成され、プロフィール情報が取得されます
+            </li>
+            <li className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
+                3
+              </span>
+              ページで「好き / 嫌い」に投票＆8項目の評価とコメントを書き込めます
+            </li>
+          </ol>
+          <p className="text-xs text-mut mt-5">
+            ※ 誰でも匿名で追加・書き込みができます。誹謗中傷や個人情報の投稿は禁止です。
+            詳しくは
+            <Link href="/terms" className="text-x hover:underline">
+              利用規約
+            </Link>
+            をご覧ください。
+          </p>
+        </section>
+      )}
+    </div>
+  );
+}

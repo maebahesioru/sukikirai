@@ -1,143 +1,71 @@
-import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
-import { isSpamContent } from '@/lib/spam-filter';
+import { NextResponse } from "next/server";
+import { createPoll } from "@/lib/queries";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { isValidToken, str } from "@/lib/validate";
+import { isSpamContent } from "@/lib/spam-filter";
+import type { PollType } from "@/lib/types";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+const TYPES: PollType[] = ["two_choice", "three_plus_fixed", "three_plus_open"];
 
 export async function POST(request: Request) {
   try {
-    const { 
+    const body = await request.json();
+    const title = str(body.title, 200).trim();
+    const description = body.description ? str(body.description, 500).trim() : null;
+    const pollType = body.pollType as PollType;
+    const options = Array.isArray(body.options)
+      ? body.options.map((o: unknown) => str(o, 100).trim()).filter(Boolean).slice(0, 10)
+      : [];
+    const relatedPersonIds = Array.isArray(body.relatedPersonIds)
+      ? body.relatedPersonIds.filter((v: unknown) => typeof v === "string").slice(0, 5)
+      : [];
+    const userToken = body.userToken;
+
+    if (!title || !TYPES.includes(pollType) || !isValidToken(userToken)) {
+      return NextResponse.json({ success: false, error: "必須項目が不足しています" }, { status: 400 });
+    }
+    if (pollType === "two_choice" && options.length !== 2) {
+      return NextResponse.json({ success: false, error: "2択の場合は選択肢を2つ指定してください" }, { status: 400 });
+    }
+    if (pollType !== "two_choice" && options.length < 3) {
+      return NextResponse.json({ success: false, error: "3択以上の場合は選択肢を3つ以上入力してください" }, { status: 400 });
+    }
+    const titleSpam = isSpamContent(title);
+    if (titleSpam.isSpam) {
+      return NextResponse.json(
+        { success: false, error: `タイトルに不適切な内容が含まれています: ${titleSpam.reason}` },
+        { status: 400 }
+      );
+    }
+    for (const o of options) {
+      const s = isSpamContent(o);
+      if (s.isSpam) {
+        return NextResponse.json(
+          { success: false, error: `選択肢に不適切な内容が含まれています: ${s.reason}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const ip = clientIp(request);
+    if (!rateLimit(`poll:ip:${ip}`, 15, 60 * 60 * 1000)) {
+      return NextResponse.json({ success: false, error: "作成リクエストが多すぎます" }, { status: 429 });
+    }
+    if (!rateLimit(`poll:token:${userToken}`, 3, 60 * 60 * 1000)) {
+      return NextResponse.json({ success: false, error: "1時間に作成できる投票は3つまでです" }, { status: 429 });
+    }
+
+    const pollId = await createPoll({
       title,
       description,
       pollType,
       options,
       relatedPersonIds,
-      userToken
-    } = await request.json();
-
-    if (!title || !pollType || !options || !Array.isArray(options) || !userToken) {
-      return NextResponse.json(
-        { success: false, error: '必須項目が不足しています' },
-        { status: 400 }
-      );
-    }
-
-    if (!/^[a-f0-9]{64}$/i.test(userToken)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid user token' },
-        { status: 400 }
-      );
-    }
-
-    // タイトルの検証
-    if (title.length > 200) {
-      return NextResponse.json(
-        { success: false, error: 'タイトルは200文字以内で入力してください' },
-        { status: 400 }
-      );
-    }
-
-    const titleSpamCheck = isSpamContent(title);
-    if (titleSpamCheck.isSpam) {
-      return NextResponse.json(
-        { success: false, error: `タイトルに不適切な内容が含まれています: ${titleSpamCheck.reason}` },
-        { status: 400 }
-      );
-    }
-
-    // 選択肢の検証
-    if (pollType === 'two_choice' && options.length !== 2) {
-      return NextResponse.json(
-        { success: false, error: '2択の場合は選択肢を2つ指定してください' },
-        { status: 400 }
-      );
-    }
-
-    if ((pollType === 'three_plus_fixed' || pollType === 'three_plus_open') && options.length < 3) {
-      return NextResponse.json(
-        { success: false, error: '3択以上の場合は選択肢を3つ以上指定してください' },
-        { status: 400 }
-      );
-    }
-
-    // 投稿制限チェック
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count } = await supabaseAdmin
-      .from('polls')
-      .select('id', { count: 'exact', head: true })
-      .eq('creator_cookie_id', userToken)
-      .gte('created_at', oneHourAgo);
-
-    if (count && count >= 3) {
-      return NextResponse.json(
-        { success: false, error: '1時間に作成できる投票は3つまでです' },
-        { status: 429 }
-      );
-    }
-
-    // 投票トークを作成
-    const { data: poll, error: pollError } = await supabaseAdmin
-      .from('polls')
-      .insert({
-        title,
-        description: description || null,
-        poll_type: pollType,
-        creator_cookie_id: userToken,
-        related_person_ids: relatedPersonIds || [],
-        total_votes: 0,
-        is_hidden: false,
-      })
-      .select()
-      .single();
-
-    if (pollError || !poll) {
-      console.error('Poll insert error:', pollError);
-      return NextResponse.json(
-        { success: false, error: '投票の作成に失敗しました' },
-        { status: 500 }
-      );
-    }
-
-    // 選択肢を作成
-    const pollOptions = options.map((option: string, index: number) => ({
-      poll_id: poll.id,
-      option_text: option,
-      option_order: index,
-      vote_count: 0,
-      created_by_creator: true,
-    }));
-
-    const { error: optionsError } = await supabaseAdmin
-      .from('poll_options')
-      .insert(pollOptions);
-
-    if (optionsError) {
-      console.error('Poll options insert error:', optionsError);
-      // ロールバック
-      await supabaseAdmin.from('polls').delete().eq('id', poll.id);
-      return NextResponse.json(
-        { success: false, error: '選択肢の作成に失敗しました' },
-        { status: 500 }
-      );
-    }
-
-    // キャッシュ無効化
-    revalidatePath('/polls');
-    if (relatedPersonIds && relatedPersonIds.length > 0) {
-      relatedPersonIds.forEach((personId: string) => {
-        revalidatePath(`/person/${personId}`);
-      });
-    }
-
-    return NextResponse.json({ success: true, pollId: poll.id });
-  } catch (error) {
-    console.error('Create poll API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+      creatorCookieId: userToken,
+    });
+    return NextResponse.json({ success: true, pollId });
+  } catch (e) {
+    console.error("poll create error:", e);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

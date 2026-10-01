@@ -1,25 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #0b0f16;
+  --color-panel: #131924;
+  --color-panel2: #1a2130;
+  --color-line: #263043;
+  --color-line2: #33405a;
+  --color-txt: #e9edf5;
+  --color-mut: #8b98ad;
+  --color-x: #1d9bf0;
+  --color-xsoft: #1d9bf026;
+  --color-like: #f91880;
+  --color-likesoft: #f9188022;
+  --color-dislike: #8b5cf6;
+  --color-dislikesoft: #8b5cf622;
+  --color-good: #00ba7c;
+  --color-bad: #f4212e;
+  --color-gold: #ffd400;
+  --font-sans: var(--font-noto), "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+    "BIZ UDPGothic", Meiryo, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink);
+  color: var(--color-txt);
+}
+
+@layer base {
+  input,
+  select,
+  textarea {
+    background: var(--color-panel2);
+    color: var(--color-txt);
+    border-color: var(--color-line);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-mut);
+  }
+  select option {
+    background: var(--color-panel2);
+    color: var(--color-txt);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #33405a;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 投票バーのアニメーション */
+.bar-anim {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }

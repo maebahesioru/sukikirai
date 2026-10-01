@@ -1,79 +1,52 @@
-import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
-import { supabase } from '@/lib/supabase';
+import { NextResponse } from "next/server";
+import { getPerson, getVoteStats, insertVote } from "@/lib/queries";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { isValidToken, str } from "@/lib/validate";
 
 export async function POST(request: Request) {
   try {
-    const { personId, voteType, userToken } = await request.json();
+    const body = await request.json();
+    const personId = str(body.personId, 100);
+    const voteType = body.voteType;
+    const userToken = body.userToken;
 
-    if (!personId || !voteType || !userToken) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (!personId || (voteType !== "like" && voteType !== "dislike")) {
+      return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
+    }
+    if (!isValidToken(userToken)) {
+      return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
     }
 
-    // Validate user token format (64 hex characters)
-    if (!/^[a-f0-9]{64}$/i.test(userToken)) {
+    const ip = clientIp(request);
+    if (!rateLimit(`vote:ip:${ip}`, 200, 60 * 60 * 1000)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid user token' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user has already voted for this person today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString();
-
-    const { data: existingVotes } = await supabase
-      .from('votes')
-      .select('id, vote_type')
-      .eq('person_id', personId)
-      .eq('cookie_id', userToken)
-      .gte('created_at', todayISO);
-
-    if (existingVotes && existingVotes.length > 0) {
-      const existingVoteType = existingVotes[0].vote_type;
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: '今日は既に投票済みです。明日また投票できます。', 
-          voteType: existingVoteType 
-        },
+        { success: false, error: "リクエストが多すぎます。しばらくお待ちください" },
         { status: 429 }
       );
     }
 
-    // Save vote to database (using user token)
-    const { error } = await supabase.from('votes').insert({
-      person_id: personId,
-      vote_type: voteType,
-      cookie_id: userToken,
-      ip_address: null,
-    });
-
-    if (error) {
-      console.error('Vote insert error:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to save vote' },
-        { status: 500 }
-      );
+    const person = await getPerson(personId);
+    if (!person || person.is_hidden) {
+      return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
     }
 
-    // ISRキャッシュを無効化して最新データを反映
-    revalidatePath(`/person/${personId}`);
-    revalidatePath('/');
-    revalidatePath('/ranking/trending');
-    revalidatePath('/ranking/popularity');
-    revalidatePath('/ranking/unpopular');
+    const r = await insertVote(person.id, voteType, userToken, ip);
+    const stats = await getVoteStats(person.id);
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Vote API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    if (!r.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "今日は既に投票済みです。明日また投票できます。",
+          voteType: r.existing ?? null,
+          ...stats,
+        },
+        { status: 429 }
+      );
+    }
+    return NextResponse.json({ success: true, ...stats });
+  } catch (e) {
+    console.error("vote API error:", e);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

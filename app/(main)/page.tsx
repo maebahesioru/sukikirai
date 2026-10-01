@@ -1,0 +1,180 @@
+import Link from "next/link";
+import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp } from "lucide-react";
+import { getHomeStats, getPeople, getRanking, getRecentComments } from "@/lib/queries";
+import HeroSearch from "@/components/HeroSearch";
+import PersonCard from "@/components/PersonCard";
+import Sidebar from "@/components/Sidebar";
+import Avatar from "@/components/Avatar";
+import { num } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [stats, trending, recent, newPeople, scoreTop] = await Promise.all([
+    getHomeStats(),
+    getRanking("trending", 10),
+    getRecentComments(6),
+    getPeople({ sort: "new", perPage: 6 }),
+    getRanking("score", 5),
+  ]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        {/* Hero */}
+        <section className="relative overflow-hidden bg-panel border border-line rounded-3xl p-6 md:p-10">
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-like/20 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-dislike/20 blur-3xl" />
+          <div className="relative">
+            <h1 className="text-3xl md:text-5xl font-black leading-tight">
+              あのXユーザーのこと、{" "}
+              <span className="bg-gradient-to-r from-like to-dislike bg-clip-text text-transparent">
+                好き？嫌い？
+              </span>
+            </h1>
+            <p className="text-mut mt-4 max-w-xl leading-relaxed text-sm md:text-base">
+              ヒカマー界隈からX全体まで。気になるあの人の「好き嫌い」と「8項目評価」をみんなで書き込める匿名サイトです。@IDで検索すると未登録のXユーザーもその場で追加できます。
+            </p>
+            <div className="mt-6">
+              <HeroSearch />
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 mt-7 text-sm">
+              <Stat label="登録人物" value={num(stats.people)} />
+              <Stat label="総投票数" value={num(stats.votes)} />
+              <Stat label="コメント" value={num(stats.comments)} />
+              <Stat label="今日の投票" value={num(stats.today_votes)} accent />
+            </div>
+          </div>
+        </section>
+
+        {/* Ranking shortcuts */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <RankLink href="/ranking/popularity" icon={<ThumbsUp className="w-5 h-5" />} title="好感度" desc="好き率が高い人" color="text-like" />
+          <RankLink href="/ranking/unpopular" icon={<ThumbsDown className="w-5 h-5" />} title="不人気" desc="嫌い率が高い人" color="text-dislike" />
+          <RankLink href="/ranking/trending" icon={<TrendingUp className="w-5 h-5" />} title="トレンド" desc="今週の急上昇" color="text-x" />
+          <RankLink href="/ranking/score" icon={<Star className="w-5 h-5" />} title="総合評価" desc="8項目の平均点" color="text-gold" />
+        </section>
+
+        {/* Trending */}
+        <section className="bg-panel border border-line rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-x" />
+              今週の急上昇
+            </h2>
+            <Link href="/ranking/trending" className="text-xs text-x hover:underline flex items-center gap-0.5">
+              もっと見る <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-1.5">
+            {trending.map((p, i) => (
+              <Link
+                key={p.id}
+                href={`/person/${p.id}`}
+                className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
+              >
+                <span
+                  className={`w-6 text-center text-sm font-black shrink-0 ${
+                    i === 0 ? "text-gold" : i === 1 ? "text-mut" : i === 2 ? "text-amber-600" : "text-mut/60"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
+                <span className="text-sm font-medium truncate flex-1">{p.name}</span>
+                <span className="text-xs font-bold text-x shrink-0">{p.recentVotes ?? 0}票</span>
+              </Link>
+            ))}
+            {trending.length === 0 && <p className="text-sm text-mut text-center py-4">まだデータがありません</p>}
+          </div>
+        </section>
+
+        {/* New people */}
+        <section>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h2 className="font-bold">最近追加されたXユーザー</h2>
+            <Link href="/people?sort=new" className="text-xs text-x hover:underline flex items-center gap-0.5">
+              一覧へ <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {newPeople.rows.map((p) => (
+              <PersonCard key={p.id} p={p} />
+            ))}
+          </div>
+        </section>
+
+        {/* Score top */}
+        {scoreTop.length > 0 && (
+          <section className="bg-panel border border-line rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold flex items-center gap-2">
+                <Star className="w-4 h-4 text-gold" />
+                総合評価ランキング
+              </h2>
+              <Link href="/ranking/score" className="text-xs text-x hover:underline flex items-center gap-0.5">
+                もっと見る <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="space-y-1.5">
+              {scoreTop.map((p, i) => (
+                <Link
+                  key={p.id}
+                  href={`/person/${p.id}`}
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
+                >
+                  <span className={`w-6 text-center text-sm font-black shrink-0 ${i === 0 ? "text-gold" : "text-mut/70"}`}>
+                    {i + 1}
+                  </span>
+                  <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
+                  <span className="text-sm font-medium truncate flex-1">{p.name}</span>
+                  <span className="text-sm font-bold text-gold shrink-0">
+                    {p.overall != null ? p.overall.toFixed(2) : "—"}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div className="lg:col-span-1">
+        <Sidebar trending={trending} recentComments={recent} />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <div className={`text-lg font-black ${accent ? "text-x" : ""}`}>{value}</div>
+      <div className="text-xs text-mut">{label}</div>
+    </div>
+  );
+}
+
+function RankLink({
+  href,
+  icon,
+  title,
+  desc,
+  color,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  color: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="bg-panel border border-line rounded-2xl p-4 hover:border-line2 transition group"
+    >
+      <div className={`mb-2 ${color}`}>{icon}</div>
+      <div className="font-bold text-sm group-hover:text-x transition">{title}</div>
+      <div className="text-xs text-mut mt-0.5">{desc}</div>
+    </Link>
+  );
+}

@@ -1,0 +1,53 @@
+// アプリ共通の定数
+
+export const CATEGORIES = ["ヒカマー", "YouTuber", "配信者", "企業・サービス", "その他"] as const;
+export type Category = (typeof CATEGORIES)[number];
+export const DEFAULT_CATEGORY: Category = "その他";
+
+// 8項目の5段階評価
+export const EVAL_ITEMS = [
+  { key: "fun", label: "面白さ" },
+  { key: "accuracy", label: "正確さ" },
+  { key: "influence", label: "発信力" },
+  { key: "knowledge", label: "知識・教養" },
+  { key: "humanity", label: "人間性" },
+  { key: "charisma", label: "カリスマ性" },
+  { key: "favor", label: "好感度" },
+  { key: "reply", label: "返信・対応" },
+] as const;
+
+export type EvalItemKey = (typeof EVAL_ITEMS)[number]["key"];
+export const EVAL_KEYS: EvalItemKey[] = EVAL_ITEMS.map((i) => i.key);
+
+export const GENDERS = ["男性", "女性", "その他"] as const;
+export const AGE_GROUPS = [
+  "10代未満",
+  "10代",
+  "20代",
+  "30代",
+  "40代",
+  "50代",
+  "60代以上",
+] as const;
+
+export const COMMENTS_PER_PAGE = 20;
+export const MAX_COMMENT_CHARS = 280; // 全角140文字相当
+export const MAX_NAME_LENGTH = 50;
+export const MAX_DESCRIPTION_LENGTH = 500;
+
+// 投票は1日1回（JSTの日付が変わるまで）
+export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// 通報理由（モーダルとAPIで共通）
+export const REPORT_REASONS = [
+  "殺害・爆破予告",
+  "個人情報の晒し",
+  "自殺ほのめかし",
+  "誹謗中傷・差別的表現",
+  "なりすまし・嘘の情報",
+  "スパム・宣伝",
+  "単に気に入らない",
+  "不適切な表現・悪質なネタ",
+  "自分のコメントを消してほしい",
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];

@@ -1,6 +1,7 @@
 // fxTwitter API（認証不要）でXプロフィールを取得。5分キャッシュ。
 
 export interface FxUser {
+  id: string;
   screenName: string;
   name: string;
   description: string;
@@ -37,6 +38,7 @@ export async function fetchFxUser(handle: string): Promise<FxUser | null> {
       return null;
     }
     const user: FxUser = {
+      id: String(u.id ?? ""),
       screenName: String(u.screen_name),
       name: String(u.name ?? u.screen_name),
       description: String(u.description ?? ""),

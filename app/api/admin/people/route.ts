@@ -112,13 +112,25 @@ export async function POST(request: Request) {
       const candidates = [person.handle, person.id.replace(/-/g, "_"), person.id].filter(
         (c): c is string => !!c
       );
-      let matched: { screenName: string; name: string; avatarUrl: string | null; followers: number } | null = null;
+      let matched: {
+        id: string;
+        screenName: string;
+        name: string;
+        avatarUrl: string | null;
+        followers: number;
+      } | null = null;
       let guessed = "";
       for (const cand of candidates) {
         guessed = cand;
         const fx = await fetchFxUser(cand);
         if (fx && fx.screenName.toLowerCase() === cand.toLowerCase()) {
-          matched = { screenName: fx.screenName, name: fx.name, avatarUrl: fx.avatarUrl, followers: fx.followers };
+          matched = {
+            id: fx.id,
+            screenName: fx.screenName,
+            name: fx.name,
+            avatarUrl: fx.avatarUrl,
+            followers: fx.followers,
+          };
           break;
         }
       }
@@ -134,6 +146,9 @@ export async function POST(request: Request) {
       const updated = await adminUpdatePerson(id, {
         handle: matched.screenName,
         avatar_url: matched.avatarUrl,
+        x_user_id: matched.id,
+        x_status: "ok",
+        x_checked_at: new Date().toISOString(),
       });
       return NextResponse.json({ success: true, person: updated });
     }

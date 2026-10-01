@@ -104,3 +104,13 @@ export type RankingRow = Person & {
   evalCount?: number;
   overall?: number | null;
 };
+
+export type XUserCandidate = {
+  handle: string;
+  name: string;
+  avatarUrl: string | null;
+  description: string;
+  followers: number;
+  registered: boolean;
+  personId: string | null;
+};

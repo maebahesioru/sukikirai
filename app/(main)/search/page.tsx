@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Search, UserPlus } from "lucide-react";
 import { findPersonByHandleOrId, normalizeHandle, searchPeople } from "@/lib/queries";
+import { findXUserCandidates } from "@/lib/xsearch";
 import PersonCard from "@/components/PersonCard";
+import XUserCandidates from "@/components/XUserCandidates";
 import SearchAutoAdd from "./SearchAutoAdd";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Xユーザーを検索・追加",
   description:
-    "XのID（@xxx）や名前で検索。未登録のXユーザーはその場でページを作成して、好き嫌い投票・評価を書き込めます。",
+    "XのID（@xxx）や名前で検索。未登録のXユーザーも、X上の候補から選ぶかIDを直接入力すればその場でページを作成して、好き嫌い投票・評価を書き込めます。",
 };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
@@ -29,6 +31,10 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
   const shouldAutoAdd = !!handle && !exact;
   const others = exact ? results.filter((r) => r.id !== exact.id) : results;
 
+  // 名前でヒットしない → X上の候補を探す（SearXNG + fxTwitter）
+  const showCandidates = !!q && !handle && !exact && results.length === 0;
+  const xCandidates = showCandidates ? await findXUserCandidates(q) : [];
+
   return (
     <div className="space-y-6">
       <section className="bg-panel border border-line rounded-2xl p-6">
@@ -37,8 +43,8 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
           <h1 className="text-2xl font-black">Xユーザーを検索・追加</h1>
         </div>
         <p className="text-sm text-mut mb-5 leading-relaxed">
-          XのID（例: <span className="text-txt font-mono">@maebahesioru2</span>）を入力すると、
-          未登録のユーザーでもその場でページを作成できます。名前やタグでの検索もOKです。
+          XのID（例: <span className="text-txt font-mono">@maebahesioru2</span>）か名前を入力。名前で
+          ヒットしない場合も、X上の候補から選んで追加できます。
         </p>
         <form method="get" action="/search" className="flex gap-2 max-w-lg">
           <div className="relative flex-1">
@@ -86,12 +92,16 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
         </section>
       )}
 
-      {q && !shouldAutoAdd && !exact && results.length === 0 && (
+      {showCandidates && xCandidates.length > 0 && (
+        <XUserCandidates query={q} candidates={xCandidates} />
+      )}
+
+      {showCandidates && xCandidates.length === 0 && (
         <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
-          検索結果が見つかりませんでした。
+          Xでも「{q}」の候補が見つかりませんでした。
           <br />
           <span className="text-sm">
-            Xユーザーを追加するには、ID（@から始まる英数字）を入力してください。
+            ID（@から始まる英数字）を直接入力すると確実に追加できます。
           </span>
         </div>
       )}
@@ -104,13 +114,13 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
               <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
                 1
               </span>
-              上の検索欄にXのID（例: @maebahesioru2）を入力して検索
+              上の検索欄にXのID（例: @maebahesioru2）か名前を入力して検索
             </li>
             <li className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
                 2
               </span>
-              未登録のユーザーは自動でページが作成され、プロフィール情報が取得されます
+              未登録のユーザーは「X上の候補」から選んで追加（IDを直接入れれば即追加）
             </li>
             <li className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">

@@ -25,7 +25,7 @@ export default function HeroSearch() {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="@IDまたは名前で検索（未登録のXユーザーは自動追加）"
+          placeholder="@IDまたは名前で検索（未登録ユーザーは候補から追加）"
           className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-line bg-panel focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
         />
       </div>

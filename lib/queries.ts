@@ -126,6 +126,16 @@ export async function getPeopleByIds(ids: string[]): Promise<Person[]> {
   );
 }
 
+export async function getPeopleByHandles(
+  handles: string[]
+): Promise<Pick<Person, "id" | "handle" | "name">[]> {
+  if (handles.length === 0) return [];
+  return sql<Pick<Person, "id" | "handle" | "name">>(
+    "SELECT id, handle, name FROM people WHERE lower(handle) = ANY($1::text[]) AND NOT is_hidden",
+    [handles.map((h) => h.toLowerCase())]
+  );
+}
+
 export async function getHomeStats(): Promise<{
   people: number;
   votes: number;

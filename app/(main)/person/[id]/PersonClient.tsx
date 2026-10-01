@@ -78,6 +78,20 @@ export default function PersonClient({
                 </span>
               ))}
             </div>
+            {person.x_status && person.x_status !== "ok" && (
+              <div className="mt-3 bg-amber-500/10 border border-amber-500/40 rounded-lg px-3 py-2 text-xs leading-relaxed">
+                {person.x_status === "reused"
+                  ? `⚠ ${
+                      person.handle ? `@${person.handle} は` : "このIDは"
+                    }現在、別のアカウントが使用しています（ID変更後に解放された可能性）。リンク先は別人の可能性があります。`
+                  : "⚠ このアカウントは現在X上で確認できません（凍結・削除・ID変更などの可能性）。"}
+                {person.x_checked_at && (
+                  <span className="text-mut">
+                    （最終確認: {String(person.x_checked_at).slice(0, 10).replace(/-/g, "/")}）
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="text-center shrink-0 px-5 py-3 rounded-xl bg-panel2 border border-line">
             <div className="text-xs text-mut mb-1">総合評価</div>

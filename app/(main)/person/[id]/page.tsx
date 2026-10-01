@@ -84,7 +84,14 @@ export default async function PersonPage({ params }: Params) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
         <PersonClient
-          person={person}
+          person={{
+            ...person,
+            x_checked_at: person.x_checked_at
+              ? typeof person.x_checked_at === "string"
+                ? person.x_checked_at
+                : person.x_checked_at.toISOString()
+              : null,
+          }}
           voteStats={voteStats}
           evalStats={evalStats}
           initialVoted={myVote !== null}

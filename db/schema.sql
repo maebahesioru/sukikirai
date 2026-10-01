@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS people (
   followers INTEGER,
   is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
   source TEXT NOT NULL DEFAULT 'admin',
+  x_user_id TEXT,
+  x_status TEXT,
+  x_checked_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

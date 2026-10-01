@@ -10,6 +10,9 @@ export type Person = {
   followers: number | null;
   is_hidden: boolean;
   source: string;
+  x_user_id?: string | null;
+  x_status?: string | null;
+  x_checked_at?: string | Date | null;
   created_at: string;
   updated_at: string;
 };

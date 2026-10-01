@@ -67,6 +67,8 @@ type AdminPerson = {
   is_hidden: boolean;
   source: string;
   created_at: string;
+  x_status?: string | null;
+  x_checked_at?: string | null;
 };
 
 type Tab = "reports" | "comments" | "votes" | "people" | "analytics";
@@ -749,6 +751,14 @@ function PeopleTab() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-bad/20 text-bad">非表示</span>
                   )}
                   <span className="text-[10px] text-mut">{p.source}</span>
+                  {p.x_status === "missing" && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                      X未確認
+                    </span>
+                  )}
+                  {p.x_status === "reused" && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-bad/20 text-bad">ID重複</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-1.5 shrink-0">

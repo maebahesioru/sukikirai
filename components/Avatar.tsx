@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 const GRADIENTS = [
   ["#f91880", "#8b5cf6"],
   ["#1d9bf0", "#8b5cf6"],
@@ -12,6 +16,11 @@ function pickGradient(name: string) {
   return GRADIENTS[h % GRADIENTS.length];
 }
 
+/**
+ * アバター。画像が読み込めない場合（凍結・削除などでURLが死んだ場合）は頭文字にフォールバック。
+ * - onError: ハイドレーション後のエラー
+ * - useEffect + complete/naturalWidth: ハイドレーション前に失敗済みのケース（イベント取りこぼし対策）
+ */
 export default function Avatar({
   name,
   avatarUrl,
@@ -23,16 +32,27 @@ export default function Avatar({
   size?: number;
   className?: string;
 }) {
-  if (avatarUrl) {
+  const [broken, setBroken] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth === 0) {
+      setBroken(true);
+    }
+  }, [avatarUrl]);
+
+  if (avatarUrl && !broken) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        ref={imgRef}
         src={avatarUrl}
         alt=""
         width={size}
         height={size}
-        loading="lazy"
         referrerPolicy="no-referrer"
+        onError={() => setBroken(true)}
         className={`rounded-full object-cover border border-line bg-panel2 shrink-0 ${className}`}
         style={{ width: size, height: size }}
       />

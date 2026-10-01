@@ -1,7 +1,9 @@
 // SearXNG（自ホスト）経由で「名前 → Xユーザー候補」を探す。
 // Xの無料APIではユーザー検索ができないため、検索インデックスに載っている
-// プロフィールページ（タイトルの「(@handle) / X」パターン等）からハンドルを拾い、
-// fxTwitter で実在確認した上で候補として返す。
+// 「プロフィールページ」のタイトル（例: 「名前 (@handle) / X」「名前 (@handle) on X」）から
+// ハンドルを拾い、fxTwitter で実在確認した上で候補として返す。
+// ※ツイートページ（タイトル「… on X: "本文"」形式）は著者名が無関係でもプロフィール風に
+//   見えるため、パターンで明確に除外する。
 
 import { fetchFxUser } from "./fxtwitter";
 import { getPeopleByHandles } from "./queries";
@@ -12,8 +14,8 @@ import type { XUserCandidate } from "./types";
 // LAN 直（本番VM100→MAINPC / ローカルは127.0.0.1）を優先する。
 const SEARX_URLS: { url: string; timeout: number }[] = [
   ...(process.env.SEARXNG_URL ? [{ url: process.env.SEARXNG_URL, timeout: 8000 }] : []),
-  { url: "http://127.0.0.1:18080", timeout: 3000 },
-  { url: "http://192.168.1.4:18080", timeout: 3000 },
+  { url: "http://127.0.0.1:18080", timeout: 4000 },
+  { url: "http://192.168.1.4:18080", timeout: 10000 },
   { url: "https://searxng.hikamers.app", timeout: 12000 },
 ];
 const UA =
@@ -31,16 +33,21 @@ const cache = new Map<string, { at: number; data: XUserCandidate[] }>();
 let windowStart = 0;
 let windowCount = 0;
 
-type Raw = { handle: string; profile: boolean };
+type Raw = { handle: string; strong: boolean };
 
 async function searx(q: string): Promise<{ url: string; title: string }[]> {
   for (const { url, timeout } of SEARX_URLS) {
     try {
-      const res = await fetch(`${url}/search?format=json&q=${encodeURIComponent(q)}`, {
-        headers: { "User-Agent": UA, Accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(timeout),
-      });
+      // VPN出口IPでは brave/duckduckgo/qwant 等がレート制限・CAPTCHAになりやすいため、
+      // 上限に強い google/bing に限定する（x.comプロフィールのインデックスも十分）。
+      const res = await fetch(
+        `${url}/search?format=json&q=${encodeURIComponent(q)}&engines=google%2Cbing`,
+        {
+          headers: { "User-Agent": UA, Accept: "application/json" },
+          cache: "no-store",
+          signal: AbortSignal.timeout(timeout),
+        }
+      );
       if (!res.ok) continue;
       const d = await res.json();
       return Array.isArray(d?.results) ? d.results.slice(0, 60) : [];
@@ -49,6 +56,13 @@ async function searx(q: string): Promise<{ url: string; title: string }[]> {
     }
   }
   return [];
+}
+
+// プロフィールページのタイトルかどうか（ツイートページを除外）
+function strongProfileTitle(title: string): boolean {
+  if (!/\(@[A-Za-z0-9_]{1,15}\)/.test(title)) return false;
+  if (/on X[:：]/.test(title)) return false; // ツイートページ（本文が付く）
+  return /\)\s*\/\s*X/.test(title) || /\)\s*on X/.test(title);
 }
 
 function norm(s: string): string {
@@ -60,44 +74,47 @@ export async function findXUserCandidates(query: string): Promise<XUserCandidate
   if (!q) return [];
   const key = q.toLowerCase();
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < TTL) return hit.data;
+  // 空結果は短命キャッシュ（エンジン一時停止から回復したらすぐ拾えるように）
+  if (hit && Date.now() - hit.at < (hit.data.length > 0 ? TTL : 2 * 60 * 1000)) return hit.data;
 
-  // 連打対策: 新規ルックアップは毎分40件まで（超過分は空を返す。同一クエリは上のキャッシュで即返る）
+  // 連打対策: 新規ルックアップは毎分20件まで（超過分は空を返す。同一クエリは上のキャッシュで即返る）
   const now = Date.now();
   if (now - windowStart > 60_000) {
     windowStart = now;
     windowCount = 0;
   }
-  if (windowCount >= 40) return [];
+  if (windowCount >= 20) return [];
   windowCount++;
 
-  // 3クエリ並行（素の名前 / 名前 X / site:x.com）。片方が空でも他が拾う。
-  const [a, b, c] = await Promise.all([searx(q), searx(`${q} X`), searx(`${q} site:x.com`)]);
+  // 2クエリ並行（素の名前 / 名前 X）。site:x.com は google の曖昧マッチで
+  // 無関係なプロフィールを大量に返すため使わない（実測: ゴミ検索で無関係候補が混入した）。
+  const [a, b] = await Promise.all([searx(q), searx(`${q} X`)]);
   const map = new Map<string, Raw>();
-  for (const r of [...a, ...b, ...c]) {
+  for (const r of [...a, ...b]) {
     const url = String(r.url ?? "");
     const title = String(r.title ?? "");
-    const profileish =
-      /\(@?[A-Za-z0-9_]{1,15}\)/.test(title) || /\/\s*X\b/.test(title) || / on X/.test(title);
+    const strong = strongProfileTitle(title);
     const mu = url.match(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})(?:[/?#]|$)/);
     if (mu && !RESERVED.has(mu[1].toLowerCase())) {
       const k = mu[1].toLowerCase();
-      const e = map.get(k) ?? { handle: mu[1], profile: false };
-      if (profileish) e.profile = true;
+      const e = map.get(k) ?? { handle: mu[1], strong: false };
+      if (strong) e.strong = true;
       map.set(k, e);
     }
-    for (const m of title.matchAll(/\(@([A-Za-z0-9_]{1,15})\)/g)) {
-      const h = m[1];
-      if (RESERVED.has(h.toLowerCase())) continue;
-      const k = h.toLowerCase();
-      const e = map.get(k) ?? { handle: h, profile: false };
-      e.profile = true;
-      map.set(k, e);
+    if (strong) {
+      for (const m of title.matchAll(/\(@([A-Za-z0-9_]{1,15})\)/g)) {
+        const h = m[1];
+        if (RESERVED.has(h.toLowerCase())) continue;
+        const k = h.toLowerCase();
+        const e = map.get(k) ?? { handle: h, strong: false };
+        e.strong = true;
+        map.set(k, e);
+      }
     }
   }
 
   const raws = [...map.values()]
-    .sort((x, y) => Number(y.profile) - Number(x.profile))
+    .sort((x, y) => Number(y.strong) - Number(x.strong))
     .slice(0, 12);
 
   const enriched: { r: Raw; fx: NonNullable<Awaited<ReturnType<typeof fetchFxUser>>> }[] = [];
@@ -116,7 +133,7 @@ export async function findXUserCandidates(query: string): Promise<XUserCandidate
       else if (nq.length >= 2 && (nname.includes(nq) || nq.includes(nname))) sim = 2;
       return { r, fx, sim };
     })
-    .filter((e) => e.sim > 0 || e.r.profile)
+    .filter((e) => e.sim > 0 || e.r.strong)
     .sort((x, y) => y.sim - x.sim || y.fx.followers - x.fx.followers)
     .slice(0, 6);
 

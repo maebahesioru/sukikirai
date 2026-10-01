@@ -1121,6 +1121,9 @@ export async function adminUpdatePerson(
     handle: string | null;
     related: string[];
     is_hidden: boolean;
+    x_user_id: string | null;
+    x_status: string | null;
+    x_checked_at: string | null;
   }>
 ): Promise<Person | null> {
   const colMap: Record<string, string> = {
@@ -1132,6 +1135,9 @@ export async function adminUpdatePerson(
     handle: "handle",
     related: "related",
     is_hidden: "is_hidden",
+    x_user_id: "x_user_id",
+    x_status: "x_status",
+    x_checked_at: "x_checked_at",
   };
   const sets: string[] = [];
   const params: unknown[] = [id];

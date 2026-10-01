@@ -1084,6 +1084,78 @@ export async function getRelatedPolls(personId: string): Promise<PollWithOptions
 }
 
 // ============================================================
+// 2ch互換（専ブラ・Siki等向け）
+// ============================================================
+
+export async function listPeopleFor2ch(): Promise<
+  { id: string; name: string; res_count: number; last_at: string | null }[]
+> {
+  return sql(
+    `SELECT p.id, p.name, COALESCE(c.cnt,0)::int AS res_count, c.last_at
+     FROM people p
+     LEFT JOIN (
+       SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at
+       FROM comments WHERE NOT is_hidden GROUP BY person_id
+     ) c ON c.person_id = p.id
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     ORDER BY c.last_at DESC NULLS LAST, p.created_at DESC`
+  );
+}
+
+export async function getPersonCommentsFor2ch(personId: string) {
+  return sql<{
+    id: string;
+    comment_number: number;
+    name: string | null;
+    vote_type: "like" | "dislike";
+    content: string;
+    created_at: string;
+    cookie_id: string | null;
+  }>(
+    `SELECT id, comment_number, name, vote_type, content, created_at, cookie_id
+     FROM comments WHERE person_id = $1 AND NOT is_hidden
+     ORDER BY comment_number ASC`,
+    [personId]
+  );
+}
+
+export async function listPollsFor2ch(): Promise<
+  { id: string; title: string; res_count: number; last_at: string | null }[]
+> {
+  return sql(
+    `SELECT p.id, p.title, COALESCE(c.cnt,0)::int AS res_count, c.last_at
+     FROM polls p
+     LEFT JOIN (
+       SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at
+       FROM poll_comments WHERE NOT is_hidden GROUP BY poll_id
+     ) c ON c.poll_id = p.id
+     WHERE NOT p.is_hidden
+     ORDER BY COALESCE(c.last_at, p.created_at) DESC`
+  );
+}
+
+export async function getPollCommentsFor2ch(pollId: string) {
+  return sql<{
+    id: string;
+    comment_number: number;
+    name: string | null;
+    content: string;
+    created_at: string;
+    cookie_id: string | null;
+    voted_option: string | null;
+  }>(
+    `SELECT c.id, c.comment_number, c.name, c.content, c.created_at, c.cookie_id,
+            o.option_text AS voted_option
+     FROM poll_comments c
+     LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
+     LEFT JOIN poll_options o ON o.id = v.option_id
+     WHERE c.poll_id = $1 AND NOT c.is_hidden
+     ORDER BY c.comment_number ASC`,
+    [pollId]
+  );
+}
+
+// ============================================================
 // 管理
 // ============================================================
 

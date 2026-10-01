@@ -11,8 +11,11 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
+  if (!UUID_RE.test(id)) return { title: "投票トーク" };
   const poll = await getPoll(id);
   return {
     title: poll ? poll.title : "投票トーク",
@@ -23,6 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function PollPage({ params }: Params) {
   const { id } = await params;
+  if (!UUID_RE.test(id)) notFound();
   const poll = await getPoll(id);
   if (!poll) notFound();
 

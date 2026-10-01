@@ -30,9 +30,11 @@ function getCharCount(text: string): number {
 export default function CommentSection({
   personId,
   hasVoted,
+  archived = false,
 }: {
   personId: string;
   hasVoted: boolean;
+  archived?: boolean;
 }) {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
   const [total, setTotal] = useState(0);
@@ -60,10 +62,47 @@ export default function CommentSection({
   }, [personId, filter, sort, page]);
 
   useEffect(() => {
-    if (hasVoted) fetchComments();
-  }, [hasVoted, fetchComments]);
+    if (hasVoted || archived) fetchComments();
+  }, [hasVoted, archived, fetchComments]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
+
+  const list = (
+    <>
+      <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
+        {comments.map((c) => (
+          <CommentItem key={c.id} comment={c} onUpdate={fetchComments} locked={archived} />
+        ))}
+        {comments.length === 0 && !loading && (
+          <p className="text-center text-mut py-8 text-sm">
+            {archived ? "コメントはありません" : "まだコメントがありません。最初のコメントを書いてみよう！"}
+          </p>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-6">
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
+          >
+            前へ
+          </button>
+          <span className="text-sm text-mut">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
+          >
+            次へ
+          </button>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
@@ -122,45 +161,21 @@ export default function CommentSection({
         </div>
       </div>
 
-      {!hasVoted ? (
+      {archived ? (
+        <>
+          <div className="bg-panel2 border border-line rounded-xl p-3 mb-4 text-center text-xs text-mut">
+            このページはアーカイブされたため、コメントの新規投稿はできません
+          </div>
+          {list}
+        </>
+      ) : !hasVoted ? (
         <div className="bg-panel2 border border-line rounded-xl p-6 text-center text-mut">
           コメントを見るには、まず上の「好き / 嫌い」に投票してください
         </div>
       ) : (
         <>
           <CommentForm personId={personId} onPosted={fetchComments} />
-          <div className={`space-y-4 mt-6 ${loading ? "opacity-60" : ""}`}>
-            {comments.map((c) => (
-              <CommentItem key={c.id} comment={c} onUpdate={fetchComments} />
-            ))}
-            {comments.length === 0 && !loading && (
-              <p className="text-center text-mut py-8 text-sm">
-                まだコメントがありません。最初のコメントを書いてみよう！
-              </p>
-            )}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-3 mt-6">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
-              >
-                前へ
-              </button>
-              <span className="text-sm text-mut">
-                {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
-              >
-                次へ
-              </button>
-            </div>
-          )}
+          {list}
         </>
       )}
     </section>
@@ -355,9 +370,11 @@ function CommentForm({
 function CommentItem({
   comment,
   onUpdate,
+  locked = false,
 }: {
   comment: CommentWithReplies;
   onUpdate: () => void;
+  locked?: boolean;
 }) {
   const [local, setLocal] = useState<CommentRow>(comment);
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
@@ -449,14 +466,16 @@ function CommentItem({
           </span>
           <span className="text-xs text-mut">{timeAgo(comment.created_at)}</span>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title="通報">
-            <Flag className="w-4 h-4" />
-          </button>
-          <button onClick={hide} className="text-mut hover:text-txt transition" title="非表示">
-            <EyeOff className="w-4 h-4" />
-          </button>
-        </div>
+        {!locked && (
+          <div className="flex gap-2 shrink-0">
+            <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title="通報">
+              <Flag className="w-4 h-4" />
+            </button>
+            <button onClick={hide} className="text-mut hover:text-txt transition" title="非表示">
+              <EyeOff className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <p className="whitespace-pre-wrap text-sm leading-relaxed mb-3">{comment.content}</p>
@@ -480,13 +499,15 @@ function CommentItem({
           <ThumbsDown className="w-4 h-4" />
           {local.bad_count}
         </button>
-        <button
-          onClick={() => setShowReply(!showReply)}
-          className="flex items-center gap-1 text-mut hover:text-x transition"
-        >
-          <MessageCircle className="w-4 h-4" />
-          返信
-        </button>
+        {!locked && (
+          <button
+            onClick={() => setShowReply(!showReply)}
+            className="flex items-center gap-1 text-mut hover:text-x transition"
+          >
+            <MessageCircle className="w-4 h-4" />
+            返信
+          </button>
+        )}
       </div>
 
       {replies.length > 0 && (
@@ -497,7 +518,7 @@ function CommentItem({
         </div>
       )}
 
-      {showReply && (
+      {!locked && showReply && (
         <div className="mt-3">
           <CommentForm
             personId={comment.person_id}

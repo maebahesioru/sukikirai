@@ -43,6 +43,8 @@ export default function PersonClient({
   });
   const voted = voteInfo.voted;
   const overall = evalStats.overall;
+  // スレ落ち（Xアカウントが確認できない/別人が使用中）→ アーカイブ表示
+  const archived = !!person.x_status && person.x_status !== "ok";
 
   return (
     <div className="space-y-6">
@@ -53,7 +55,7 @@ export default function PersonClient({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-black">{person.name}</h1>
-              {person.handle && (
+              {person.handle && !archived && (
                 <a
                   href={`https://x.com/${person.handle}`}
                   target="_blank"
@@ -78,15 +80,17 @@ export default function PersonClient({
                 </span>
               ))}
             </div>
-            {person.x_status && person.x_status !== "ok" && (
-              <div className="mt-3 bg-amber-500/10 border border-amber-500/40 rounded-lg px-3 py-2 text-xs leading-relaxed">
+            {archived && (
+              <div className="mt-3 bg-panel2 border border-line rounded-lg px-3 py-2 text-xs text-mut leading-relaxed">
+                ※{" "}
                 {person.x_status === "reused"
-                  ? `⚠ ${
-                      person.handle ? `@${person.handle} は` : "このIDは"
-                    }現在、別のアカウントが使用しています（ID変更後に解放された可能性）。リンク先は別人の可能性があります。`
-                  : "⚠ このアカウントは現在X上で確認できません（凍結・削除・ID変更などの可能性）。"}
+                  ? person.handle
+                    ? `@${person.handle} は現在、別のアカウントが使用されています（ID変更後に解放された可能性）。`
+                    : "このIDは現在、別のアカウントが使用されています。"
+                  : "このXアカウントは現在確認できません（凍結・削除・ID変更など）。"}
+                このページはアーカイブされました。
                 {person.x_checked_at && (
-                  <span className="text-mut">
+                  <span>
                     （最終確認: {String(person.x_checked_at).slice(0, 10).replace(/-/g, "/")}）
                   </span>
                 )}
@@ -115,9 +119,10 @@ export default function PersonClient({
         initialVoted={initialVoted}
         initialVoteType={initialVoteType}
         onVotedChange={setVoteInfo}
+        archived={archived}
       />
 
-      {voted && (
+      {!archived && voted && (
         <ShareButtons
           personName={person.name}
           voteType={voteInfo.voteType}
@@ -132,6 +137,7 @@ export default function PersonClient({
         initialStats={evalStats}
         hasVoted={voted}
         initialMine={myEval}
+        archived={archived}
       />
 
       {/* タグ内ランキング */}
@@ -154,7 +160,7 @@ export default function PersonClient({
                   {t.name}
                 </Link>
                 <div className="flex items-center gap-2 w-36 shrink-0">
-                  <div className="flex-1 bg-panel2 rounded-full h-1.5 overflow-hidden flex">
+                  <div className="flex-1 bg-line rounded-full h-1.5 overflow-hidden flex">
                     <div className="bg-like h-full" style={{ width: `${t.likePct}%` }} />
                     <div className="bg-dislike h-full" style={{ width: `${100 - t.likePct}%` }} />
                   </div>
@@ -212,7 +218,7 @@ export default function PersonClient({
       )}
 
       {/* コメント */}
-      <CommentSection personId={person.id} hasVoted={voted} />
+      <CommentSection personId={person.id} hasVoted={voted} archived={archived} />
     </div>
   );
 }

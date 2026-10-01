@@ -26,12 +26,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const p = await getPerson(decodeURIComponent(id));
   if (!p || p.is_hidden) return { title: "人物が見つかりません" };
+  const archived = !!p.x_status && p.x_status !== "ok";
   return {
     title: `${p.name}の評価・好き嫌い`,
     description:
       p.description ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
     alternates: { canonical: `/person/${p.id}` },
+    ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,
       description: p.description || undefined,

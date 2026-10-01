@@ -29,6 +29,9 @@ export async function POST(request: Request) {
     if (!person || person.is_hidden) {
       return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
     }
+    if (person.x_status && person.x_status !== "ok") {
+      return NextResponse.json({ success: false, error: "投票できません" }, { status: 403 });
+    }
 
     const r = await insertVote(person.id, voteType, userToken, ip);
     const stats = await getVoteStats(person.id);

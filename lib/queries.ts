@@ -45,6 +45,7 @@ export async function getPeople(f: {
   page?: number;
   perPage?: number;
   includeHidden?: boolean;
+  includeArchived?: boolean;
 }): Promise<{ rows: PersonWithVotes[]; total: number }> {
   const per = Math.min(Math.max(f.perPage ?? 60, 1), 200);
   const page = Math.max(f.page ?? 1, 1);
@@ -55,6 +56,7 @@ export async function getPeople(f: {
   const order = PEOPLE_ORDER[f.sort ?? "new"];
   const where = `
     ${f.includeHidden ? "TRUE" : "NOT p.is_hidden"}
+    AND ${f.includeArchived ? "TRUE" : "(p.x_status IS NULL OR p.x_status = 'ok')"}
     AND ($1 = '' OR p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%' OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%')
     AND ($2 = '' OR $2 = ANY(p.tags))
     AND ($3 = '' OR p.category = $3)`;
@@ -102,7 +104,7 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
          COUNT(*) AS total
        FROM votes GROUP BY person_id
      ) v ON v.person_id = p.id
-     WHERE NOT p.is_hidden AND (
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND (
        p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%'
        OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%'
        OR EXISTS (SELECT 1 FROM unnest(p.tags) tg WHERE tg ILIKE '%' || $1 || '%')
@@ -117,7 +119,10 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
 
 export async function getPeopleByIds(ids: string[]): Promise<Person[]> {
   if (ids.length === 0) return [];
-  return sql<Person>("SELECT * FROM people WHERE id = ANY($1::text[]) AND NOT is_hidden", [ids]);
+  return sql<Person>(
+    "SELECT * FROM people WHERE id = ANY($1::text[]) AND NOT is_hidden AND (x_status IS NULL OR x_status = 'ok')",
+    [ids]
+  );
 }
 
 export async function getHomeStats(): Promise<{
@@ -129,7 +134,7 @@ export async function getHomeStats(): Promise<{
   const day = jstDayStart();
   const row = await sql1<{ people: number; votes: number; comments: number; today_votes: number }>(
     `SELECT
-       (SELECT COUNT(*)::int FROM people WHERE NOT is_hidden) AS people,
+       (SELECT COUNT(*)::int FROM people WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok')) AS people,
        (SELECT COUNT(*)::int FROM votes) AS votes,
        (SELECT COUNT(*)::int FROM comments WHERE NOT is_hidden) AS comments,
        (SELECT COUNT(*)::int FROM votes WHERE created_at >= $1) AS today_votes`,
@@ -203,6 +208,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
       `SELECT p.*, COUNT(*)::int AS recent_votes
        FROM votes v JOIN people p ON p.id = v.person_id
        WHERE v.created_at >= now() - interval '7 days' AND NOT p.is_hidden
+         AND (p.x_status IS NULL OR p.x_status = 'ok')
        GROUP BY p.id
        ORDER BY recent_votes DESC, p.name ASC
        LIMIT ${limit}`
@@ -231,7 +237,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
                 AVG(favor) AS favor_avg, AVG(reply) AS reply_avg
          FROM evaluations GROUP BY person_id HAVING COUNT(*) >= 1
        ) e ON e.person_id = p.id
-       WHERE NOT p.is_hidden`
+       WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')`
     );
     const mapped = rows.map((r) => {
       const avgs = [
@@ -265,7 +271,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
          COUNT(*) AS total
        FROM votes GROUP BY person_id HAVING COUNT(*) >= 1
      ) v ON v.person_id = p.id
-     WHERE NOT p.is_hidden
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
      ORDER BY ${order}
      LIMIT ${limit}`
   );
@@ -448,11 +454,15 @@ export async function postComment(
   }
 
   return withTx(async (c) => {
-    const person = await c.query("SELECT id FROM people WHERE id = $1 AND NOT is_hidden", [
-      input.personId,
-    ]);
+    const person = await c.query<{ x_status: string | null }>(
+      "SELECT id, x_status FROM people WHERE id = $1 AND NOT is_hidden",
+      [input.personId]
+    );
     if (person.rowCount === 0) {
       return { ok: false as const, error: "人物が見つかりません", status: 404 };
+    }
+    if (person.rows[0]?.x_status && person.rows[0].x_status !== "ok") {
+      return { ok: false as const, error: "このページはアーカイブされているため、コメントできません", status: 403 };
     }
 
     const oneMin = await c.query<{ c: number }>(
@@ -611,6 +621,7 @@ export async function getRecentComments(limit = 10): Promise<
             p.name AS person_name, p.avatar_url AS person_avatar
      FROM comments c JOIN people p ON p.id = c.person_id
      WHERE NOT c.is_hidden AND c.parent_comment_id IS NULL
+       AND (p.x_status IS NULL OR p.x_status = 'ok')
      ORDER BY c.created_at DESC LIMIT ${limit}`
   );
 }
@@ -631,7 +642,7 @@ export async function getTagRanking(
          COUNT(*) AS total
        FROM votes GROUP BY person_id HAVING COUNT(*) >= 1
      ) v ON v.person_id = p.id
-     WHERE NOT p.is_hidden AND p.id <> $1 AND p.tags && $2::text[]
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND p.id <> $1 AND p.tags && $2::text[]
      ORDER BY like_pct DESC, v.total DESC
      LIMIT ${limit}`,
     [person.id, person.tags]
@@ -1227,5 +1238,7 @@ export async function getLikeRankingPosition(
 
 /** サイトマップ用 */
 export async function listSitemapEntries(): Promise<{ id: string; updated_at: string }[]> {
-  return sql("SELECT id, updated_at FROM people WHERE NOT is_hidden ORDER BY created_at DESC");
+  return sql(
+    "SELECT id, updated_at FROM people WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok') ORDER BY created_at DESC"
+  );
 }

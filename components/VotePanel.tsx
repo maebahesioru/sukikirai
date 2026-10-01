@@ -19,6 +19,7 @@ export default function VotePanel({
   initialVoted,
   initialVoteType,
   onVotedChange,
+  archived = false,
 }: {
   personId: string;
   personName: string;
@@ -27,6 +28,7 @@ export default function VotePanel({
   initialVoted: boolean;
   initialVoteType: "like" | "dislike" | null;
   onVotedChange?: (info: VoteInfo) => void;
+  archived?: boolean;
 }) {
   const [likes, setLikes] = useState(initialLikes);
   const [dislikes, setDislikes] = useState(initialDislikes);
@@ -79,6 +81,30 @@ export default function VotePanel({
       setBusy(false);
     }
   };
+
+  // スレ落ち（アーカイブ）: 結果のみ表示・投票不可
+  if (archived) {
+    return (
+      <section className="bg-panel border border-line rounded-2xl p-6">
+        <h2 className="text-xl font-bold text-center mb-5">{personName}のことは…好き？嫌い？</h2>
+        <div className="flex justify-between mb-2 text-sm font-bold">
+          <span className="text-like">
+            好き {likes}票（{likePct.toFixed(1)}%）
+          </span>
+          <span className="text-dislike">
+            嫌い {dislikes}票（{(100 - likePct).toFixed(1)}%）
+          </span>
+        </div>
+        <div className="w-full bg-line rounded-full h-4 overflow-hidden flex border border-line">
+          <div className="bg-gradient-to-r from-like to-pink-500 h-full" style={{ width: `${likePct}%` }} />
+          <div className="bg-gradient-to-r from-indigo-500 to-dislike h-full" style={{ width: `${100 - likePct}%` }} />
+        </div>
+        <p className="text-center text-xs text-mut mt-4">
+          ※ このページはアーカイブされたため、投票は終了しています
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">

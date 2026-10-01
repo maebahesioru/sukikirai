@@ -11,11 +11,13 @@ export default function EvalPanel({
   initialStats,
   hasVoted,
   initialMine,
+  archived = false,
 }: {
   personId: string;
   initialStats: EvalStats;
   hasVoted: boolean;
   initialMine: Record<string, number | null> | null;
+  archived?: boolean;
 }) {
   const [stats, setStats] = useState<EvalStats>(initialStats);
   const [mine, setMine] = useState<Record<string, number | null> | null>(initialMine);
@@ -63,19 +65,50 @@ export default function EvalPanel({
     }
   };
 
+  const header = (
+    <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+      <h2 className="text-xl font-bold">8項目の評価</h2>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-mut">総合</span>
+        <span className="text-2xl font-black text-gold">
+          {overall != null ? overall.toFixed(1) : "—"}
+        </span>
+        <span className="text-sm text-mut">/ 5.0</span>
+        <span className="text-xs text-mut">（{stats.total}人が回答）</span>
+      </div>
+    </div>
+  );
+
+  // スレ落ち（アーカイブ）: 平均点のみ表示・書き込み不可
+  if (archived) {
+    return (
+      <section className="bg-panel border border-line rounded-2xl p-6">
+        {header}
+        <div className="space-y-3">
+          {EVAL_ITEMS.map((item) => {
+            const avg = stats.avgs[item.key];
+            const count = stats.counts[item.key] ?? 0;
+            return (
+              <div key={item.key} className="flex items-center gap-3">
+                <span className="w-24 text-sm text-mut shrink-0">{item.label}</span>
+                <span className="text-sm font-bold w-10 text-right">
+                  {avg != null ? avg.toFixed(1) : "—"}
+                </span>
+                <span className="text-xs text-mut">（{count}）</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-center text-xs text-mut mt-4">
+          ※ このページはアーカイブされたため、評価の書き込みは終了しています
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-        <h2 className="text-xl font-bold">8項目の評価</h2>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-mut">総合</span>
-          <span className="text-2xl font-black text-gold">
-            {overall != null ? overall.toFixed(1) : "—"}
-          </span>
-          <span className="text-sm text-mut">/ 5.0</span>
-          <span className="text-xs text-mut">（{stats.total}人が回答）</span>
-        </div>
-      </div>
+      {header}
 
       {!hasVoted && (
         <div className="bg-panel2 border border-line rounded-xl p-4 mb-4 text-center text-sm text-mut">

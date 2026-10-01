@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEvalStats, getMyEvalToday, insertEvaluation } from "@/lib/queries";
+import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
@@ -35,6 +35,14 @@ export async function POST(request: Request) {
         { success: false, error: "1項目以上選んでください" },
         { status: 400 }
       );
+    }
+
+    const person = await getPerson(personId);
+    if (!person || person.is_hidden) {
+      return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
+    }
+    if (person.x_status && person.x_status !== "ok") {
+      return NextResponse.json({ success: false, error: "評価できません" }, { status: 403 });
     }
 
     const r = await insertEvaluation(personId, userToken, scores);

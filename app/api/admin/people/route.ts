@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   }
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") ?? "").trim();
-  const { rows } = await getPeople({ q, includeHidden: true, perPage: 100, sort: "new" });
+  const { rows } = await getPeople({ q, includeHidden: true, includeArchived: true, perPage: 100, sort: "new" });
   return NextResponse.json({ success: true, people: rows });
 }
 

@@ -116,6 +116,7 @@ export async function POST(request: Request) {
         id: string;
         screenName: string;
         name: string;
+        description: string;
         avatarUrl: string | null;
         followers: number;
       } | null = null;
@@ -128,6 +129,7 @@ export async function POST(request: Request) {
             id: fx.id,
             screenName: fx.screenName,
             name: fx.name,
+            description: fx.description,
             avatarUrl: fx.avatarUrl,
             followers: fx.followers,
           };
@@ -146,6 +148,7 @@ export async function POST(request: Request) {
       const updated = await adminUpdatePerson(id, {
         handle: matched.screenName,
         avatar_url: matched.avatarUrl,
+        x_description: matched.description,
         x_user_id: matched.id,
         x_status: "ok",
         x_checked_at: new Date().toISOString(),

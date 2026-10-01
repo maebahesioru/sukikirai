@@ -13,6 +13,7 @@ export type Person = {
   x_user_id?: string | null;
   x_status?: string | null;
   x_checked_at?: string | Date | null;
+  x_description?: string | null;
   created_at: string;
   updated_at: string;
 };

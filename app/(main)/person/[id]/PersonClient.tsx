@@ -45,6 +45,8 @@ export default function PersonClient({
   const overall = evalStats.overall;
   // スレ落ち（Xアカウントが確認できない/別人が使用中）→ アーカイブ表示
   const archived = !!person.x_status && person.x_status !== "ok";
+  // 概要文: Xの現在のプロフィール文（x_description）を優先、なければサイト側のdescription
+  const profileText = person.x_description || person.description;
 
   return (
     <div className="space-y-6">
@@ -67,9 +69,9 @@ export default function PersonClient({
                 </a>
               )}
             </div>
-            {person.description && (
+            {profileText && (
               <p className="text-mut text-sm mt-2 leading-relaxed whitespace-pre-wrap">
-                {person.description}
+                {profileText}
               </p>
             )}
             <div className="flex flex-wrap gap-1.5 mt-3">

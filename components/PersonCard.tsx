@@ -21,8 +21,8 @@ export default function PersonCard({ p }: { p: PersonCardData }) {
         </div>
       </div>
 
-      {p.description && (
-        <p className="text-sm text-mut line-clamp-2 leading-snug">{p.description}</p>
+      {(p.x_description || p.description) && (
+        <p className="text-sm text-mut line-clamp-2 leading-snug">{p.x_description || p.description}</p>
       )}
 
       <div className="flex flex-wrap gap-1 mt-auto">

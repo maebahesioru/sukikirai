@@ -57,7 +57,7 @@ export async function getPeople(f: {
   const where = `
     ${f.includeHidden ? "TRUE" : "NOT p.is_hidden"}
     AND ${f.includeArchived ? "TRUE" : "(p.x_status IS NULL OR p.x_status = 'ok')"}
-    AND ($1 = '' OR p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%' OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%')
+    AND ($1 = '' OR p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%' OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%' OR COALESCE(p.x_description,'') ILIKE '%' || $1 || '%')
     AND ($2 = '' OR $2 = ANY(p.tags))
     AND ($3 = '' OR p.category = $3)`;
   const rows = await sql<PersonWithVotes>(
@@ -107,6 +107,7 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND (
        p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%'
        OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%'
+      OR COALESCE(p.x_description,'') ILIKE '%' || $1 || '%'
        OR EXISTS (SELECT 1 FROM unnest(p.tags) tg WHERE tg ILIKE '%' || $1 || '%')
        OR p.id = $2
      )
@@ -701,14 +702,15 @@ export async function addPersonFromX(
       id = `${baseSlug}-${i}`;
     }
     const r = await c.query<Person>(
-      `INSERT INTO people (id, handle, name, description, tags, category, avatar_url, followers, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'user')
+      `INSERT INTO people (id, handle, name, description, x_description, tags, category, avatar_url, followers, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'user')
        ON CONFLICT (id) DO NOTHING
        RETURNING *`,
       [
         id,
         fx.screenName,
         fx.name.slice(0, 100),
+        fx.description.slice(0, 500),
         fx.description.slice(0, 500),
         ["X"],
         DEFAULT_CATEGORY,
@@ -1124,6 +1126,7 @@ export async function adminUpdatePerson(
     x_user_id: string | null;
     x_status: string | null;
     x_checked_at: string | null;
+    x_description: string | null;
   }>
 ): Promise<Person | null> {
   const colMap: Record<string, string> = {
@@ -1138,6 +1141,7 @@ export async function adminUpdatePerson(
     x_user_id: "x_user_id",
     x_status: "x_status",
     x_checked_at: "x_checked_at",
+    x_description: "x_description",
   };
   const sets: string[] = [];
   const params: unknown[] = [id];

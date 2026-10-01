@@ -30,13 +30,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${p.name}の評価・好き嫌い`,
     description:
+      p.x_description ||
       p.description ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
     alternates: { canonical: `/person/${p.id}` },
     ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,
-      description: p.description || undefined,
+      description: p.x_description || p.description || undefined,
     },
   };
 }
@@ -68,7 +69,7 @@ export default async function PersonPage({ params }: Params) {
     "@context": "https://schema.org",
     "@type": "Person",
     name: person.name,
-    description: person.description || undefined,
+    description: person.x_description || person.description || undefined,
     url: `${SITE_URL}/person/${person.id}`,
     aggregateRating:
       voteStats.total > 0

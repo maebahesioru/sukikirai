@@ -15,6 +15,7 @@ import {
   getVoteStats,
 } from "@/lib/queries";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { maybeRefreshPersonProfile } from "@/lib/xsync";
 import PersonClient from "./PersonClient";
 import Sidebar from "@/components/Sidebar";
 
@@ -47,6 +48,9 @@ export default async function PersonPage({ params }: Params) {
   const id = decodeURIComponent(rawId);
   const person = await getPerson(id);
   if (!person || person.is_hidden) notFound();
+
+  // 閲覧時にプロフィールをバックグラウンド同期（1時間キャッシュ・次の表示から反映）
+  void maybeRefreshPersonProfile(person.id).catch(() => {});
 
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value ?? "";

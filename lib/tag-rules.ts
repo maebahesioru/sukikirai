@@ -142,6 +142,11 @@ const STOPWORDS = new Set<string>([
   "お願い", "感じ", "方", "人", "名", "界隈", "学生", "高校生", "中学生", "大学生", "社会人", "済み", "無言",
   "相互", "ブロック", "解除", "挨拶", "報告", "告知", "宣伝", "更新", "投稿", "好き", "嫌い", "エロ", "えっち",
   "エッチ", "えちえち", "nsfw", "自分用", "系", "派", "者", "部", "会", "屋", "趣味垢", "サブ垢",
+  "全て", "基本", "基本的", "名前", "相方", "相棒", "アイコン", "ヘッダー", "推し", "日本", "大好き", "毎日",
+  "今日", "明日", "昨日", "今年", "去年", "来年", "場合", "時間", "今回", "以上", "以下", "一応", "失礼",
+  "参照", "返し", "関わり", "関わる", "決まっ", "言うまでも", "欲しい", "ほしい", "めっちゃ", "とても",
+  "ちょっと", "すごく", "すごい", "やばい", "すぎ", "頻度", "バック", "どうぞ", "ぜひ", "是非",
+  "url", "プロフ", "仕事", "アカウント名", "教えて", "見てる", "してます", "しました", "おります",
   // カタカナ一般語
   "ツイッター", "インスタ", "インスタグラム", "ユーチューブ", "ツイッチ", "ディスコード", "ティックトック",
   "コミュニティ", "コンテンツ", "チャンネル", "サブスク", "リンク", "サイト", "ブログ", "アプリ", "ゲーム", "マー",
@@ -177,6 +182,13 @@ const LATIN_RE = /^[A-Za-z0-9]+$/;
 const CONTENT_CHAR_RE = /[ぁ-んァ-ヶ一-龠a-zA-Z]/;
 const NUMERIC_RE = /^[0-9０-９]+$/;
 
+/** 語尾が動詞・助動詞・形容詞系の候補はタグにしない（「決まってる」「色んな」「低い」等の断片対策） */
+const BAD_END_RE =
+  /(てる|ってる|でる|ける|げる|べる|める|せる|れる|られる|して|する|した|します|ません|ました|です|ます|たい|かも|かな|けど|ので|のに|から|まで|だけ|しか|れば|たら|なら|くれ|なり|そう|よう|こと|もの|て|い|な|る|う|っ|ん)$/;
+
+/** 結合してよい断片（純カナ/漢字・各2文字以上。「ブル」+「アカ」→「ブルアカ」） */
+const MERGEABLE_RE = /^[ァ-ヶー一-龠々]+$/;
+
 /**
  * プロフ文 → タグ候補の語リスト。
  * - URL・@IDを除去 → Intl.Segmenter で単語分割
@@ -191,23 +203,33 @@ export function bioToCandidates(bio: string): string[] {
   const tokens: string[] = [];
   let run: string[] = [];
 
+  const okCandidate = (t: string): boolean => {
+    if (t.length < 2 || t.length > 12) return false;
+    if (LATIN_RE.test(t) && t.length < 3) return false;
+    if (STOPWORDS.has(t.toLowerCase())) return false;
+    if (/^[ぁ-んー]{1,3}$/.test(t)) return false; // 「なり」「くれ」などの短い助詞的語
+    if (BAD_END_RE.test(t)) return false; // 動詞・助動詞の断片
+    return true;
+  };
+
   const flush = () => {
     if (run.length === 0) return;
-    const allLatin = run.every((t) => LATIN_RE.test(t));
-    if (allLatin) {
-      for (const t of run) {
-        if (t.length >= 3 && t.length <= 12) tokens.push(t);
-      }
-    } else {
-      const merged = run.join("");
-      if (merged.length >= 2 && merged.length <= 12) {
-        tokens.push(merged);
-      } else if (run.length > 1) {
-        for (const t of run) {
-          if (t.length >= 2 && t.length <= 12) tokens.push(t);
-        }
+    // 「ブル」+「アカ」のような分割複合語だけ結合（純カナ/漢字・各2文字以上）
+    // それ以外の断片は個別にフィルタにかける
+    let buf = "";
+    const pushBuf = () => {
+      if (buf && okCandidate(buf)) tokens.push(buf);
+      buf = "";
+    };
+    for (const t of run) {
+      if (t.length >= 2 && MERGEABLE_RE.test(t)) {
+        buf += t;
+      } else {
+        pushBuf();
+        if (okCandidate(t)) tokens.push(t);
       }
     }
+    pushBuf();
     run = [];
   };
 
@@ -227,8 +249,6 @@ export function bioToCandidates(bio: string): string[] {
       flush();
       continue;
     }
-    const isLatin = LATIN_RE.test(raw);
-    if (run.length > 0 && LATIN_RE.test(run[run.length - 1]) !== isLatin) flush();
     run.push(raw);
   }
   flush();

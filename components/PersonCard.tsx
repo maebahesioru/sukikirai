@@ -39,9 +39,10 @@ export default function PersonCard({ p }: { p: PersonCardData }) {
       <div className="mt-1">
         {likePct != null ? (
           <>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-like font-bold">好き {likePct.toFixed(0)}%</span>
-              <span className="text-mut">{total}票</span>
+            <div className="flex items-center text-xs mb-1 gap-2">
+              <span className="text-like font-bold">好き {Math.round(likePct)}%</span>
+              <span className="text-dislike font-bold">嫌い {100 - Math.round(likePct)}%</span>
+              <span className="text-mut ml-auto shrink-0">{total}票</span>
             </div>
             <div className="w-full bg-line rounded-full h-1.5 overflow-hidden flex">
               <div className="bg-like h-full" style={{ width: `${likePct}%` }} />

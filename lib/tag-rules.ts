@@ -311,3 +311,45 @@ export function classifyWithAuto(
   }
   return tags;
 }
+
+/* ================= カテゴリ自動判定 ================= */
+
+/** 企業・サービス */
+const COMPANY_ANY = ["株式会社", "有限会社", "合同会社", "公式アカウント", "公式です", "ブランド", "メーカー", "企業アカウント", "運営しています", "サービスを提供", "プレスリリース", "co.,ltd", "inc.", "corp."];
+/** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
+const COMPANY_NAME_RE = /^(yahoo|youtube|google|openai|x|amazon|microsoft|apple|meta|nintendo|sony|rakuten|楽天|line|discord|tiktok|netflix|nhk)$/i;
+/** 政治家 */
+const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "内閣総理", "大臣", "知事", "市長", "市議会", "都議会", "立候補"];
+/** 芸能人 */
+const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌手", "お笑いコンビ", "お笑い芸人"];
+/** Vtuber */
+const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー"];
+/** BOT（bio側の言い回し） */
+const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる"];
+/** YouTuber */
+const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー"];
+/** 配信者 */
+const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer"];
+/** クリエイター */
+const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター"];
+
+/**
+ * 名前とプロフィール文からカテゴリを決める（純ローカル・自動）。
+ * 順序: 企業 → 政治家 → 芸能人 → Vtuber → BOT → ヒカマー → YouTuber → 配信者 → クリエイター → その他
+ * （ヒカマー界隈の人は「ヒカマー」を優先。活動内容はタグ側で表現する）
+ */
+export function classifyCategory(name: string, bio: string): string {
+  const n = (name || "").normalize("NFKC").trim();
+  const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
+
+  if (COMPANY_NAME_RE.test(n) || COMPANY_ANY.some((k) => text.includes(k))) return "企業・サービス";
+  if (POLITICIAN_ANY.some((k) => text.includes(k))) return "政治家";
+  if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
+  if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";
+  if (/bot$/i.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
+  if (HIKAMER_RE.test(text) || HIKAMER_NAME_RE.test(n)) return "ヒカマー";
+  if (YOUTUBER_ANY.some((k) => text.includes(k))) return "YouTuber";
+  if (STREAMER_ANY.some((k) => text.includes(k))) return "配信者";
+  if (CREATOR_ANY.some((k) => text.includes(k))) return "クリエイター";
+  return "その他";
+}

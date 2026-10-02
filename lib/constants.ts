@@ -1,6 +1,17 @@
 // アプリ共通の定数
 
-export const CATEGORIES = ["ヒカマー", "YouTuber", "配信者", "企業・サービス", "その他"] as const;
+export const CATEGORIES = [
+  "ヒカマー",
+  "YouTuber",
+  "配信者",
+  "Vtuber",
+  "クリエイター",
+  "BOT",
+  "企業・サービス",
+  "芸能人",
+  "政治家",
+  "その他",
+] as const;
 export type Category = (typeof CATEGORIES)[number];
 export const DEFAULT_CATEGORY: Category = "その他";
 

@@ -18,14 +18,14 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`vote:ip:${ip}`, 200, 60 * 60 * 1000)) {
+    if (!rateLimit(`vote:ip:${ip}`, 600, 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "リクエストが多すぎます。しばらくお待ちください" },
         { status: 429 }
       );
     }
     // トークン回しによる票水増し対策（1日あたりのIP上限）
-    if (!rateLimit(`vote:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`vote:ipday:${ip}`, 1000, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の投票数が上限に達しました。明日またお試しください" },
         { status: 429 }

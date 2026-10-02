@@ -53,13 +53,13 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`comment:ip:${ip}`, 80, 60 * 60 * 1000)) {
+    if (!rateLimit(`comment:ip:${ip}`, 300, 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "投稿が多すぎます。しばらくお待ちください" },
         { status: 429 }
       );
     }
-    if (!rateLimit(`comment:ipday:${ip}`, 300, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`comment:ipday:${ip}`, 2000, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の投稿数が上限に達しました。明日またお試しください" },
         { status: 429 }

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`pollopt:ip:${ip}`, 120, 60 * 60 * 1000)) {
+    if (!rateLimit(`pollopt:ip:${ip}`, 300, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "リクエストが多すぎます" }, { status: 429 });
     }
 

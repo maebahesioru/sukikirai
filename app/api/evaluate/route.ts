@@ -16,13 +16,13 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`eval:ip:${ip}`, 120, 60 * 60 * 1000)) {
+    if (!rateLimit(`eval:ip:${ip}`, 300, 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "リクエストが多すぎます。しばらくお待ちください" },
         { status: 429 }
       );
     }
-    if (!rateLimit(`eval:ipday:${ip}`, 200, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`eval:ipday:${ip}`, 1000, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の評価数が上限に達しました。明日またお試しください" },
         { status: 429 }

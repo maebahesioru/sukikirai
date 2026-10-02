@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`report:ip:${ip}`, 30, 60 * 60 * 1000)) {
+    if (!rateLimit(`report:ip:${ip}`, 60, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "通報が多すぎます。しばらくお待ちください" }, { status: 429 });
     }
 

@@ -58,11 +58,11 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`poll:ip:${ip}`, 30, 60 * 60 * 1000)) {
+    if (!rateLimit(`poll:ip:${ip}`, 60, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "作成リクエストが多すぎます" }, { status: 429 });
     }
-    if (!rateLimit(`poll:token:${userToken}`, 6, 60 * 60 * 1000)) {
-      return NextResponse.json({ success: false, error: "1時間に作成できる投票は6つまでです" }, { status: 429 });
+    if (!rateLimit(`poll:token:${userToken}`, 12, 60 * 60 * 1000)) {
+      return NextResponse.json({ success: false, error: "1時間に作成できる投票は12個までです" }, { status: 429 });
     }
 
     const pollId = await createPoll({

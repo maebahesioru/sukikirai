@@ -20,7 +20,7 @@ export default function ShareButtons({
   const dislikePct = 100 - likePct;
   const url = () => (typeof window !== "undefined" ? window.location.href : "");
 
-  const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${likePct}% vs【嫌い派】${dislikePct}%\n#ヒカマーズ好き嫌いcom`;
+  const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${likePct}% vs【嫌い派】${dislikePct}%\n#ツイッタラー世論調査`;
 
   const open = (u: string) => window.open(u, "_blank");
 

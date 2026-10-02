@@ -128,7 +128,7 @@ export default function CreatePollForm() {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value.slice(0, 200))}
-          placeholder="例: 一番好きなヒカマーは？"
+          placeholder="例: 一番好きなツイッタラーは？"
           className="w-full px-3 py-2.5 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
         />
       </div>

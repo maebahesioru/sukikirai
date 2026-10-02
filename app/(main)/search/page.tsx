@@ -53,7 +53,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="@IDまたは名前（例: @maebahesioru2 / ヒカマー）"
+              placeholder="@IDまたは名前（例: @maebahesioru2 / ツイッタラー）"
               className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
             />
           </div>

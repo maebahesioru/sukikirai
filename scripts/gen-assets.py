@@ -89,14 +89,14 @@ def make_og():
 
     # ロゴ（ハート）＋サイト名
     d.polygon(heart_points(120, 130, 128), fill=LIKE)
-    d.text((200, 104), "ヒカマーズ好き嫌い.com", font=f_logo, fill=TXT)
+    d.text((200, 104), "ツイッタラー世論調査", font=f_logo, fill=TXT)
 
     # タイトル
-    d.text((80, 240), "あのXユーザーのこと、", font=f_title, fill=TXT)
+    d.text((80, 240), "あのツイッタラーのこと、", font=f_title, fill=TXT)
     d.text((80, 330), "好き？嫌い？", font=f_title, fill=LIKE)
 
     # サブタイトル
-    d.text((82, 436), "ヒカマー界隈からX全体まで。@IDで検索して誰でも追加、", font=f_sub, fill=MUT)
+    d.text((82, 436), "X全体のツイッタラーを@IDで検索して誰でも追加、", font=f_sub, fill=MUT)
     d.text((82, 476), "好き嫌い投票・8項目評価・コメントが書き込める匿名サイト。", font=f_sub, fill=MUT)
 
     # 結果バー（装飾）
@@ -108,8 +108,8 @@ def make_og():
     )
 
     # URL
-    d.text((W - 80 - d.textlength("hikamer-suki-kira.hikamers.app", font=f_url), 556),
-           "hikamer-suki-kira.hikamers.app", font=f_url, fill=XBLUE)
+    d.text((W - 80 - d.textlength("tsuittara-yoron.hikamers.app", font=f_url), 556),
+           "tsuittara-yoron.hikamers.app", font=f_url, fill=XBLUE)
 
     img.convert("RGB").save(os.path.join(PUBLIC, "og.png"), "PNG")
     print("wrote public/og.png")

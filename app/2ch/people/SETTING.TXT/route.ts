@@ -2,8 +2,8 @@ import { to2chResponse } from "@/lib/bbs2ch";
 
 export const dynamic = "force-dynamic";
 
-const SETTINGS = `BBS_TITLE=ヒカマーズ好き嫌い.com（人物）
-BBS_TITLE_ORIG=ヒカマーズ好き嫌い.com（人物）
+const SETTINGS = `BBS_TITLE=ツイッタラー世論調査（人物）
+BBS_TITLE_ORIG=ツイッタラー世論調査（人物）
 BBS_NONAME_NAME=名無しさん
 BBS_MAX_MENU_THREAD=1000
 BBS_THREAD_TATESUGI=50

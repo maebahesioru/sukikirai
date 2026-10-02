@@ -14,17 +14,17 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - Xユーザーの好き嫌い・評価サイト`,
+    default: `${SITE_NAME} - ツイッタラーの好き嫌い・評価サイト`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESC,
-  keywords: ["好き嫌い", "評価", "X", "ヒカマー", "ランキング", "世論調査", "レビュー"],
+  keywords: ["好き嫌い", "評価", "X", "ツイッタラー", "ランキング", "世論調査", "レビュー"],
   formatDetection: { email: false, address: false, telephone: false },
   openGraph: {
     type: "website",
     locale: "ja_JP",
     url: "/",
-    title: `${SITE_NAME} - Xユーザーの好き嫌い・評価サイト`,
+    title: `${SITE_NAME} - ツイッタラーの好き嫌い・評価サイト`,
     description: SITE_DESC,
     siteName: SITE_NAME,
     images: ["/og.png"],

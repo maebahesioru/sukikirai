@@ -33,7 +33,7 @@ export default async function HomePage() {
               </span>
             </h1>
             <p className="text-mut mt-4 max-w-xl leading-relaxed text-sm md:text-base">
-              ヒカマー界隈からX全体まで。気になるあの人の「好き嫌い」と「8項目評価」をみんなで書き込める匿名サイトです。@IDで検索すると未登録のXユーザーもその場で追加できます。
+              X全体のツイッタラーたちの「好き嫌い」と「8項目評価」をみんなで書き込める匿名サイトです。@IDで検索すると未登録のXユーザーもその場で追加できます。
             </p>
             <div className="mt-6">
               <HeroSearch />

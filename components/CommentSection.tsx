@@ -242,7 +242,7 @@ function CommentForm({
         return;
       }
       if (tweet && !parentCommentId) {
-        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】としてコメントを投稿しました！\n\n「${content.trim()}」\n\n#ヒカマーズ好き嫌いcom`;
+        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】としてコメントを投稿しました！\n\n「${content.trim()}」\n\n#ツイッタラー世論調査`;
         window.open(
           `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
           "_blank"

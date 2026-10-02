@@ -1428,3 +1428,32 @@ export async function getPollUpload(id: string): Promise<{ mime: string; data: B
     [id]
   );
 }
+
+/** タグ自動付与の対象一覧（mode=empty はタグが空の人だけ） */
+export async function listTagTargets(
+  mode: "all" | "empty"
+): Promise<{ id: string; name: string; tags: string[]; bio: string }[]> {
+  return sql<{ id: string; name: string; tags: string[]; bio: string }>(
+    `SELECT id, name, tags, COALESCE(NULLIF(x_description, ''), description, '') AS bio
+     FROM people
+     WHERE NOT is_hidden ${mode === "empty" ? "AND tags = '{}'::text[]" : ""}`
+  );
+}
+
+/** 複数人のタグをまとめて更新（チャンク実行） */
+export async function setPeopleTags(pairs: { id: string; tags: string[] }[]): Promise<void> {
+  for (let i = 0; i < pairs.length; i += 200) {
+    const chunk = pairs.slice(i, i + 200);
+    const values: string[] = [];
+    const params: unknown[] = [];
+    chunk.forEach((p, j) => {
+      params.push(p.id, p.tags);
+      values.push(`($${j * 2 + 1}, $${j * 2 + 2}::text[])`);
+    });
+    await sql(
+      `UPDATE people p SET tags = v.tags FROM (VALUES ${values.join(",")}) AS v(id, tags)
+       WHERE p.id = v.id`,
+      params
+    );
+  }
+}

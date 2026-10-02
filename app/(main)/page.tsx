@@ -27,7 +27,7 @@ export default async function HomePage() {
           <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-dislike/20 blur-3xl" />
           <div className="relative">
             <h1 className="text-3xl md:text-5xl font-black leading-tight">
-              あのXユーザーのこと、{" "}
+              あのツイッタラーのこと、{" "}
               <span className="bg-gradient-to-r from-like to-dislike bg-clip-text text-transparent">
                 好き？嫌い？
               </span>

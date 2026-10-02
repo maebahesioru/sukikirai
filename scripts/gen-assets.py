@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ヒカマーズ好き嫌い.com v2 — OGP画像・アイコン生成（PIL）
+"""ツイッタラー世論調査 v2 — OGP画像・アイコン生成（PIL）
 
 生成物:
   public/og.png        1200x630 OGPカード

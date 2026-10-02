@@ -1,4 +1,4 @@
-# ヒカマーズ好き嫌い.com
+# ツイッタラー世論調査
 
 Xユーザーの「好き嫌い」と「8項目評価」を匿名で書き込めるサイトです（v2）。
 
@@ -16,7 +16,7 @@ Xユーザーの「好き嫌い」と「8項目評価」を匿名で書き込め
 
 - Next.js 15 (App Router) / React 19 / Tailwind CSS 4
 - PostgreSQL（node-postgres）※自鯖 Coolify 上で運用
-- ホスティング: Coolify (VM100) / ドメイン: hikamer-suki-kira.hikamers.app
+- ホスティング: Coolify (VM100) / ドメイン: tsuittara-yoron.hikamers.app（旧: hikamer-suki-kira.hikamers.app → 301）
 
 ## 開発
 

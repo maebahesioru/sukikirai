@@ -1,8 +1,10 @@
-// タグ自動付与（キーワード辞書方式・LLM/外部API不使用の純ローカル判定）
-// プロフィール文と名前からキーワードを照合してタグを決める。辞書はここを編集するだけで全員に反映される。
+// タグ自動付与（キーワード辞書 + プロフ単語の自動昇格・LLM/外部API不使用の純ローカル判定）
 //
-// 命名方針: 「◯◯マー」はヒカマー系の称号のみ（ヒカマー/成人ヒカマー/反ヒカマー/技術系ヒカマー）。
-// それ以外は一般のXユーザーにも自然な名前（◯◯好き・役割名など）にする。
+// 2層構造:
+//   1) 辞書（TAG_RULES） — キュレーション済みの主要タグ
+//   2) 自動昇格タグ   — プロフ文を単語分割し、2人以上が使っている語を自動でタグ化（プロフの多様さに比例して増える）
+//
+// 命名方針: 「◯◯マー」はヒカマー系の称号のみ。自動昇格タグは語そのまま（一般ユーザーにも自然）。
 
 export type TagRule = {
   tag: string;
@@ -13,6 +15,8 @@ export type TagRule = {
   /** ヒカマー（成人ヒカマー含む）と判定された人にのみ付与 */
   hikamerOnly?: boolean;
 };
+
+export type PromotedTag = { tag: string; count: number };
 
 /** ヒカマー界隈の命名規則（名前で判定） */
 const HIKAMER_NAME_RE = /mani|マニ|キン$|bot$/i;
@@ -116,6 +120,168 @@ export function classifyByRules(name: string, bio: string): string[] {
     if (rule.keywords.some((k) => text.includes(k))) {
       tags.push(rule.tag);
     }
+  }
+  return tags;
+}
+
+/* ================= プロフ単語の自動昇格 ================= */
+
+/** 分割後にタグにしない一般語（小文字で照合） */
+const STOPWORDS = new Set<string>([
+  // 助詞・助動詞・補助語
+  "と", "が", "を", "に", "で", "も", "や", "は", "の", "へ", "ね", "よ", "だ", "な", "て", "た",
+  "です", "ます", "ました", "ません", "して", "してる", "してます", "いる", "ある", "なる", "する",
+  "やる", "やっ", "やり", "れる", "られ", "たい", "ない", "から", "まで", "より", "ほど", "くらい", "ぐらい",
+  "など", "とか", "ので", "のに", "けど", "けれど", "でも", "しか", "だけ", "ばかり", "こそ", "って", "たり",
+  "たら", "なら", "こと", "もの", "とき", "ところ", "ため", "よう", "そう", "どう", "こんな", "そんな", "あんな",
+  "この", "その", "あの", "ここ", "そこ", "あそこ", "わたし", "私", "僕", "俺", "自分", "みんな", "皆",
+  // 汎用語
+  "さん", "ちゃん", "くん", "氏", "様", "アカウント", "垢", "ツイート", "フォロー", "フォロバ", "フォロワー",
+  "リプ", "リプライ", "dm", "プロフィール", "固定", "ツイフィ", "メイン", "サブ", "本垢", "鍵垢", "裏垢", "活動",
+  "情報", "趣味", "日常", "雑多", "記録", "中心", "多め", "気軽", "仲良く", "ください", "下さい", "よろしく",
+  "お願い", "感じ", "方", "人", "名", "界隈", "学生", "高校生", "中学生", "大学生", "社会人", "済み", "無言",
+  "相互", "ブロック", "解除", "挨拶", "報告", "告知", "宣伝", "更新", "投稿", "好き", "嫌い", "エロ", "えっち",
+  "エッチ", "えちえち", "nsfw", "自分用", "系", "派", "者", "部", "会", "屋", "趣味垢", "サブ垢",
+  // カタカナ一般語
+  "ツイッター", "インスタ", "インスタグラム", "ユーチューブ", "ツイッチ", "ディスコード", "ティックトック",
+  "コミュニティ", "コンテンツ", "チャンネル", "サブスク", "リンク", "サイト", "ブログ", "アプリ", "ゲーム", "マー",
+  // ラテン一般語
+  "the", "and", "for", "you", "with", "my", "me", "our", "your", "his", "her", "its", "at", "to", "of", "in",
+  "on", "is", "are", "was", "were", "be", "been", "it", "this", "that", "these", "those", "from", "by", "or",
+  "not", "but", "all", "can", "will", "just", "follow", "followers", "following", "thanks", "thank", "please",
+  "official", "account", "bot", "via", "https", "http", "www", "com", "net", "org", "t", "amp", "link", "links",
+  "bio", "profile", "sns", "youtube", "twitter", "instagram", "tiktok", "twitch", "discord", "facebook",
+  "line", "note", "ameblo", "tumblr", "reddit", "pixiv",
+]);
+
+/** 自動昇格から除外する語（辞書のキーワード・ヒカマー系の別名） */
+const PROMOTION_EXCLUDE = new Set<string>([
+  ...TAG_RULES.flatMap((r) => r.keywords.map((k) => k.toLowerCase())),
+  "ヒカマー", "ヒカマニ", "ヒカマズ", "ヒカマる", "ヒカマー界隈", "mania", "mani", "マニ", "マニア", "キン",
+]);
+
+let segmenter: Intl.Segmenter | null | undefined;
+function getSegmenter(): Intl.Segmenter | null {
+  if (segmenter === undefined) {
+    try {
+      segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+    } catch {
+      segmenter = null;
+    }
+  }
+  return segmenter;
+}
+
+const URL_OR_HANDLE_RE = /https?:\/\/\S+|t\.co\/\S+|@[A-Za-z0-9_]+/g;
+const LATIN_RE = /^[A-Za-z0-9]+$/;
+const CONTENT_CHAR_RE = /[ぁ-んァ-ヶ一-龠a-zA-Z]/;
+const NUMERIC_RE = /^[0-9０-９]+$/;
+
+/**
+ * プロフ文 → タグ候補の語リスト。
+ * - URL・@IDを除去 → Intl.Segmenter で単語分割
+ * - 助詞等のストップワードで区切りつつ、隣接する内容語を結合（「ブル」+「アカ」→「ブルアカ」）
+ * - ラテン語は3文字以上・日本語は2〜12文字
+ */
+export function bioToCandidates(bio: string): string[] {
+  if (!bio) return [];
+  const seg = getSegmenter();
+  if (!seg) return [];
+  const cleaned = bio.normalize("NFKC").replace(URL_OR_HANDLE_RE, " ");
+  const tokens: string[] = [];
+  let run: string[] = [];
+
+  const flush = () => {
+    if (run.length === 0) return;
+    const allLatin = run.every((t) => LATIN_RE.test(t));
+    if (allLatin) {
+      for (const t of run) {
+        if (t.length >= 3 && t.length <= 12) tokens.push(t);
+      }
+    } else {
+      const merged = run.join("");
+      if (merged.length >= 2 && merged.length <= 12) {
+        tokens.push(merged);
+      } else if (run.length > 1) {
+        for (const t of run) {
+          if (t.length >= 2 && t.length <= 12) tokens.push(t);
+        }
+      }
+    }
+    run = [];
+  };
+
+  for (const part of seg.segment(cleaned)) {
+    const raw = part.segment.trim();
+    if (!raw) {
+      flush();
+      continue;
+    }
+    const norm = raw.toLowerCase();
+    const isContent =
+      part.isWordLike &&
+      CONTENT_CHAR_RE.test(raw) &&
+      !NUMERIC_RE.test(raw) &&
+      !STOPWORDS.has(norm);
+    if (!isContent) {
+      flush();
+      continue;
+    }
+    const isLatin = LATIN_RE.test(raw);
+    if (run.length > 0 && LATIN_RE.test(run[run.length - 1]) !== isLatin) flush();
+    run.push(raw);
+  }
+  flush();
+  return tokens;
+}
+
+/**
+ * 全員のプロフから、2人以上が使っている語を昇格タグとして集計。
+ * 辞書キーワード・ストップワードは除外。表示形はオリジナル（ラテンは先頭大文字）。
+ */
+export function computePromotedTags(bios: string[]): Map<string, PromotedTag> {
+  const counts = new Map<string, number>();
+  const display = new Map<string, string>();
+  for (const bio of bios) {
+    const seen = new Set<string>();
+    for (const t of bioToCandidates(bio)) {
+      const key = t.toLowerCase();
+      if (seen.has(key) || PROMOTION_EXCLUDE.has(key)) continue;
+      seen.add(key);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+      if (!display.has(key)) {
+        display.set(key, LATIN_RE.test(t) ? t[0].toUpperCase() + t.slice(1) : t);
+      }
+    }
+  }
+  const out = new Map<string, PromotedTag>();
+  for (const [key, count] of counts) {
+    if (count >= 2) out.set(key, { tag: display.get(key)!, count });
+  }
+  return out;
+}
+
+/** 辞書タグ → 不足分を自動昇格タグで補充（最大3個） */
+export function classifyWithAuto(
+  name: string,
+  bio: string,
+  promoted: Map<string, PromotedTag> | null
+): string[] {
+  const tags = classifyByRules(name, bio);
+  if (!promoted || promoted.size === 0 || tags.length >= 3) return tags;
+  const extra: PromotedTag[] = [];
+  const seen = new Set(tags);
+  for (const t of bioToCandidates(bio)) {
+    const p = promoted.get(t.toLowerCase());
+    if (p && !seen.has(p.tag)) {
+      seen.add(p.tag);
+      extra.push(p);
+    }
+  }
+  extra.sort((a, b) => b.count - a.count);
+  for (const e of extra) {
+    if (tags.length >= 3) break;
+    tags.push(e.tag);
   }
   return tags;
 }

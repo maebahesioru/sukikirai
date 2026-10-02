@@ -9,11 +9,13 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const NONAME = "名無しさん";
 
-// スレッドキー: サイトIDから決定的な12桁数字を作る（810ch等と同じ数値キー形式）
+// スレッドキー: サイトIDから決定的な10桁数字を作る。
+// ⚠️ 5ch互換ブラウザ（Siki等）はスレキーを「10桁」とみなして切り詰める/URLを組み立てるため、
+//    12桁だと `/dat/{10桁}.dat` に化けて404になる（2026-10-02実測）。必ず10桁にする。
 export function threadKey(id: string): string {
   const h = createHash("sha256").update("suki2ch:" + id).digest("hex");
-  const n = parseInt(h.slice(0, 12), 16) % 1_000_000_000_000;
-  return String(n).padStart(12, "0");
+  const n = parseInt(h.slice(0, 12), 16) % 10_000_000_000;
+  return String(n).padStart(10, "0");
 }
 
 // 書き込みID: cookie_id のハッシュから決定的に9文字（匿名・追跡不能）

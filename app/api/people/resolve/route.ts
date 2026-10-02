@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addPersonFromX } from "@/lib/queries";
+import { autoTagPerson } from "@/lib/autotag";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { str } from "@/lib/validate";
 
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
     const result = await addPersonFromX(query);
     if ("error" in result) {
       return NextResponse.json({ success: false, error: result.error }, { status: result.status });
+    }
+    if (result.created) {
+      // 新規追加はタグを自動付与（バックグラウンド・失敗しても応答には影響しない）
+      void autoTagPerson(result.person.id).catch((e) => console.error("[autotag]", e));
     }
     return NextResponse.json({
       success: true,

@@ -147,6 +147,7 @@ export async function POST(request: Request) {
       }
       const updated = await adminUpdatePerson(id, {
         handle: matched.screenName,
+        ...(matched.name ? { name: matched.name.slice(0, 100) } : {}),
         avatar_url: matched.avatarUrl,
         x_description: matched.description,
         x_user_id: matched.id,

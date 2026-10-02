@@ -132,7 +132,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
               {tags.slice(0, 40).map((t) => (
                 <Link
                   key={t.tag}
-                  href={href({ tag: t.tag, page: "1" })}
+                  href={`/tag/${encodeURIComponent(t.tag)}`}
                   className={`text-xs px-2.5 py-1 rounded-full border transition ${
                     tag === t.tag
                       ? "bg-x text-white border-x"

@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "date-fns"],
   },
 
+  // OG画像用フォント等を standalone へ確実に含める
+  outputFileTracingIncludes: {
+    "/person/**": ["./assets/**"],
+  },
+
   async headers() {
     return [
       {

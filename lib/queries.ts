@@ -1460,3 +1460,112 @@ export async function setPeopleTags(
     );
   }
 }
+
+/* ================= 統計ページ用 ================= */
+
+/** 評価の総数 */
+export async function getEvalTotalCount(): Promise<number> {
+  const r = await sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM evaluations");
+  return r?.c ?? 0;
+}
+
+const SCORE_SUB = `
+  (SELECT person_id, AVG(item_avg) AS score FROM (
+     ${EVAL_KEYS.map((k) => `SELECT person_id, ${k}::numeric AS item_avg FROM evaluations WHERE ${k} IS NOT NULL`).join(" UNION ALL ")}
+   ) u GROUP BY person_id)`;
+
+const VOTE_SUB = `
+  (SELECT person_id, COUNT(*)::int AS votes,
+     (COUNT(*) FILTER (WHERE vote_type='like')::numeric / NULLIF(COUNT(*),0) * 100) AS like_pct
+   FROM votes GROUP BY person_id)`;
+
+export type CategoryStat = {
+  category: string;
+  people: number;
+  votes: number;
+  avg_like: number | null;
+  avg_score: number | null;
+};
+
+export async function getCategoryStats(): Promise<CategoryStat[]> {
+  return sql<CategoryStat>(
+    `SELECT p.category,
+       COUNT(*)::int AS people,
+       COALESCE(SUM(v.votes),0)::int AS votes,
+       ROUND(AVG(v.like_pct)::numeric, 1)::float AS avg_like,
+       ROUND(AVG(s.score)::numeric, 2)::float AS avg_score
+     FROM people p
+     LEFT JOIN ${VOTE_SUB} v ON v.person_id = p.id
+     LEFT JOIN ${SCORE_SUB} s ON s.person_id = p.id
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     GROUP BY p.category
+     ORDER BY people DESC`
+  );
+}
+
+export type TagStat = {
+  tag: string;
+  people: number;
+  votes: number;
+  avg_like: number | null;
+  avg_score: number | null;
+};
+
+export async function getTagStats(minPeople = 2, limit = 20): Promise<TagStat[]> {
+  return sql<TagStat>(
+    `SELECT t.tag,
+       COUNT(DISTINCT t.person_id)::int AS people,
+       COALESCE(SUM(v.votes),0)::int AS votes,
+       ROUND(AVG(v.like_pct)::numeric, 1)::float AS avg_like,
+       ROUND(AVG(s.score)::numeric, 2)::float AS avg_score
+     FROM (
+       SELECT p.id AS person_id, x.tag
+       FROM people p, unnest(p.tags) AS x(tag)
+       WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     ) t
+     LEFT JOIN ${VOTE_SUB} v ON v.person_id = t.person_id
+     LEFT JOIN ${SCORE_SUB} s ON s.person_id = t.person_id
+     GROUP BY t.tag
+     HAVING COUNT(DISTINCT t.person_id) >= ${Math.max(1, Math.floor(minPeople))}
+     ORDER BY people DESC, t.tag ASC
+     LIMIT ${Math.max(1, Math.floor(limit))}`
+  );
+}
+
+/** 8項目の相関（ペアごとのピアソン相関） */
+export async function getEvalCorrelation(): Promise<{ a: string; b: string; value: number | null }[]> {
+  const pairs: [string, string][] = [];
+  for (let i = 0; i < EVAL_KEYS.length; i++) {
+    for (let j = i + 1; j < EVAL_KEYS.length; j++) {
+      pairs.push([EVAL_KEYS[i], EVAL_KEYS[j]]);
+    }
+  }
+  const sel = pairs
+    .map(([a, b]) => `corr(${a}::numeric, ${b}::numeric) AS "${a}__${b}"`)
+    .join(", ");
+  const row = await sql1<Record<string, number | null>>(`SELECT ${sel} FROM evaluations`);
+  return pairs.map(([a, b]) => ({
+    a,
+    b,
+    value: row?.[`${a}__${b}`] ?? null,
+  }));
+}
+
+/** 各項目のスコア分布（1〜5の件数） */
+export async function getScoreDistribution(): Promise<Record<string, number[]>> {
+  const parts = EVAL_KEYS.map(
+    (k) => `SELECT '${k}' AS item, ${k} AS score FROM evaluations WHERE ${k} IS NOT NULL`
+  );
+  const rows = await sql<{ item: string; score: number; n: number }>(
+    `SELECT item, score, COUNT(*)::int AS n
+     FROM (${parts.join(" UNION ALL ")}) u
+     GROUP BY item, score`
+  );
+  const out: Record<string, number[]> = {};
+  for (const k of EVAL_KEYS) out[k] = [0, 0, 0, 0, 0];
+  for (const r of rows) {
+    const idx = Number(r.score) - 1;
+    if (out[r.item] && idx >= 0 && idx < 5) out[r.item][idx] = r.n;
+  }
+  return out;
+}

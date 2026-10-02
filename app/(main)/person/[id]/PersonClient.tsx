@@ -77,9 +77,13 @@ export default function PersonClient({
             <div className="flex flex-wrap gap-1.5 mt-3">
               <span className="text-xs px-2.5 py-1 rounded-full bg-xsoft text-x">{person.category}</span>
               {person.tags.map((t) => (
-                <span key={t} className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line text-mut">
+                <Link
+                  key={t}
+                  href={`/tag/${encodeURIComponent(t)}`}
+                  className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line text-mut hover:text-x hover:border-line2 transition"
+                >
                   #{t}
-                </span>
+                </Link>
               ))}
             </div>
             {archived && (
@@ -108,6 +112,12 @@ export default function PersonClient({
                 好き率 {likeRank.rank}位 / {likeRank.total}人
               </div>
             )}
+            <Link
+              href={`/compare?a=${person.id}`}
+              className="mt-2 inline-block text-xs px-3 py-1 rounded-lg border border-line text-mut hover:text-txt hover:border-line2 transition"
+            >
+              比較する
+            </Link>
           </div>
         </div>
       </section>

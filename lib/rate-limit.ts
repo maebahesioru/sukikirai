@@ -23,8 +23,10 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
 
 /**
  * クライアントIP取得。
- * Cloudflare経由なら CF-Connecting-IP が最も信頼できる（CFが必ず付与/上書きする）。
- * XFFの先頭はクライアントが偽装できるため使わない（フォールバック時は最後のホップ）。
+ * 経路: client → Cloudflare → cloudflared(VM100) → Traefik → app。
+ * CFエッジがXFFの先頭を「実クライアントIP」に正規化する（クライアント偽装のXFFは捨てられる・2026-10-02実測）。
+ * TraefikのforwardedHeaders.trustedIPs設定で、内部ホップ(fd2a:4e87:e742::1)は末尾に付く。
+ * よって「先頭エントリ」が実クライアントIP。直LANアクセスはTraefikがヘッダを置換するため偽装不可。
  */
 export function clientIp(req: Request): string {
   const h = req.headers;
@@ -36,7 +38,7 @@ export function clientIp(req: Request): string {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    if (parts.length > 0) return parts[parts.length - 1];
+    if (parts.length > 0) return parts[0];
   }
   return h.get("x-real-ip")?.trim() || "unknown";
 }

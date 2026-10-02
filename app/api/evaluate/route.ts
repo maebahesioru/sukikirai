@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
-    if (!rateLimit(`eval:ipday:${ip}`, 60, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`eval:ipday:${ip}`, 200, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の評価数が上限に達しました。明日またお試しください" },
         { status: 429 }

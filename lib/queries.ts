@@ -480,14 +480,14 @@ export async function postComment(
       `SELECT COUNT(*)::int AS c FROM comments WHERE cookie_id = $1 AND created_at >= now() - interval '1 minute'`,
       [input.cookieId]
     );
-    if ((oneMin.rows[0]?.c ?? 0) >= 2) {
-      return { ok: false as const, error: "コメントの投稿が早すぎます。1分以上間隔をあけてください", status: 429 };
+    if ((oneMin.rows[0]?.c ?? 0) >= 3) {
+      return { ok: false as const, error: "コメントの投稿が早すぎます。少し間隔をあけてください", status: 429 };
     }
     const tenMin = await c.query<{ c: number }>(
       `SELECT COUNT(*)::int AS c FROM comments WHERE cookie_id = $1 AND created_at >= now() - interval '10 minutes'`,
       [input.cookieId]
     );
-    if ((tenMin.rows[0]?.c ?? 0) >= 5) {
+    if ((tenMin.rows[0]?.c ?? 0) >= 10) {
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
 
@@ -985,14 +985,14 @@ export async function insertPollComment(input: {
       `SELECT COUNT(*)::int AS c FROM poll_comments WHERE cookie_id = $1 AND created_at >= now() - interval '1 minute'`,
       [input.cookieId]
     );
-    if ((oneMin.rows[0]?.c ?? 0) >= 2) {
-      return { ok: false as const, error: "コメントの投稿が早すぎます。1分以上間隔をあけてください", status: 429 };
+    if ((oneMin.rows[0]?.c ?? 0) >= 3) {
+      return { ok: false as const, error: "コメントの投稿が早すぎます。少し間隔をあけてください", status: 429 };
     }
     const tenMin = await c.query<{ c: number }>(
       `SELECT COUNT(*)::int AS c FROM poll_comments WHERE cookie_id = $1 AND created_at >= now() - interval '10 minutes'`,
       [input.cookieId]
     );
-    if ((tenMin.rows[0]?.c ?? 0) >= 5) {
+    if ((tenMin.rows[0]?.c ?? 0) >= 10) {
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
 

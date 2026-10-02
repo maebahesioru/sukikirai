@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`resolve:ip:${ip}`, 12, 60 * 60 * 1000)) {
+    if (!rateLimit(`resolve:ip:${ip}`, 30, 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "追加リクエストが多すぎます。1時間ほどおいてからお試しください" },
         { status: 429 }

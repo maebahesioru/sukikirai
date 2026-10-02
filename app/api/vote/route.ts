@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       );
     }
     // トークン回しによる票水増し対策（1日あたりのIP上限）
-    if (!rateLimit(`vote:ipday:${ip}`, 30, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`vote:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の投票数が上限に達しました。明日またお試しください" },
         { status: 429 }

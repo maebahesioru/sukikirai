@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (!rateLimit(`pollvote:ip:${ip}`, 200, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "リクエストが多すぎます" }, { status: 429 });
     }
-    if (!rateLimit(`pollvote:ipday:${ip}`, 30, 24 * 60 * 60 * 1000)) {
+    if (!rateLimit(`pollvote:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の投票数が上限に達しました。明日またお試しください" },
         { status: 429 }

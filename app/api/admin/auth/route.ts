@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, adminCookieValue, checkAdminPassword } from "@/lib/auth";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIp(request);
+    // 総当たり対策: IPごと15分10回 + 全体で15分60回
+    if (
+      !rateLimit(`adminauth:ip:${ip}`, 10, 15 * 60 * 1000) ||
+      !rateLimit("adminauth:global", 60, 15 * 60 * 1000)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "試行が多すぎます。しばらくお待ちください" },
+        { status: 429 }
+      );
+    }
     const body = await request.json();
     const password = typeof body.password === "string" ? body.password : "";
     if (!checkAdminPassword(password)) {

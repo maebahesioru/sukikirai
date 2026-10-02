@@ -59,6 +59,12 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
+    if (!rateLimit(`comment:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "本日の投稿数が上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
 
     const result = await postComment({
       personId,

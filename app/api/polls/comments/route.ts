@@ -43,6 +43,12 @@ export async function POST(request: Request) {
     if (!rateLimit(`pollcomment:ip:${ip}`, 40, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "投稿が多すぎます" }, { status: 429 });
     }
+    if (!rateLimit(`pollcomment:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "本日の投稿数が上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
 
     const r = await insertPollComment({
       pollId,

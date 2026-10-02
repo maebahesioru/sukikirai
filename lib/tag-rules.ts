@@ -314,8 +314,10 @@ export function classifyWithAuto(
 
 /* ================= カテゴリ自動判定 ================= */
 
-/** 企業・サービス */
-const COMPANY_ANY = ["株式会社", "有限会社", "合同会社", "公式アカウント", "公式です", "ブランド", "メーカー", "企業アカウント", "運営しています", "サービスを提供", "プレスリリース", "co.,ltd", "inc.", "corp."];
+/** 企業・サービス（bio側は法人自認の言い回しのみ） */
+const COMPANY_ANY = ["公式アカウント", "運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp."];
+/** 企業名らしさ（アカウント名に法人格がある場合のみ。bioの勤務先言及では誤判定するため） */
+const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
 /** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
 const COMPANY_NAME_RE = /^(yahoo|youtube|google|openai|x|amazon|microsoft|apple|meta|nintendo|sony|rakuten|楽天|line|discord|tiktok|netflix|nhk)$/i;
 /** 政治家 */
@@ -343,7 +345,13 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   const n = (name || "").normalize("NFKC").trim();
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
 
-  if (COMPANY_NAME_RE.test(n) || COMPANY_ANY.some((k) => text.includes(k))) return "企業・サービス";
+  if (
+    COMPANY_NAME_RE.test(n) ||
+    COMPANY_NAME_ORG_RE.test(n) ||
+    COMPANY_ANY.some((k) => text.includes(k))
+  ) {
+    return "企業・サービス";
+  }
   if (POLITICIAN_ANY.some((k) => text.includes(k))) return "政治家";
   if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
   if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";

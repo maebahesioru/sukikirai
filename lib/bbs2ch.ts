@@ -9,13 +9,28 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const NONAME = "名無しさん";
 
-// スレッドキー: サイトIDから決定的な10桁数字を作る。
-// ⚠️ 5ch互換ブラウザ（Siki等）はスレキーを「10桁」とみなして切り詰める/URLを組み立てるため、
-//    12桁だと `/dat/{10桁}.dat` に化けて404になる（2026-10-02実測）。必ず10桁にする。
-export function threadKey(id: string): string {
-  const h = createHash("sha256").update("suki2ch:" + id).digest("hex");
-  const n = parseInt(h.slice(0, 12), 16) % 10_000_000_000;
-  return String(n).padStart(10, "0");
+// スレッドキー = スレ立て時刻のUNIX秒。
+// ⚠️ 5ch互換ブラウザ（Siki等）は threadkey をそのまま「epoch秒」とみなして
+//    pubdate = key*1000 でスレ立て日時を表示する（810ch実測: key 1781526063 → 2026/06/15）。
+//    ランダムなキーだと日時が2237年などになるため、必ず実際の作成時刻（秒）を使う。
+//    同一秒の衝突はソート順で+1秒ずらす（表示が1秒ズレるだけで無害）。
+export function assignThreadKeys<T extends { id: string; created_at: string }>(
+  rows: T[]
+): Map<string, string> {
+  const secOf = (r: T) => Math.floor(new Date(r.created_at).getTime() / 1000);
+  const sorted = [...rows].sort(
+    (a, b) => secOf(a) - secOf(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
+  const used = new Set<string>();
+  const map = new Map<string, string>();
+  for (const r of sorted) {
+    let k = secOf(r);
+    if (!Number.isFinite(k) || k <= 0) k = 1;
+    while (used.has(String(k))) k++;
+    used.add(String(k));
+    map.set(r.id, String(k));
+  }
+  return map;
 }
 
 // 書き込みID: cookie_id のハッシュから決定的に9文字（匿名・追跡不能）

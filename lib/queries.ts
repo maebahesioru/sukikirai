@@ -1088,10 +1088,10 @@ export async function getRelatedPolls(personId: string): Promise<PollWithOptions
 // ============================================================
 
 export async function listPeopleFor2ch(): Promise<
-  { id: string; name: string; res_count: number; last_at: string | null }[]
+  { id: string; name: string; created_at: string; res_count: number; last_at: string | null }[]
 > {
   return sql(
-    `SELECT p.id, p.name, COALESCE(c.cnt,0)::int AS res_count, c.last_at
+    `SELECT p.id, p.name, p.created_at, COALESCE(c.cnt,0)::int AS res_count, c.last_at
      FROM people p
      LEFT JOIN (
        SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at
@@ -1120,10 +1120,10 @@ export async function getPersonCommentsFor2ch(personId: string) {
 }
 
 export async function listPollsFor2ch(): Promise<
-  { id: string; title: string; res_count: number; last_at: string | null }[]
+  { id: string; title: string; created_at: string; res_count: number; last_at: string | null }[]
 > {
   return sql(
-    `SELECT p.id, p.title, COALESCE(c.cnt,0)::int AS res_count, c.last_at
+    `SELECT p.id, p.title, p.created_at, COALESCE(c.cnt,0)::int AS res_count, c.last_at
      FROM polls p
      LEFT JOIN (
        SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at

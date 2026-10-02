@@ -3,11 +3,11 @@ import { getPollCommentsFor2ch, listPollsFor2ch } from "@/lib/queries";
 import {
   NONAME,
   anonId,
+  assignThreadKeys,
   datLine,
   esc2ch,
   fmt2chDate,
   sanitizeField,
-  threadKey,
   to2chResponse,
 } from "@/lib/bbs2ch";
 
@@ -17,7 +17,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   const { key } = await params;
   const raw = key.replace(/\.dat$/i, "");
   const rows = await listPollsFor2ch();
-  const thread = rows.find((r) => threadKey(r.id) === raw);
+  const keys = assignThreadKeys(rows);
+  const thread = rows.find((r) => keys.get(r.id) === raw);
   if (!thread) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }

@@ -181,6 +181,14 @@ CREATE TABLE IF NOT EXISTS poll_reports (
 );
 CREATE INDEX IF NOT EXISTS idx_poll_reports_comment ON poll_reports(poll_comment_id);
 
+CREATE TABLE IF NOT EXISTS poll_uploads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  data BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- updated_at triggers
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$
 BEGIN

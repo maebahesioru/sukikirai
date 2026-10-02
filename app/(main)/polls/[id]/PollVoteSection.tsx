@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Cookies from "js-cookie";
 import { Crown, Plus } from "lucide-react";
+import ImageUploadField from "@/components/ImageUploadField";
 import type { PollOption, PollType } from "@/lib/types";
 
 function OptionImage({ url }: { url: string | null }) {
@@ -194,13 +195,7 @@ export default function PollVoteSection({
               追加
             </button>
           </div>
-          <input
-            type="text"
-            value={addImage}
-            onChange={(e) => setAddImage(e.target.value.slice(0, 500))}
-            placeholder="画像URL（任意・https://…）"
-            className="mt-2 w-full px-3 py-2 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-          />
+          <ImageUploadField value={addImage} onChange={setAddImage} className="mt-2" />
           <p className="text-xs text-mut mt-1.5">
             ※ 追加できるのは投稿者以外・1人3個まで・全体で20個まで
           </p>

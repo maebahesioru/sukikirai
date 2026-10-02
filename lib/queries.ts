@@ -1412,3 +1412,19 @@ export async function listSitemapEntries(): Promise<{ id: string; updated_at: st
     "SELECT id, updated_at FROM people WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok') ORDER BY created_at DESC"
   );
 }
+
+/** 投票トーク用アップロード画像（DB保存） */
+export async function insertPollUpload(mime: string, size: number, data: Buffer): Promise<string> {
+  const r = await sql1<{ id: string }>(
+    "INSERT INTO poll_uploads (mime, size, data) VALUES ($1,$2,$3) RETURNING id",
+    [mime, size, data]
+  );
+  return r!.id;
+}
+
+export async function getPollUpload(id: string): Promise<{ mime: string; data: Buffer } | null> {
+  return sql1<{ mime: string; data: Buffer }>(
+    "SELECT mime, data FROM poll_uploads WHERE id = $1",
+    [id]
+  );
+}

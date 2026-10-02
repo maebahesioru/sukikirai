@@ -21,7 +21,8 @@ export async function POST(request: Request) {
         const obj = o as { text?: unknown; imageUrl?: unknown };
         const text = str(obj?.text, 100).trim();
         const rawUrl = obj?.imageUrl ? str(obj.imageUrl, 500).trim() : "";
-        const imageUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : null;
+        const imageUrl =
+          /^https?:\/\//i.test(rawUrl) || rawUrl.startsWith("/api/uploads/") ? rawUrl : null;
         return { text, imageUrl };
       })
       .filter((o) => o.text)

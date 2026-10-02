@@ -9,7 +9,8 @@ export async function POST(request: Request) {
     const pollId = str(body.pollId, 40);
     const optionText = str(body.optionText, 100).trim();
     const rawUrl = body.imageUrl ? str(body.imageUrl, 500).trim() : "";
-    const imageUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : null;
+    const imageUrl =
+      /^https?:\/\//i.test(rawUrl) || rawUrl.startsWith("/api/uploads/") ? rawUrl : null;
     const userToken = body.userToken;
 
     if (!isUuid(pollId) || !optionText || !isValidToken(userToken)) {

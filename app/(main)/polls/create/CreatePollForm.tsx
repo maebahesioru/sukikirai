@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { Plus, X, Search } from "lucide-react";
+import ImageUploadField from "@/components/ImageUploadField";
 import type { PollType } from "@/lib/types";
 
 type RelatedPerson = { id: string; name: string; handle: string | null; avatar_url: string | null };
@@ -179,7 +180,7 @@ export default function CreatePollForm() {
           選択肢 <span className="text-bad">*</span>
         </label>
         <p className="text-xs text-mut mb-2">
-          画像URL（任意）を入れると画像付きに。2択で両方に入れると横並びの「どっち？」形式になります
+          画像URLまたはアップロード（任意）で画像付きに。2択で両方に入れると横並びの「どっち？」形式になります
         </p>
         <div className="space-y-2">
           {options.map((o, i) => (
@@ -203,13 +204,7 @@ export default function CreatePollForm() {
                   </button>
                 )}
               </div>
-              <input
-                type="text"
-                value={o.imageUrl}
-                onChange={(e) => setOptionImage(i, e.target.value.slice(0, 500))}
-                placeholder="画像URL（任意・https://…）"
-                className="w-full px-3 py-1.5 rounded-lg border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-xs text-mut"
-              />
+              <ImageUploadField value={o.imageUrl} onChange={(v) => setOptionImage(i, v)} />
             </div>
           ))}
         </div>

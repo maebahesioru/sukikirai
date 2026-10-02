@@ -1,6 +1,5 @@
 ﻿import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { SITE_URL, SITE_NAME, SITE_DESC } from "@/lib/site";
 
@@ -64,11 +63,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja" className={notoSansJP.variable}>
+    <html lang="ja" className={notoSansJP.variable} suppressHydrationWarning>
       <body className="antialiased">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT}
-        </Script>
+        {/* 描画前にテーマを確定させる（ここを next/script にすると遅延実行で一瞬前のテーマが見える）。
+            body先頭の同期スクリプト = パース時に即実行され、初回ペイント前に html へクラスが付く */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: THEME_INIT }}
+        />
         {children}
       </body>
     </html>

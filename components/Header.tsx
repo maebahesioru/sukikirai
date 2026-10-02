@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Heart, Menu, X } from "lucide-react";
 import { SITE_NAME } from "@/lib/site";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/ranking/popularity", label: "ランキング" },
@@ -60,6 +61,8 @@ export default function Header() {
               />
             </div>
           </form>
+
+          <ThemeToggle />
 
           <button
             onClick={() => setOpen(!open)}

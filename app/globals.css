@@ -1,50 +1,92 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink: #0b0f16;
-  --color-panel: #131924;
-  --color-panel2: #1a2130;
-  --color-line: #263043;
-  --color-line2: #33405a;
-  --color-txt: #e9edf5;
-  --color-mut: #8b98ad;
+/* ---- テーマトークン（ライト既定 / .dark で上書き / 初回はOS設定に追従） ---- */
+:root {
+  --t-ink: #f4f6f9;
+  --t-panel: #ffffff;
+  --t-panel2: #eef1f5;
+  --t-line: #dae1ea;
+  --t-line2: #c3cedb;
+  --t-txt: #0f1419;
+  --t-mut: #5b6a7d;
+  --t-gold: #d97706;
+  --t-good: #059669;
+  --t-bad: #dc2626;
+  color-scheme: light;
+}
+
+.dark {
+  --t-ink: #0b0f16;
+  --t-panel: #131924;
+  --t-panel2: #1a2130;
+  --t-line: #263043;
+  --t-line2: #33405a;
+  --t-txt: #e9edf5;
+  --t-mut: #8b98ad;
+  --t-gold: #ffd400;
+  --t-good: #00ba7c;
+  --t-bad: #f4212e;
+  color-scheme: dark;
+}
+
+/* JSなしでもOS設定に追従（明示 .light があれば除外） */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --t-ink: #0b0f16;
+    --t-panel: #131924;
+    --t-panel2: #1a2130;
+    --t-line: #263043;
+    --t-line2: #33405a;
+    --t-txt: #e9edf5;
+    --t-mut: #8b98ad;
+    --t-gold: #ffd400;
+    --t-good: #00ba7c;
+    --t-bad: #f4212e;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-ink: var(--t-ink);
+  --color-panel: var(--t-panel);
+  --color-panel2: var(--t-panel2);
+  --color-line: var(--t-line);
+  --color-line2: var(--t-line2);
+  --color-txt: var(--t-txt);
+  --color-mut: var(--t-mut);
   --color-x: #1d9bf0;
   --color-xsoft: #1d9bf026;
   --color-like: #f91880;
   --color-likesoft: #f9188022;
   --color-dislike: #8b5cf6;
   --color-dislikesoft: #8b5cf622;
-  --color-good: #00ba7c;
-  --color-bad: #f4212e;
-  --color-gold: #ffd400;
+  --color-good: var(--t-good);
+  --color-bad: var(--t-bad);
+  --color-gold: var(--t-gold);
   --font-sans: var(--font-noto), "Hiragino Kaku Gothic ProN", "Hiragino Sans",
     "BIZ UDPGothic", Meiryo, system-ui, sans-serif;
 }
 
-html {
-  color-scheme: dark;
-}
-
 body {
-  background: var(--color-ink);
-  color: var(--color-txt);
+  background: var(--t-ink);
+  color: var(--t-txt);
 }
 
 @layer base {
   input,
   select,
   textarea {
-    background: var(--color-panel2);
-    color: var(--color-txt);
-    border-color: var(--color-line);
+    background: var(--t-panel2);
+    color: var(--t-txt);
+    border-color: var(--t-line);
   }
   input::placeholder,
   textarea::placeholder {
-    color: var(--color-mut);
+    color: var(--t-mut);
   }
   select option {
-    background: var(--color-panel2);
-    color: var(--color-txt);
+    background: var(--t-panel2);
+    color: var(--t-txt);
   }
 }
 
@@ -53,7 +95,7 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #33405a;
+  background: var(--t-line2);
   border-radius: 5px;
 }
 ::-webkit-scrollbar-track {

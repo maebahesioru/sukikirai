@@ -1,5 +1,6 @@
 ﻿import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { SITE_URL, SITE_NAME, SITE_DESC } from "@/lib/site";
 
@@ -49,15 +50,27 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0f16",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f6f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f16" },
+  ],
 };
+
+/* 初回アクセス: 保存済み設定 > OS設定の順で判定し、描画前に html へクラス付与（FOUC防止）。
+   保存設定が無い間は OS 設定変更にも追従する。 */
+const THEME_INIT = `(function(){try{var m=window.matchMedia("(prefers-color-scheme: dark)");function ap(){var t=null;try{t=localStorage.getItem("theme")}catch(e){}var d=t==="dark"||(t!=="light"&&m.matches);var e=document.documentElement;e.classList.toggle("dark",d);e.classList.toggle("light",!d)}ap();m.addEventListener("change",function(){var t=null;try{t=localStorage.getItem("theme")}catch(e){}if(t!=="dark"&&t!=="light")ap()})}catch(e){}})();`;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja" className={notoSansJP.variable}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

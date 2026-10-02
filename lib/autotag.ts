@@ -46,7 +46,7 @@ export async function retagEveryone(
   const updates: { id: string; tags: string[]; category: string }[] = [];
   for (const r of targets) {
     const tags = classifyWithAuto(r.name, r.bio, promoted);
-    const category = classifyCategory(r.name, r.bio);
+    const category = classifyCategory(r.name, r.bio, r.category === "ヒカマー");
     const cur = r.tags ?? [];
     const sameTags = tags.length === cur.length && tags.every((t, i) => t === cur[i]);
     if (!sameTags || category !== r.category) {

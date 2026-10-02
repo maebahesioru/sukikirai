@@ -336,9 +336,10 @@ const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画�
 /**
  * 名前とプロフィール文からカテゴリを決める（純ローカル・自動）。
  * 順序: 企業 → 政治家 → 芸能人 → Vtuber → BOT → ヒカマー → YouTuber → 配信者 → クリエイター → その他
- * （ヒカマー界隈の人は「ヒカマー」を優先。活動内容はタグ側で表現する）
+ * legacyHikamer=true（既にヒカマーカテゴリの人）は、明示タイプ（企業等）に該当しない限りヒカマーを維持
+ * ＝既存の界隈名簿を尊重しつつ、新規追加は完全自動で分類する。
  */
-export function classifyCategory(name: string, bio: string): string {
+export function classifyCategory(name: string, bio: string, legacyHikamer = false): string {
   const n = (name || "").normalize("NFKC").trim();
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
 
@@ -347,7 +348,7 @@ export function classifyCategory(name: string, bio: string): string {
   if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
   if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";
   if (/bot$/i.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
-  if (HIKAMER_RE.test(text) || HIKAMER_NAME_RE.test(n)) return "ヒカマー";
+  if (legacyHikamer || HIKAMER_RE.test(text) || HIKAMER_NAME_RE.test(n)) return "ヒカマー";
   if (YOUTUBER_ANY.some((k) => text.includes(k))) return "YouTuber";
   if (STREAMER_ANY.some((k) => text.includes(k))) return "配信者";
   if (CREATOR_ANY.some((k) => text.includes(k))) return "クリエイター";

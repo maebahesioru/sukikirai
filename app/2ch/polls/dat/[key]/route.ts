@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPollCommentsFor2ch, listPollsFor2ch } from "@/lib/queries";
+import { buildOpLine } from "@/lib/thread2ch";
 import {
   ABONE,
   NONAME,
@@ -40,5 +41,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
       sanitizeField(c.mail ?? "", 64)
     );
   });
-  return to2chResponse(lines.length ? lines.join("\n") + "\n" : "");
+  const out = lines.length
+    ? lines.join("\n") + "\n"
+    : buildOpLine("poll", thread.title, title, thread.created_at, thread.id);
+  return to2chResponse(out);
 }

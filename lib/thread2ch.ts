@@ -17,15 +17,15 @@ import {
 } from "./bbs2ch";
 
 export type ResolvedThread =
-  | { kind: "person"; id: string; name: string }
-  | { kind: "poll"; id: string; title: string };
+  | { kind: "person"; id: string; name: string; createdAt: string }
+  | { kind: "poll"; id: string; title: string; createdAt: string };
 
 /** キー（10桁数字）から人物スレを解決 */
 export async function resolvePeopleThread(rawKey: string): Promise<ResolvedThread | null> {
   const rows = await listPeopleFor2ch();
   const keys = assignThreadKeys(rows);
   const t = rows.find((r) => keys.get(r.id) === rawKey);
-  return t ? { kind: "person", id: t.id, name: t.name } : null;
+  return t ? { kind: "person", id: t.id, name: t.name, createdAt: t.created_at } : null;
 }
 
 /** キー（10桁数字）から投票トークスレを解決 */
@@ -33,11 +33,38 @@ export async function resolvePollThread(rawKey: string): Promise<ResolvedThread 
   const rows = await listPollsFor2ch();
   const keys = assignThreadKeys(rows);
   const t = rows.find((r) => keys.get(r.id) === rawKey);
-  return t ? { kind: "poll", id: t.id, title: t.title } : null;
+  return t ? { kind: "poll", id: t.id, title: t.title, createdAt: t.created_at } : null;
+}
+
+/** コメント0件のスレに置く仮OP行（datを空にしない。2chではスレに必ず>>1が存在する） */
+export function buildOpLine(
+  kind: "person" | "poll",
+  label: string,
+  title: string,
+  createdAt: string,
+  threadId: string
+): string {
+  const body =
+    kind === "person"
+      ? `「${label}」の評価・好き嫌いスレッドです。好き派・嫌い派を書き込めます。`
+      : `「${label}」の投票トークです。選択肢への投票とコメントができます。`;
+  return (
+    datLine(
+      NONAME,
+      fmt2chDate(createdAt || new Date().toISOString()),
+      anonId(null, threadId),
+      sanitizeField(body, 300),
+      title
+    ) + "\n"
+  );
 }
 
 /** 人物スレのdat本文を組み立てる（dat / read.cgi GET 共通） */
-export async function buildPersonDat(thread: { id: string; name: string }): Promise<string> {
+export async function buildPersonDat(thread: {
+  id: string;
+  name: string;
+  createdAt?: string;
+}): Promise<string> {
   const title = sanitizeField(`${thread.name}の評価・好き嫌い`, 120);
   const comments = await getPersonCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
@@ -53,11 +80,18 @@ export async function buildPersonDat(thread: { id: string; name: string }): Prom
       sanitizeField(c.mail ?? "", 64)
     );
   });
-  return lines.length ? lines.join("\n") + "\n" : "";
+  if (lines.length === 0) {
+    return buildOpLine("person", thread.name, title, thread.createdAt ?? "", thread.id);
+  }
+  return lines.join("\n") + "\n";
 }
 
 /** 投票トークスレのdat本文を組み立てる */
-export async function buildPollDat(thread: { id: string; title: string }): Promise<string> {
+export async function buildPollDat(thread: {
+  id: string;
+  title: string;
+  createdAt?: string;
+}): Promise<string> {
   const title = sanitizeField(thread.title, 120);
   const comments = await getPollCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
@@ -75,5 +109,8 @@ export async function buildPollDat(thread: { id: string; title: string }): Promi
       sanitizeField(c.mail ?? "", 64)
     );
   });
-  return lines.length ? lines.join("\n") + "\n" : "";
+  if (lines.length === 0) {
+    return buildOpLine("poll", thread.title, title, thread.createdAt ?? "", thread.id);
+  }
+  return lines.join("\n") + "\n";
 }

@@ -59,10 +59,21 @@ async function searx(q: string): Promise<{ url: string; title: string }[]> {
 }
 
 // プロフィールページのタイトルかどうか（ツイートページを除外）
+// 「名前 (@handle) / X」「名前 (@handle) on X」「名前 (@handle) | Twitter」などのほか、
+// 末尾が「(@handle)」で終わる形（Bingが「/ X」を落とすことがある）も許可する。
 function strongProfileTitle(title: string): boolean {
   if (!/\(@[A-Za-z0-9_]{1,15}\)/.test(title)) return false;
-  if (/on X[:：]/.test(title)) return false; // ツイートページ（本文が付く）
-  return /\)\s*\/\s*X/.test(title) || /\)\s*on X/.test(title);
+  if (/on X[:：]/i.test(title)) return false; // ツイートページ（本文が付く）
+  // 末尾アンカー: …(@handle) [ / X | | Twitter | on X | なし ]。
+  if (
+    /\(@[A-Za-z0-9_]{1,15}\)\s*(?:[-–—|/]\s*(?:X|Twitter)|on\s+(?:X|Twitter))?\s*[.。]?\s*$/i.test(
+      title
+    )
+  ) {
+    return true;
+  }
+  // 末尾以外でも「(@handle) / X」「(@handle) on X」型なら許容
+  return /\)\s*\/\s*(?:X|Twitter)\b/i.test(title) || /\)\s*on\s+(?:X|Twitter)\b/i.test(title);
 }
 
 function norm(s: string): string {
@@ -70,7 +81,7 @@ function norm(s: string): string {
 }
 
 export async function findXUserCandidates(query: string): Promise<XUserCandidate[]> {
-  const q = query.trim().replace(/^@/, "");
+  const q = query.trim().replace(/^@/, "").normalize("NFKC");
   if (!q) return [];
   const key = q.toLowerCase();
   const hit = cache.get(key);
@@ -86,11 +97,13 @@ export async function findXUserCandidates(query: string): Promise<XUserCandidate
   if (windowCount >= 20) return [];
   windowCount++;
 
-  // 2クエリ並行（素の名前 / 名前 X）。site:x.com は google の曖昧マッチで
-  // 無関係なプロフィールを大量に返すため使わない（実測: ゴミ検索で無関係候補が混入した）。
-  const [a, b] = await Promise.all([searx(q), searx(`${q} X`)]);
+  // 4クエリ並行（素の名前 / 名前 X / 名前 (@ / 名前 twitter）。
+  // 「(@」を付けるとプロフィールページ（タイトルに「(@handle)」を含む）が上位に来やすい（実測）。
+  // site:x.com は google の曖昧マッチで無関係なプロフィールを大量に返すため使わない（実測）。
+  const variants = [q, `${q} X`, `${q} (@`, `${q} twitter`];
+  const merged = (await Promise.all(variants.map((v) => searx(v)))).flat();
   const map = new Map<string, Raw>();
-  for (const r of [...a, ...b]) {
+  for (const r of merged) {
     const url = String(r.url ?? "");
     const title = String(r.title ?? "");
     const strong = strongProfileTitle(title);
@@ -115,7 +128,7 @@ export async function findXUserCandidates(query: string): Promise<XUserCandidate
 
   const raws = [...map.values()]
     .sort((x, y) => Number(y.strong) - Number(x.strong))
-    .slice(0, 12);
+    .slice(0, 16);
 
   const enriched: { r: Raw; fx: NonNullable<Awaited<ReturnType<typeof fetchFxUser>>> }[] = [];
   for (const item of await Promise.all(
@@ -134,8 +147,13 @@ export async function findXUserCandidates(query: string): Promise<XUserCandidate
       return { r, fx, sim };
     })
     .filter((e) => e.sim > 0 || e.r.strong)
-    .sort((x, y) => y.sim - x.sim || y.fx.followers - x.fx.followers)
-    .slice(0, 6);
+    .sort(
+      (x, y) =>
+        y.sim - x.sim ||
+        Number(y.r.strong) - Number(x.r.strong) ||
+        y.fx.followers - x.fx.followers
+    )
+    .slice(0, 8);
 
   const registered = await getPeopleByHandles(scored.map((e) => e.fx.screenName || e.r.handle));
   const regMap = new Map(registered.map((p) => [(p.handle ?? "").toLowerCase(), p]));

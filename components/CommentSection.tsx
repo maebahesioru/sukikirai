@@ -11,7 +11,7 @@ import {
   Send,
 } from "lucide-react";
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
-import { REPORT_REASONS, type ReportReason, GENDERS, AGE_GROUPS, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
+import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
 import ReportModal from "./ReportModal";
 import { timeAgo } from "@/lib/format";
 import Avatar from "./Avatar";
@@ -199,8 +199,6 @@ function CommentForm({
 }) {
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
-  const [gender, setGender] = useState("");
-  const [ageGroup, setAgeGroup] = useState("");
   const [voteType, setVoteType] = useState<"like" | "dislike">("like");
   const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
   const [tweet, setTweet] = useState(true);
@@ -232,8 +230,6 @@ function CommentForm({
           personId,
           name: name.trim() || null,
           mail: mail.trim() || null,
-          gender: gender || null,
-          ageGroup: ageGroup || null,
           voteType,
           content: content.trim(),
           parentCommentId: parentCommentId ?? null,
@@ -268,7 +264,7 @@ function CommentForm({
       {parentNumber && (
         <p className="text-sm font-bold text-mut">&gt;&gt;{parentNumber} への返信</p>
       )}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
           value={name}
@@ -284,30 +280,6 @@ function CommentForm({
           title="sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります"
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
-        <select
-          value={gender}
-          onChange={(e) => setGender(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-        >
-          <option value="">性別（任意）</option>
-          {GENDERS.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-        <select
-          value={ageGroup}
-          onChange={(e) => setAgeGroup(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-        >
-          <option value="">年代（任意）</option>
-          {AGE_GROUPS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="flex gap-2">

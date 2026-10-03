@@ -95,6 +95,24 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
   const s = q.trim();
   if (!s) return [];
   const sNoAt = s.replace(/^@/, "").toLowerCase();
+  if (sNoAt === "") return [];
+  const nq = normalizeForSearch(s);
+  const tokens = s
+    .split(/[\s・_\-–—]+/)
+    .map((t) => normalizeForSearch(t))
+    .filter((t) => t.length >= 2)
+    .slice(0, 6);
+  const hay = sqlNorm(
+    `COALESCE(p.name,'') || ' ' || p.id || ' ' || COALESCE(p.handle,'') || ' ' || COALESCE(p.description,'') || ' ' || COALESCE(p.x_description,'') || ' ' || COALESCE(array_to_string(p.tags, ' '),'')`
+  );
+  const normCond = [
+    `($3 <> '' AND ${hay} LIKE '%' || $3 || '%')`,
+    tokens.length
+      ? `(${tokens.map((_, i) => `${hay} LIKE '%' || $${4 + i} || '%'`).join(" AND ")})`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" OR ");
   return sql<PersonWithVotes>(
     `SELECT p.*, COALESCE(v.likes,0)::int AS likes, COALESCE(v.dislikes,0)::int AS dislikes, COALESCE(v.total,0)::int AS total
      FROM people p
@@ -111,11 +129,13 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
       OR COALESCE(p.x_description,'') ILIKE '%' || $1 || '%'
        OR EXISTS (SELECT 1 FROM unnest(p.tags) tg WHERE tg ILIKE '%' || $1 || '%')
        OR p.id = $2
+       OR ${normCond}
      )
-     ORDER BY (p.id = $2 OR lower(COALESCE(p.handle,'')) = lower($2)) DESC,
+     ORDER BY (${sqlNorm("p.name")} = $3) DESC,
+              (p.id = $2 OR lower(COALESCE(p.handle,'')) = lower($2)) DESC,
               COALESCE(v.total,0) DESC, p.name ASC
      LIMIT ${limit}`,
-    [s, sNoAt]
+    [s, sNoAt, nq, ...tokens]
   );
 }
 
@@ -678,6 +698,32 @@ export function normalizeHandle(raw: string): string | null {
   if (!/^[A-Za-z0-9_]{1,15}$/.test(h)) return null;
   return h;
 }
+
+/* ================= 検索用正規化（表記ゆれ吸収） ================= */
+// カタカナ→ひらがな・全角英数→半角・区切り文字除去 で「くずは/クズハ」「nazimidori/nazi-midori」等を同一視する。
+
+const KATAKANA_FROM = Array.from({ length: 0x30f6 - 0x30a1 + 1 }, (_, i) =>
+  String.fromCharCode(0x30a1 + i)
+).join("");
+const HIRAGANA_TO = Array.from({ length: 0x30f6 - 0x30a1 + 1 }, (_, i) =>
+  String.fromCharCode(0x3041 + i)
+).join("");
+const ZENKAKU_FROM =
+  "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９　";
+const HANKAKU_TO = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ";
+
+/** JS側の正規化（クエリ用）: NFKC → 小文字 → カタカナ→ひらがな → 区切り除去 */
+export function normalizeForSearch(s: string): string {
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/[\s・_\-–—]/g, "");
+}
+
+/** SQL式の正規化（カラム側）: lower → カタカナ→ひらがな → 全角英数→半角 → 区切り除去 */
+const sqlNorm = (expr: string) =>
+  `replace(replace(replace(replace(translate(translate(lower(${expr}), '${KATAKANA_FROM}', '${HIRAGANA_TO}'), '${ZENKAKU_FROM}', '${HANKAKU_TO}'), ' ', ''), '・', ''), '_', ''), '-', '')`;
 
 export async function findPersonByHandleOrId(handle: string): Promise<Person | null> {
   const h = handle.toLowerCase();
@@ -1601,14 +1647,18 @@ export async function suggestPeople(
   const query = q.trim();
   if (!query) return [];
   const h = query.replace(/^@/, "");
+  const nq = normalizeForSearch(query);
+  const hay = sqlNorm(`COALESCE(name,'') || ' ' || id || ' ' || COALESCE(handle,'')`);
   return sql<{ id: string; name: string; handle: string | null; avatar_url: string | null }>(
     `SELECT id, name, handle, avatar_url FROM people
      WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok')
-       AND (name ILIKE '%' || $1 || '%' OR COALESCE(handle,'') ILIKE '%' || $2 || '%' OR id ILIKE '%' || $2 || '%')
+       AND (name ILIKE '%' || $1 || '%' OR ($2 <> '' AND COALESCE(handle,'') ILIKE '%' || $2 || '%') OR ($2 <> '' AND id ILIKE '%' || $2 || '%')
+            OR ($3 <> '' AND ${hay} LIKE '%' || $3 || '%'))
      ORDER BY (lower(COALESCE(handle,'')) = lower($2)) DESC,
               (name ILIKE $1 || '%') DESC,
+              ($3 <> '' AND ${hay} LIKE $3 || '%') DESC,
               COALESCE(followers, 0) DESC
      LIMIT ${Math.max(1, Math.floor(limit))}`,
-    [query, h]
+    [query, h, nq]
   );
 }

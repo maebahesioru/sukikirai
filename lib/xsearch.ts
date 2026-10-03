@@ -77,7 +77,11 @@ function strongProfileTitle(title: string): boolean {
 }
 
 function norm(s: string): string {
-  return s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/[^\p{L}\p{N}]/gu, "");
 }
 
 export async function findXUserCandidates(query: string): Promise<XUserCandidate[]> {

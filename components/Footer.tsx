@@ -17,9 +17,32 @@ export default function Footer() {
             人物一覧
           </Link>
         </div>
+        <p>
+          姉妹サイト:{" "}
+          <a
+            href="https://nareaitter.hikamers.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-x hover:underline"
+          >
+            馴れ合いサークル（nareaitter）
+          </a>
+        </p>
         <p className="leading-relaxed">
           本サイトは誰でも匿名でXユーザーの好き嫌い・評価を書き込める非公式のまとめサイトです。X Corp.
           および各対象者とは関係ありません。誹謗中傷・個人情報の投稿は禁止です。
+        </p>
+        <p>
+          姉妹サイト:{" "}
+          <a
+            href="https://nareaitter.hikamers.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-txt underline-offset-2 hover:underline transition"
+          >
+            Twitter馴れ合いサークル（馴れ合い表）
+          </a>
+          <span className="ml-2">Xの交流相手をグリッドで一覧表示するツール</span>
         </p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>

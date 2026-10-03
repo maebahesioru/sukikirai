@@ -32,7 +32,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
       fmt2chDate(c.created_at),
       anonId(c.cookie_id, c.id),
       esc2ch(c.content),
-      title
+      title,
+      sanitizeField(c.mail ?? "", 64)
     );
   });
   return to2chResponse(lines.length ? lines.join("\n") + "\n" : "");

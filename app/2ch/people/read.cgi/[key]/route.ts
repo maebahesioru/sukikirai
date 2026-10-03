@@ -39,6 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
   const form = await request.formData().catch(() => null);
   const message = String(form?.get("MESSAGE") ?? "").trim();
   const name = String(form?.get("NAME") ?? "").trim().slice(0, 40);
+  const mail = String(form?.get("MAIL") ?? "").trim().slice(0, 64) || null;
   if (!message) {
     return new NextResponse("本文が空です", { status: 400, headers: TEXT_HEADERS });
   }
@@ -72,6 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
   const r = await postComment({
     personId: thread.id,
     name: name || null,
+    mail,
     userId: null,
     gender: null,
     ageGroup: null,

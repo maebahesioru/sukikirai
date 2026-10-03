@@ -91,7 +91,8 @@ export function datLine(
   date: string,
   id: string,
   message: string,
-  title: string
+  title: string,
+  mail = ""
 ): string {
-  return [name, "", `${date} ID:${id}`, message, title].join("<>");
+  return [name, mail, `${date} ID:${id}`, message, title].join("<>");
 }

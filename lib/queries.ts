@@ -442,6 +442,7 @@ export async function getComments(
 export type CommentInput = {
   personId: string;
   name: string | null;
+  mail?: string | null;
   userId: string | null;
   gender: string | null;
   ageGroup: string | null;
@@ -521,8 +522,8 @@ export async function postComment(
     );
 
     const inserted = await c.query<CommentRow>(
-      `INSERT INTO comments (person_id, comment_number, name, user_id, gender, age_group, vote_type, content, cookie_id, parent_comment_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      `INSERT INTO comments (person_id, comment_number, name, user_id, gender, age_group, vote_type, content, cookie_id, parent_comment_id, mail)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        RETURNING id, person_id, comment_number, name, user_id, gender, age_group,
                  vote_type, content, created_at, 0::int AS good_count, 0::int AS bad_count,
                  is_hidden, is_reported, parent_comment_id`,
@@ -537,6 +538,7 @@ export async function postComment(
         input.content,
         input.cookieId,
         input.parentCommentId,
+        input.mail ?? null,
       ]
     );
     return { ok: true as const, comment: inserted.rows[0] };
@@ -969,6 +971,7 @@ export async function insertPollComment(input: {
   content: string;
   parentCommentId: string | null;
   cookieId: string;
+  mail?: string | null;
 }): Promise<{ ok: true; comment: PollCommentRow } | { ok: false; error: string; status: number }> {
   const spam = isSpamContent(input.content);
   if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
@@ -1002,8 +1005,8 @@ export async function insertPollComment(input: {
       [input.pollId]
     );
     const inserted = await c.query<PollCommentRow>(
-      `INSERT INTO poll_comments (poll_id, comment_number, name, user_id, content, cookie_id, parent_comment_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+      `INSERT INTO poll_comments (poll_id, comment_number, name, user_id, content, cookie_id, parent_comment_id, mail)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING id, poll_id, comment_number, name, user_id, content, created_at,
                  0::int AS good_count, 0::int AS bad_count, is_hidden, is_reported, parent_comment_id`,
       [
@@ -1014,6 +1017,7 @@ export async function insertPollComment(input: {
         input.content,
         input.cookieId,
         input.parentCommentId,
+        input.mail ?? null,
       ]
     );
     return { ok: true as const, comment: inserted.rows[0] };
@@ -1094,11 +1098,12 @@ export async function listPeopleFor2ch(): Promise<
     `SELECT p.id, p.name, p.created_at, COALESCE(c.cnt,0)::int AS res_count, c.last_at
      FROM people p
      LEFT JOIN (
-       SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at
+       SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,
+              MAX(created_at) FILTER (WHERE COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
        FROM comments WHERE NOT is_hidden GROUP BY person_id
      ) c ON c.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
-     ORDER BY c.last_at DESC NULLS LAST, p.created_at DESC`
+     ORDER BY COALESCE(c.last_bump, p.created_at) DESC` 
   );
 }
 
@@ -1111,8 +1116,9 @@ export async function getPersonCommentsFor2ch(personId: string) {
     content: string;
     created_at: string;
     cookie_id: string | null;
+    mail: string | null;
   }>(
-    `SELECT id, comment_number, name, vote_type, content, created_at, cookie_id
+    `SELECT id, comment_number, name, vote_type, content, created_at, cookie_id, mail
      FROM comments WHERE person_id = $1 AND NOT is_hidden
      ORDER BY comment_number ASC`,
     [personId]
@@ -1126,11 +1132,12 @@ export async function listPollsFor2ch(): Promise<
     `SELECT p.id, p.title, p.created_at, COALESCE(c.cnt,0)::int AS res_count, c.last_at
      FROM polls p
      LEFT JOIN (
-       SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at
+       SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,
+              MAX(created_at) FILTER (WHERE COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
        FROM poll_comments WHERE NOT is_hidden GROUP BY poll_id
      ) c ON c.poll_id = p.id
      WHERE NOT p.is_hidden
-     ORDER BY COALESCE(c.last_at, p.created_at) DESC`
+     ORDER BY COALESCE(c.last_bump, p.created_at) DESC`
   );
 }
 
@@ -1143,9 +1150,10 @@ export async function getPollCommentsFor2ch(pollId: string) {
     created_at: string;
     cookie_id: string | null;
     voted_option: string | null;
+    mail: string | null;
   }>(
     `SELECT c.id, c.comment_number, c.name, c.content, c.created_at, c.cookie_id,
-            o.option_text AS voted_option
+            o.option_text AS voted_option, c.mail
      FROM poll_comments c
      LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
      LEFT JOIN poll_options o ON o.id = v.option_id
@@ -1568,4 +1576,25 @@ export async function getScoreDistribution(): Promise<Record<string, number[]>> 
     if (out[r.item] && idx >= 0 && idx < 5) out[r.item][idx] = r.n;
   }
   return out;
+}
+
+/* ================= 入力中サジェスト ================= */
+
+export async function suggestPeople(
+  q: string,
+  limit = 8
+): Promise<{ id: string; name: string; handle: string | null; avatar_url: string | null }[]> {
+  const query = q.trim();
+  if (!query) return [];
+  const h = query.replace(/^@/, "");
+  return sql<{ id: string; name: string; handle: string | null; avatar_url: string | null }>(
+    `SELECT id, name, handle, avatar_url FROM people
+     WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok')
+       AND (name ILIKE '%' || $1 || '%' OR COALESCE(handle,'') ILIKE '%' || $2 || '%' OR id ILIKE '%' || $2 || '%')
+     ORDER BY (lower(COALESCE(handle,'')) = lower($2)) DESC,
+              (name ILIKE $1 || '%') DESC,
+              COALESCE(followers, 0) DESC
+     LIMIT ${Math.max(1, Math.floor(limit))}`,
+    [query, h]
+  );
 }

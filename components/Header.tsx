@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, Heart, Menu, X } from "lucide-react";
+import { Heart, Menu, X } from "lucide-react";
 import { SITE_NAME } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
+import SearchSuggest from "@/components/SearchSuggest";
 
 const NAV = [
   { href: "/ranking/popularity", label: "ランキング" },
@@ -16,16 +17,8 @@ const NAV = [
 ];
 
 export default function Header() {
-  const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const router = useRouter();
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!q.trim()) return;
-    router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-    setOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-ink/85 backdrop-blur">
@@ -50,18 +43,15 @@ export default function Header() {
             ))}
           </nav>
 
-          <form onSubmit={submit} className="flex-1 min-w-0 ml-auto max-w-xs">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut" />
-              <input
-                type="text"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="@ID・名前で検索"
-                className="w-full pl-9 pr-3 py-2 rounded-full border border-line bg-panel2 text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-              />
-            </div>
-          </form>
+          <SearchSuggest
+            formClassName="flex-1 min-w-0 ml-auto max-w-xs"
+            inputClassName="w-full pl-9 pr-3 py-2 rounded-full border border-line bg-panel2 text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+            placeholder="@ID・名前で検索"
+            onSubmit={(query) => {
+              setOpen(false);
+              router.push(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
+            }}
+          />
 
           <ThemeToggle />
 

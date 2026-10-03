@@ -201,3 +201,7 @@ CREATE TRIGGER people_set_updated BEFORE UPDATE ON people FOR EACH ROW EXECUTE F
 
 DROP TRIGGER IF EXISTS polls_set_updated ON polls;
 CREATE TRIGGER polls_set_updated BEFORE UPDATE ON polls FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- 2ch互換: メール欄（sage判定・datパススルー用）
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS mail TEXT;
+ALTER TABLE poll_comments ADD COLUMN IF NOT EXISTS mail TEXT;

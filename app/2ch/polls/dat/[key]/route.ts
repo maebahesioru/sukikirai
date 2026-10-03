@@ -29,7 +29,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     const body = c.voted_option
       ? `「${sanitizeField(c.voted_option, 60)}」に投票しました！<br><br>${esc2ch(c.content)}`
       : esc2ch(c.content);
-    return datLine(base, fmt2chDate(c.created_at), anonId(c.cookie_id, c.id), body, title);
+    return datLine(
+      base,
+      fmt2chDate(c.created_at),
+      anonId(c.cookie_id, c.id),
+      body,
+      title,
+      sanitizeField(c.mail ?? "", 64)
+    );
   });
   return to2chResponse(lines.length ? lines.join("\n") + "\n" : "");
 }

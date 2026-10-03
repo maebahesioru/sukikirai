@@ -47,7 +47,8 @@ export async function buildPersonDat(thread: { id: string; name: string }): Prom
       fmt2chDate(c.created_at),
       anonId(c.cookie_id, c.id),
       esc2ch(c.content),
-      title
+      title,
+      sanitizeField(c.mail ?? "", 64)
     );
   });
   return lines.length ? lines.join("\n") + "\n" : "";
@@ -62,7 +63,14 @@ export async function buildPollDat(thread: { id: string; title: string }): Promi
     const body = c.voted_option
       ? `「${sanitizeField(c.voted_option, 60)}」に投票しました！<br><br>${esc2ch(c.content)}`
       : esc2ch(c.content);
-    return datLine(base, fmt2chDate(c.created_at), anonId(c.cookie_id, c.id), body, title);
+    return datLine(
+      base,
+      fmt2chDate(c.created_at),
+      anonId(c.cookie_id, c.id),
+      body,
+      title,
+      sanitizeField(c.mail ?? "", 64)
+    );
   });
   return lines.length ? lines.join("\n") + "\n" : "";
 }

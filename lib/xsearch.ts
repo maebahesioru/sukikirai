@@ -38,12 +38,13 @@ type Raw = { handle: string; strong: boolean };
 async function searx(q: string): Promise<{ url: string; title: string }[]> {
   for (const { url, timeout } of SEARX_URLS) {
     try {
-      // エンジン構成（2026-10-03）: searxng側で google cse 等をVM100直出口プロキシ（家庭IP）経由に設定済み。
-      // 実測の知見: 旧googleエンジン(/wml/search)は廃止済みで403になるため使わない。
-      // Google結果は「google cse」エンジンが取れる（x.comプロフィールも取得可・実測）。
-      // ※engines=に未登録の名前(startpage等)を混ぜると無視される（pd_engines空→デフォルト全エンジンに落ちる）ので注意。
+      // エンジン構成（2026-10-03決定）: Bingのみ。Googleは完全に切った（ユーザー決定）。
+      // 理由: searxngのgoogle cseはblackle.comの共有トークンを世界中で共用→高負荷時に
+      // 「unusual traffic」で全出口（家庭IP/WARP/Mullvad）同時に停止し、自前で制御不能だった。
+      // BingはVPN出口のままでも安定動作する（x.comプロフィールのインデックスも十分）。
+      // ※engines=に未登録の名前(startpage等)を混ぜると無視されるので注意。
       const res = await fetch(
-        `${url}/search?format=json&q=${encodeURIComponent(q)}&engines=google%20cse%2Cbing`,
+        `${url}/search?format=json&q=${encodeURIComponent(q)}&engines=bing`,
         {
           headers: { "User-Agent": UA, Accept: "application/json" },
           cache: "no-store",

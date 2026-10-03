@@ -11,8 +11,9 @@ import {
   Send,
 } from "lucide-react";
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
-import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
+import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS } from "@/lib/constants";
 import ReportModal from "./ReportModal";
+import CommentText from "./CommentText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
 
@@ -268,8 +269,9 @@ function CommentForm({
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value.slice(0, MAX_NAME_LENGTH))}
-          placeholder="名前（任意・未入力で匿名）"
+          onChange={(e) => setName(e.target.value.slice(0, 64))}
+          placeholder="名前（任意・#でトリップ）"
+          title="「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます"
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <input
@@ -431,7 +433,7 @@ function CommentItem({
   };
 
   return (
-    <div className="border border-line rounded-xl p-4">
+    <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 flex-wrap text-sm">
           <span className="text-mut text-xs">#{comment.comment_number}</span>
@@ -473,7 +475,7 @@ function CommentItem({
         )}
       </div>
 
-      <p className="whitespace-pre-wrap text-sm leading-relaxed mb-3">{comment.content}</p>
+      <CommentText content={comment.content} className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
 
       <div className="flex items-center gap-4 text-sm">
         <button
@@ -581,7 +583,7 @@ function ReplyItem({
   };
 
   return (
-    <div className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
+    <div id={`c${reply.comment_number}`} className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
         <span className="text-mut text-xs">&gt;&gt;{parentNumber}</span>
         <span className="font-medium">{reply.name || "匿名"}</span>
@@ -611,7 +613,7 @@ function ReplyItem({
         <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>
         <span className="ml-auto" />
       </div>
-      <p className="whitespace-pre-wrap mb-2">{reply.content}</p>
+      <CommentText content={reply.content} className="whitespace-pre-wrap mb-2" />
       <div className="flex items-center gap-3 text-xs">
         <button
           onClick={() => react("good")}

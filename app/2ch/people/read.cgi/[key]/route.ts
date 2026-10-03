@@ -5,6 +5,7 @@ import { getPerson, postComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { isValidToken } from "@/lib/validate";
 import { to2chResponse } from "@/lib/bbs2ch";
+import { applyTrip } from "@/lib/trip";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
 
   const form = await request.formData().catch(() => null);
   const message = String(form?.get("MESSAGE") ?? "").trim();
-  const name = String(form?.get("NAME") ?? "").trim().slice(0, 40);
+  const name = applyTrip(String(form?.get("NAME") ?? "").trim().slice(0, 64));
   const mail = String(form?.get("MAIL") ?? "").trim().slice(0, 64) || null;
   if (!message) {
     return new NextResponse("本文が空です", { status: 400, headers: TEXT_HEADERS });
@@ -68,7 +69,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
   }
 
   // 名前欄に「嫌い」があれば嫌い派、それ以外は好き派として書き込む
-  const voteType: "like" | "dislike" = name.includes("嫌い") ? "dislike" : "like";
+  const voteType: "like" | "dislike" = (name ?? "").includes("嫌い") ? "dislike" : "like";
 
   const r = await postComment({
     personId: thread.id,

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getComments, postComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isValidToken, str } from "@/lib/validate";
-import { AGE_GROUPS, GENDERS, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
+import { AGE_GROUPS, GENDERS, MAX_COMMENT_CHARS } from "@/lib/constants";
+import { applyTrip } from "@/lib/trip";
 
 export async function GET(request: Request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const personId = str(body.personId, 100);
-    const name = body.name ? str(body.name, MAX_NAME_LENGTH) : null;
+    const name = applyTrip(body.name ? str(body.name, 64) : null);
     const mail = body.mail ? (str(body.mail, 64).trim() || null) : null;
     const userId = body.userId ? str(body.userId, 50) : null;
     const gender = GENDERS.includes(body.gender) ? (body.gender as string) : null;

@@ -6,6 +6,7 @@ import {
   listPollsFor2ch,
 } from "./queries";
 import {
+  ABONE,
   NONAME,
   anonId,
   assignThreadKeys,
@@ -40,6 +41,7 @@ export async function buildPersonDat(thread: { id: string; name: string }): Prom
   const title = sanitizeField(`${thread.name}の評価・好き嫌い`, 120);
   const comments = await getPersonCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
+    if (c.is_hidden) return ABONE;
     const tag = c.vote_type === "like" ? "好き派" : "嫌い派";
     const base = c.name ? sanitizeField(c.name, 40) : NONAME;
     return datLine(
@@ -59,6 +61,7 @@ export async function buildPollDat(thread: { id: string; title: string }): Promi
   const title = sanitizeField(thread.title, 120);
   const comments = await getPollCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
+    if (c.is_hidden) return ABONE;
     const base = c.name ? sanitizeField(c.name, 40) : NONAME;
     const body = c.voted_option
       ? `「${sanitizeField(c.voted_option, 60)}」に投票しました！<br><br>${esc2ch(c.content)}`

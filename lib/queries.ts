@@ -1159,8 +1159,8 @@ export async function listPeopleFor2ch(): Promise<
      FROM people p
      LEFT JOIN (
        SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,
-              MAX(created_at) FILTER (WHERE COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
-       FROM comments WHERE NOT is_hidden GROUP BY person_id
+              MAX(created_at) FILTER (WHERE NOT is_hidden AND COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
+       FROM comments GROUP BY person_id
      ) c ON c.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
      ORDER BY COALESCE(c.last_bump, p.created_at) DESC` 
@@ -1177,9 +1177,10 @@ export async function getPersonCommentsFor2ch(personId: string) {
     created_at: string;
     cookie_id: string | null;
     mail: string | null;
+    is_hidden: boolean;
   }>(
-    `SELECT id, comment_number, name, vote_type, content, created_at, cookie_id, mail
-     FROM comments WHERE person_id = $1 AND NOT is_hidden
+    `SELECT id, comment_number, name, vote_type, content, created_at, cookie_id, mail, is_hidden
+     FROM comments WHERE person_id = $1
      ORDER BY comment_number ASC`,
     [personId]
   );
@@ -1193,8 +1194,8 @@ export async function listPollsFor2ch(): Promise<
      FROM polls p
      LEFT JOIN (
        SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,
-              MAX(created_at) FILTER (WHERE COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
-       FROM poll_comments WHERE NOT is_hidden GROUP BY poll_id
+              MAX(created_at) FILTER (WHERE NOT is_hidden AND COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
+       FROM poll_comments GROUP BY poll_id
      ) c ON c.poll_id = p.id
      WHERE NOT p.is_hidden
      ORDER BY COALESCE(c.last_bump, p.created_at) DESC`
@@ -1211,13 +1212,14 @@ export async function getPollCommentsFor2ch(pollId: string) {
     cookie_id: string | null;
     voted_option: string | null;
     mail: string | null;
+    is_hidden: boolean;
   }>(
     `SELECT c.id, c.comment_number, c.name, c.content, c.created_at, c.cookie_id,
-            o.option_text AS voted_option, c.mail
+            o.option_text AS voted_option, c.mail, c.is_hidden
      FROM poll_comments c
      LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
      LEFT JOIN poll_options o ON o.id = v.option_id
-     WHERE c.poll_id = $1 AND NOT c.is_hidden
+     WHERE c.poll_id = $1
      ORDER BY c.comment_number ASC`,
     [pollId]
   );

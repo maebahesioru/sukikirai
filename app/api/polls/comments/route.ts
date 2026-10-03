@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPollComments, insertPollComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isValidToken, isUuid, str } from "@/lib/validate";
+import { applyTrip } from "@/lib/trip";
 
 export async function GET(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const pollId = str(body.pollId, 40);
-    const name = body.name ? str(body.name, 50) : null;
+    const name = applyTrip(body.name ? str(body.name, 64) : null);
     const mail = body.mail ? (str(body.mail, 64).trim() || null) : null;
     const userId = body.userId ? str(body.userId, 50) : null;
     const content = str(body.content, 2000).trim();

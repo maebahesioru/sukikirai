@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPersonCommentsFor2ch, listPeopleFor2ch } from "@/lib/queries";
 import {
+  ABONE,
   NONAME,
   anonId,
   assignThreadKeys,
@@ -25,6 +26,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   const title = sanitizeField(`${thread.name}の評価・好き嫌い`, 120);
   const comments = await getPersonCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
+    if (c.is_hidden) return ABONE;
     const tag = c.vote_type === "like" ? "好き派" : "嫌い派";
     const base = c.name ? sanitizeField(c.name, 40) : NONAME;
     return datLine(

@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
+import CommentText from "@/components/CommentText";
 import type { ReportReason } from "@/lib/constants";
 
 type PollComment = {
@@ -152,8 +153,9 @@ export default function PollComments({ pollId }: { pollId: string }) {
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value.slice(0, 50))}
-            placeholder="名前（任意・未入力で匿名）"
+            onChange={(e) => setName(e.target.value.slice(0, 64))}
+            placeholder="名前（任意・#でトリップ）"
+            title="「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます"
             className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
           <input
@@ -312,7 +314,7 @@ function PollCommentItem({
   const visibleReplies = (comment.replies ?? []).filter((r) => !hiddenIds.includes(r.id));
 
   return (
-    <div className="border border-line rounded-xl p-4">
+    <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-center gap-2 flex-wrap mb-2 text-sm">
         <span className="text-mut text-xs">#{comment.comment_number}</span>
         <span className="font-medium">{comment.name || "匿名"}</span>
@@ -348,7 +350,7 @@ function PollCommentItem({
       {comment.voted_option && (
         <p className="text-sm font-bold text-x mb-1.5">「{comment.voted_option}」に投票しました！</p>
       )}
-      <p className="whitespace-pre-wrap text-sm leading-relaxed mb-3">{comment.content}</p>
+      <CommentText content={comment.content} className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
       <div className="flex items-center gap-4 text-sm">
         <button
           onClick={() => react("good")}
@@ -380,7 +382,7 @@ function PollCommentItem({
       {visibleReplies.length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
           {visibleReplies.map((r) => (
-            <div key={r.id} className="text-sm">
+            <div key={r.id} id={`c${r.comment_number}`} className="text-sm">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-mut text-xs">&gt;&gt;{comment.comment_number}</span>
                 <span className="font-medium">{r.name || "匿名"}</span>
@@ -407,7 +409,7 @@ function PollCommentItem({
               {r.voted_option && (
                 <p className="text-xs font-bold text-x mb-1">「{r.voted_option}」に投票しました！</p>
               )}
-              <p className="whitespace-pre-wrap">{r.content}</p>
+              <CommentText content={r.content} className="whitespace-pre-wrap" />
             </div>
           ))}
         </div>
@@ -419,8 +421,8 @@ function PollCommentItem({
             <input
               type="text"
               value={replyName}
-              onChange={(e) => setReplyName(e.target.value.slice(0, 50))}
-              placeholder="名前（任意）"
+              onChange={(e) => setReplyName(e.target.value.slice(0, 64))}
+              placeholder="名前（任意・#でトリップ）"
               className="w-full px-3 py-2 rounded-lg border border-line text-sm"
             />
             <input

@@ -8,6 +8,7 @@ import iconv from "iconv-lite";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const NONAME = "名無しさん";
+export const ABONE = "あぼーん<>あぼーん<>あぼーん<>あぼーん<>あぼーん";
 
 // スレッドキー = スレ立て時刻のUNIX秒。
 // ⚠️ 5ch互換ブラウザ（Siki等）は threadkey をそのまま「epoch秒」とみなして

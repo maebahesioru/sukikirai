@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPollCommentsFor2ch, listPollsFor2ch } from "@/lib/queries";
 import {
+  ABONE,
   NONAME,
   anonId,
   assignThreadKeys,
@@ -25,6 +26,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
   const title = sanitizeField(thread.title, 120);
   const comments = await getPollCommentsFor2ch(thread.id);
   const lines = comments.map((c) => {
+    if (c.is_hidden) return ABONE;
     const base = c.name ? sanitizeField(c.name, 40) : NONAME;
     const body = c.voted_option
       ? `「${sanitizeField(c.voted_option, 60)}」に投票しました！<br><br>${esc2ch(c.content)}`

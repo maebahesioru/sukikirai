@@ -98,7 +98,7 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
   if (sNoAt === "") return [];
   const nq = normalizeForSearch(s);
   const tokens = s
-    .split(/[\s・_\-–—]+/)
+    .split(/[\s・･_\-–—.。]+/)
     .map((t) => normalizeForSearch(t))
     .filter((t) => t.length >= 2)
     .slice(0, 6);
@@ -718,12 +718,12 @@ export function normalizeForSearch(s: string): string {
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
-    .replace(/[\s・_\-–—]/g, "");
+    .replace(/[\s・･_\-–—.。]/g, "");
 }
 
 /** SQL式の正規化（カラム側）: lower → カタカナ→ひらがな → 全角英数→半角 → 区切り除去 */
 const sqlNorm = (expr: string) =>
-  `replace(replace(replace(replace(translate(translate(lower(${expr}), '${KATAKANA_FROM}', '${HIRAGANA_TO}'), '${ZENKAKU_FROM}', '${HANKAKU_TO}'), ' ', ''), '・', ''), '_', ''), '-', '')`;
+  `replace(replace(replace(replace(replace(replace(replace(translate(translate(lower(${expr}), '${KATAKANA_FROM}', '${HIRAGANA_TO}'), '${ZENKAKU_FROM}', '${HANKAKU_TO}'), ' ', ''), '・', ''), '･', ''), '_', ''), '-', ''), '.', ''), '。', '')`;
 
 export async function findPersonByHandleOrId(handle: string): Promise<Person | null> {
   const h = handle.toLowerCase();

@@ -27,6 +27,8 @@ function getCharCount(text: string): number {
   return count;
 }
 
+const isSageMail = (m?: string | null) => (m ?? "").trim().toLowerCase() === "sage";
+
 export default function CommentSection({
   personId,
   hasVoted,
@@ -196,6 +198,7 @@ function CommentForm({
   onPosted: () => void;
 }) {
   const [name, setName] = useState("");
+  const [mail, setMail] = useState("");
   const [gender, setGender] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
   const [voteType, setVoteType] = useState<"like" | "dislike">("like");
@@ -228,6 +231,7 @@ function CommentForm({
         body: JSON.stringify({
           personId,
           name: name.trim() || null,
+          mail: mail.trim() || null,
           gender: gender || null,
           ageGroup: ageGroup || null,
           voteType,
@@ -264,12 +268,20 @@ function CommentForm({
       {parentNumber && (
         <p className="text-sm font-bold text-mut">&gt;&gt;{parentNumber} への返信</p>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, MAX_NAME_LENGTH))}
           placeholder="名前（任意・未入力で匿名）"
+          className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+        />
+        <input
+          type="text"
+          value={mail}
+          onChange={(e) => setMail(e.target.value.slice(0, 64))}
+          placeholder="メール（sageでageない）"
+          title="sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります"
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <select
@@ -457,6 +469,14 @@ function CommentItem({
               （{[comment.gender, comment.age_group].filter(Boolean).join("・")}）
             </span>
           )}
+          {isSageMail(comment.mail) && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
+              title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+            >
+              sage
+            </span>
+          )}
           <span
             className={`text-xs px-2 py-0.5 rounded-full ${
               comment.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
@@ -593,6 +613,14 @@ function ReplyItem({
         {(reply.gender || reply.age_group) && (
           <span className="text-xs text-mut">
             （{[reply.gender, reply.age_group].filter(Boolean).join("・")}）
+          </span>
+        )}
+        {isSageMail(reply.mail) && (
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
+            title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+          >
+            sage
           </span>
         )}
         <span

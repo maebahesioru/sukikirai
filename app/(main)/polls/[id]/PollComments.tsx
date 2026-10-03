@@ -12,6 +12,7 @@ type PollComment = {
   poll_id: string;
   comment_number: number;
   name: string | null;
+  mail?: string | null;
   content: string;
   created_at: string;
   good_count: number;
@@ -25,6 +26,8 @@ type SortType = "number" | "new";
 
 const HIDDEN_KEY = "hiddenPollComments";
 
+const isSageMail = (m?: string | null) => (m ?? "").trim().toLowerCase() === "sage";
+
 function getCharCount(text: string): number {
   let c = 0;
   for (let i = 0; i < text.length; i++) c += text.charCodeAt(i) <= 0x7f ? 1 : 2;
@@ -35,6 +38,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
   const [comments, setComments] = useState<PollComment[]>([]);
   const [total, setTotal] = useState(0);
   const [name, setName] = useState("");
+  const [mail, setMail] = useState("");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<SortType>("number");
@@ -95,6 +99,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
         body: JSON.stringify({
           pollId,
           name: name.trim() || null,
+          mail: mail.trim() || null,
           content: content.trim(),
           userToken: token,
         }),
@@ -141,13 +146,23 @@ export default function PollComments({ pollId }: { pollId: string }) {
       </div>
 
       <form onSubmit={submit} className="bg-panel2 border border-line rounded-xl p-4 space-y-3 mb-6">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, 50))}
-          placeholder="名前（任意・未入力で匿名）"
-          className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value.slice(0, 50))}
+            placeholder="名前（任意・未入力で匿名）"
+            className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+          <input
+            type="text"
+            value={mail}
+            onChange={(e) => setMail(e.target.value.slice(0, 64))}
+            placeholder="メール（sageでageない）"
+            title="sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります"
+            className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+        </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -208,6 +223,7 @@ function PollCommentItem({
   const [counts, setCounts] = useState({ good: comment.good_count, bad: comment.bad_count });
   const [showReply, setShowReply] = useState(false);
   const [replyName, setReplyName] = useState("");
+  const [replyMail, setReplyMail] = useState("");
   const [replyText, setReplyText] = useState(`>>${comment.comment_number}\n`);
   const [busy, setBusy] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -270,6 +286,7 @@ function PollCommentItem({
         body: JSON.stringify({
           pollId,
           name: replyName.trim() || null,
+          mail: replyMail.trim() || null,
           content: replyText.trim(),
           parentCommentId: comment.id,
           userToken: token,
@@ -297,6 +314,14 @@ function PollCommentItem({
       <div className="flex items-center gap-2 flex-wrap mb-2 text-sm">
         <span className="text-mut text-xs">#{comment.comment_number}</span>
         <span className="font-medium">{comment.name || "匿名"}</span>
+        {isSageMail(comment.mail) && (
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
+            title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+          >
+            sage
+          </span>
+        )}
         <span className="text-xs text-mut">{timeAgo(comment.created_at)}</span>
         <span className="ml-auto flex gap-2">
           <button
@@ -354,6 +379,14 @@ function PollCommentItem({
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-mut text-xs">&gt;&gt;{comment.comment_number}</span>
                 <span className="font-medium">{r.name || "匿名"}</span>
+                {isSageMail(r.mail) && (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
+                    title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+                  >
+                    sage
+                  </span>
+                )}
                 <span className="text-xs text-mut">{timeAgo(r.created_at)}</span>
                 <button
                   onClick={() => onHide(r.id)}
@@ -374,13 +407,22 @@ function PollCommentItem({
 
       {showReply && (
         <form onSubmit={submitReply} className="mt-3 bg-panel2 border border-line rounded-xl p-3 space-y-2">
-          <input
-            type="text"
-            value={replyName}
-            onChange={(e) => setReplyName(e.target.value.slice(0, 50))}
-            placeholder="名前（任意）"
-            className="w-full px-3 py-2 rounded-lg border border-line text-sm"
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              value={replyName}
+              onChange={(e) => setReplyName(e.target.value.slice(0, 50))}
+              placeholder="名前（任意）"
+              className="w-full px-3 py-2 rounded-lg border border-line text-sm"
+            />
+            <input
+              type="text"
+              value={replyMail}
+              onChange={(e) => setReplyMail(e.target.value.slice(0, 64))}
+              placeholder="メール（sageでageない）"
+              className="w-full px-3 py-2 rounded-lg border border-line text-sm"
+            />
+          </div>
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}

@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const personId = str(body.personId, 100);
     const name = body.name ? str(body.name, MAX_NAME_LENGTH) : null;
+    const mail = body.mail ? (str(body.mail, 64).trim() || null) : null;
     const userId = body.userId ? str(body.userId, 50) : null;
     const gender = GENDERS.includes(body.gender) ? (body.gender as string) : null;
     const ageGroup = AGE_GROUPS.includes(body.ageGroup) ? (body.ageGroup as string) : null;
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
     const result = await postComment({
       personId,
       name: name && name.trim() ? name : null,
+      mail,
       userId,
       gender,
       ageGroup,

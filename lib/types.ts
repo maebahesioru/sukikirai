@@ -37,6 +37,7 @@ export type CommentRow = {
   person_id: string;
   comment_number: number;
   name: string | null;
+  mail?: string | null;
   user_id: string | null;
   gender: string | null;
   age_group: string | null;
@@ -88,6 +89,7 @@ export type PollCommentRow = {
   poll_id: string;
   comment_number: number;
   name: string | null;
+  mail?: string | null;
   user_id: string | null;
   content: string;
   created_at: string;

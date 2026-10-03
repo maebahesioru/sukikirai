@@ -372,7 +372,7 @@ const REACTION_JOIN = `LEFT JOIN (
   FROM comment_reactions GROUP BY comment_id
 ) r ON r.comment_id = c.id`;
 
-const COMMENT_COLS = `c.id, c.person_id, c.comment_number, c.name, c.user_id, c.gender, c.age_group,
+const COMMENT_COLS = `c.id, c.person_id, c.comment_number, c.name, c.mail, c.user_id, c.gender, c.age_group,
   c.vote_type, c.content, c.created_at, c.is_hidden, c.is_reported, c.parent_comment_id,
   COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count`;
 
@@ -936,7 +936,7 @@ export async function getPollComments(
   const rows = await sql<
     PollCommentRow & { good_count: number; bad_count: number; voted_option: string | null }
   >(
-    `SELECT c.id, c.poll_id, c.comment_number, c.name, c.user_id, c.content, c.created_at,
+    `SELECT c.id, c.poll_id, c.comment_number, c.name, c.mail, c.user_id, c.content, c.created_at,
             c.is_hidden, c.is_reported, c.parent_comment_id,
             COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count,
             o.option_text AS voted_option

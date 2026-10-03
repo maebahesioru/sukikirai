@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const pollId = str(body.pollId, 40);
     const name = body.name ? str(body.name, 50) : null;
+    const mail = body.mail ? (str(body.mail, 64).trim() || null) : null;
     const userId = body.userId ? str(body.userId, 50) : null;
     const content = str(body.content, 2000).trim();
     const parentCommentId = body.parentCommentId ? str(body.parentCommentId, 40) : null;
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
       content,
       parentCommentId,
       cookieId: userToken,
+      mail,
     });
     if (!r.ok) {
       return NextResponse.json({ success: false, error: r.error }, { status: r.status });

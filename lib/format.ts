@@ -42,3 +42,16 @@ export function fmtTime2ch(input: string | Date): string {
     WEEKDAYS_EN[j.getUTCDay()]
   }) ${p(j.getUTCHours())}:${p(j.getUTCMinutes())}:${p(j.getUTCSeconds())}`;
 }
+
+/** アスキーアート（AA）っぽい投稿かどうか（等幅表示に切り替える判定） */
+export function isAA(text: string): boolean {
+  // 連続するスペース（半角/全角2つ以上）＝AAの位置合わせの典型
+  if (/[ 　]{2,}/.test(text)) return true;
+  // 複数行で、行頭が空白の行が2行以上
+  const lines = text.split("\n");
+  if (lines.length >= 2 && lines.filter((l) => /^[ 　]/.test(l)).length >= 2) return true;
+  // AA記号（アンダースコア系・上線・縦棒が連続）
+  if ((text.match(/[＿￣━]/g)?.length ?? 0) >= 2) return true;
+  if (/[＼／|｜]{3,}/.test(text)) return true;
+  return false;
+}

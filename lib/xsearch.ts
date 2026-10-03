@@ -38,10 +38,12 @@ type Raw = { handle: string; strong: boolean };
 async function searx(q: string): Promise<{ url: string; title: string }[]> {
   for (const { url, timeout } of SEARX_URLS) {
     try {
-      // VPN出口IPでは brave/duckduckgo/qwant 等がレート制限・CAPTCHAになりやすいため、
-      // 上限に強い google/bing に限定する（x.comプロフィールのインデックスも十分）。
+      // エンジン構成（2026-10-03）: searxng側で google cse 等をVM100直出口プロキシ（家庭IP）経由に設定済み。
+      // 実測の知見: 旧googleエンジン(/wml/search)は廃止済みで403になるため使わない。
+      // Google結果は「google cse」エンジンが取れる（x.comプロフィールも取得可・実測）。
+      // ※engines=に未登録の名前(startpage等)を混ぜると無視される（pd_engines空→デフォルト全エンジンに落ちる）ので注意。
       const res = await fetch(
-        `${url}/search?format=json&q=${encodeURIComponent(q)}&engines=google%2Cbing`,
+        `${url}/search?format=json&q=${encodeURIComponent(q)}&engines=google%20cse%2Cbing`,
         {
           headers: { "User-Agent": UA, Accept: "application/json" },
           cache: "no-store",

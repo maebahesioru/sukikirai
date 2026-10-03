@@ -106,3 +106,10 @@ body {
 .bar-anim {
   transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* AA（アスキーアート）表示用フォント: 2ch系AAに合う等幅スタック */
+.font-aa {
+  font-family: "MS PGothic", "Mona", "IPAMonaPGothic", "Monapo", "Noto Sans Mono CJK JP",
+    "DejaVu Sans Mono", monospace;
+  font-variant-ligatures: none;
+}

@@ -3,6 +3,7 @@ import { sql, sql1, withTx, jstDayStart } from "./db";
 import { EVAL_KEYS, DEFAULT_CATEGORY } from "./constants";
 import { isSpamContent, calculateSimilarity } from "./spam-filter";
 import { fetchFxUser } from "./fxtwitter";
+import { anonId } from "./bbs2ch";
 import type {
   CommentRow,
   CommentWithReplies,
@@ -373,7 +374,7 @@ const REACTION_JOIN = `LEFT JOIN (
 ) r ON r.comment_id = c.id`;
 
 const COMMENT_COLS = `c.id, c.person_id, c.comment_number, c.name, c.mail, c.user_id, c.gender, c.age_group,
-  c.vote_type, c.content, c.created_at, c.is_hidden, c.is_reported, c.parent_comment_id,
+  c.vote_type, c.content, c.created_at, c.is_hidden, c.is_reported, c.parent_comment_id, c.cookie_id,
   COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count`;
 
 export async function getComments(
@@ -428,14 +429,19 @@ export async function getComments(
   for (const rep of replies) {
     const pid = rep.parent_comment_id as string;
     const arr = byParent.get(pid) ?? [];
-    arr.push(rep);
+    const { cookie_id, ...rest } = rep;
+    arr.push({ ...rest, anon_id: anonId(cookie_id ?? null, rep.id) });
     byParent.set(pid, arr);
   }
 
-  const comments: CommentWithReplies[] = mains.map((m) => ({
-    ...m,
-    replies: byParent.get(m.id) ?? [],
-  }));
+  const comments: CommentWithReplies[] = mains.map((m) => {
+    const { cookie_id, ...rest } = m;
+    return {
+      ...rest,
+      anon_id: anonId(cookie_id ?? null, m.id),
+      replies: byParent.get(m.id) ?? [],
+    };
+  });
   return { comments, total };
 }
 
@@ -937,7 +943,7 @@ export async function getPollComments(
     PollCommentRow & { good_count: number; bad_count: number; voted_option: string | null }
   >(
     `SELECT c.id, c.poll_id, c.comment_number, c.name, c.mail, c.user_id, c.content, c.created_at,
-            c.is_hidden, c.is_reported, c.parent_comment_id,
+            c.is_hidden, c.is_reported, c.parent_comment_id, c.cookie_id,
             COALESCE(r.g,0)::int AS good_count, COALESCE(r.b,0)::int AS bad_count,
             o.option_text AS voted_option
      FROM poll_comments c ${POLL_REACTION_JOIN}
@@ -952,14 +958,22 @@ export async function getPollComments(
   for (const rep of rows) {
     if (!rep.parent_comment_id) continue;
     const arr = byParent.get(rep.parent_comment_id) ?? [];
-    arr.push(rep as unknown as CommentWithReplies["replies"][number]);
+    const { cookie_id, ...rest } = rep;
+    arr.push({
+      ...rest,
+      anon_id: anonId(cookie_id ?? null, rep.id),
+    } as unknown as CommentWithReplies["replies"][number]);
     byParent.set(rep.parent_comment_id, arr);
   }
   return {
-    comments: mains.map((m) => ({
-      ...(m as unknown as CommentWithReplies),
-      replies: byParent.get(m.id) ?? [],
-    })),
+    comments: mains.map((m) => {
+      const { cookie_id, ...rest } = m;
+      return {
+        ...(rest as unknown as CommentWithReplies),
+        anon_id: anonId(cookie_id ?? null, m.id),
+        replies: byParent.get(m.id) ?? [],
+      };
+    }),
     total: rows.length,
   };
 }

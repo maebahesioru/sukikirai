@@ -13,7 +13,7 @@ import {
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
 import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS, MAX_NAME_LENGTH } from "@/lib/constants";
 import ReportModal from "./ReportModal";
-import { timeAgo } from "@/lib/format";
+import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
 
 type FilterType = "all" | "like" | "dislike";
@@ -456,7 +456,10 @@ function CommentItem({
           >
             {comment.vote_type === "like" ? "好き派" : "嫌い派"}
           </span>
-          <span className="text-xs text-mut">{timeAgo(comment.created_at)}</span>
+          <span className="text-xs text-mut" title={timeAgo(comment.created_at)}>
+            {fmtTime2ch(comment.created_at)}
+          </span>
+          <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
         </div>
         {!locked && (
           <div className="flex gap-2 shrink-0">
@@ -602,7 +605,10 @@ function ReplyItem({
         >
           {reply.vote_type === "like" ? "好き派" : "嫌い派"}
         </span>
-        <span className="text-xs text-mut">{timeAgo(reply.created_at)}</span>
+        <span className="text-xs text-mut" title={timeAgo(reply.created_at)}>
+          {fmtTime2ch(reply.created_at)}
+        </span>
+        <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>
         <span className="ml-auto" />
       </div>
       <p className="whitespace-pre-wrap mb-2">{reply.content}</p>

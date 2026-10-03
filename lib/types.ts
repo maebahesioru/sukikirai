@@ -49,6 +49,10 @@ export type CommentRow = {
   is_hidden: boolean;
   is_reported: boolean;
   parent_comment_id: string | null;
+  /** 2ch互換の9文字ID（datと同じ値） */
+  anon_id?: string;
+  /** 内部用（APIには出さない） */
+  cookie_id?: string | null;
   /** 投票トーク用: このコメント主が投票した選択肢のラベル */
   voted_option?: string | null;
 };
@@ -98,6 +102,10 @@ export type PollCommentRow = {
   is_hidden: boolean;
   is_reported: boolean;
   parent_comment_id: string | null;
+  /** 2ch互換の9文字ID（datと同じ値） */
+  anon_id?: string;
+  /** 内部用（APIには出さない） */
+  cookie_id?: string | null;
 };
 
 export type RankingRow = Person & {

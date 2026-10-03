@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-react";
-import { timeAgo } from "@/lib/format";
+import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
 import type { ReportReason } from "@/lib/constants";
 
@@ -13,6 +13,8 @@ type PollComment = {
   comment_number: number;
   name: string | null;
   mail?: string | null;
+  /** 2ch互換の9文字ID */
+  anon_id?: string;
   content: string;
   created_at: string;
   good_count: number;
@@ -322,7 +324,10 @@ function PollCommentItem({
             sage
           </span>
         )}
-        <span className="text-xs text-mut">{timeAgo(comment.created_at)}</span>
+        <span className="text-xs text-mut" title={timeAgo(comment.created_at)}>
+          {fmtTime2ch(comment.created_at)}
+        </span>
+        <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
         <span className="ml-auto flex gap-2">
           <button
             onClick={() => setShowReport(true)}
@@ -387,7 +392,10 @@ function PollCommentItem({
                     sage
                   </span>
                 )}
-                <span className="text-xs text-mut">{timeAgo(r.created_at)}</span>
+                <span className="text-xs text-mut" title={timeAgo(r.created_at)}>
+                  {fmtTime2ch(r.created_at)}
+                </span>
+                <span className="text-[11px] text-mut font-mono">ID:{r.anon_id}</span>
                 <button
                   onClick={() => onHide(r.id)}
                   className="ml-auto text-mut hover:text-txt transition"

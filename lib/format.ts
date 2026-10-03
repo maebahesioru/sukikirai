@@ -30,3 +30,15 @@ export function num(n: number | null | undefined): string {
   if (n == null) return "0";
   return n.toLocaleString("ja-JP");
 }
+
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** 2ch風の絶対時刻（JST固定・秒まで）: 2026/10/03(Sat) 19:14:37 */
+export function fmtTime2ch(input: string | Date): string {
+  const d = typeof input === "string" ? new Date(input) : input;
+  const j = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${j.getUTCFullYear()}/${p(j.getUTCMonth() + 1)}/${p(j.getUTCDate())}(${
+    WEEKDAYS_EN[j.getUTCDay()]
+  }) ${p(j.getUTCHours())}:${p(j.getUTCMinutes())}:${p(j.getUTCSeconds())}`;
+}

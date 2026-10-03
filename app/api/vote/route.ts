@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "投票できません" }, { status: 403 });
     }
 
-    const r = await insertVote(person.id, voteType, userToken, ip);
+    const r = await insertVote(person.id, voteType, userToken);
     const stats = await getVoteStats(person.id);
 
     if (!r.ok) {

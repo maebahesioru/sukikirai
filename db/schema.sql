@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS votes (
   person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE,
   vote_type TEXT NOT NULL CHECK (vote_type IN ('like','dislike')),
   cookie_id TEXT NOT NULL,
-  ip_address TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_votes_person ON votes(person_id);
@@ -65,7 +64,6 @@ CREATE TABLE IF NOT EXISTS comment_reactions (
   comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
   reaction_type TEXT NOT NULL CHECK (reaction_type IN ('good','bad')),
   cookie_id TEXT NOT NULL,
-  ip_address TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (comment_id, cookie_id)
 );

@@ -209,19 +209,18 @@ export async function getTodayVote(
 export async function insertVote(
   personId: string,
   voteType: "like" | "dislike",
-  cookieId: string,
-  ip: string | null
+  cookieId: string
 ): Promise<{ ok: boolean; existing?: "like" | "dislike" }> {
   const day = jstDayStart();
   const r = await sql1<{ id: string }>(
-    `INSERT INTO votes (person_id, vote_type, cookie_id, ip_address)
-     SELECT $1, $2, $3, $4
+    `INSERT INTO votes (person_id, vote_type, cookie_id)
+     SELECT $1, $2, $3
      WHERE EXISTS (SELECT 1 FROM people WHERE id = $1 AND NOT is_hidden)
        AND NOT EXISTS (
-         SELECT 1 FROM votes WHERE person_id = $1 AND cookie_id = $3 AND created_at >= $5
+         SELECT 1 FROM votes WHERE person_id = $1 AND cookie_id = $3 AND created_at >= $4
        )
      RETURNING id`,
-    [personId, voteType, cookieId, ip, day]
+    [personId, voteType, cookieId, day]
   );
   if (r) return { ok: true };
   const existing = await getTodayVote(personId, cookieId);
@@ -476,7 +475,6 @@ export type CommentInput = {
   content: string;
   parentCommentId: string | null;
   cookieId: string;
-  ip: string | null;
 };
 
 export async function postComment(
@@ -1327,15 +1325,15 @@ export async function adminSetVotes(personId: string, likes: number, dislikes: n
     await c.query("DELETE FROM votes WHERE person_id = $1", [personId]);
     if (likes > 0) {
       await c.query(
-        `INSERT INTO votes (person_id, vote_type, cookie_id, ip_address)
-         SELECT $1, 'like', 'admin_like_' || g::text || '_' || $3, NULL FROM generate_series(1, $2) g`,
+        `INSERT INTO votes (person_id, vote_type, cookie_id)
+         SELECT $1, 'like', 'admin_like_' || g::text || '_' || $3 FROM generate_series(1, $2) g`,
         [personId, likes, String(stamp)]
       );
     }
     if (dislikes > 0) {
       await c.query(
-        `INSERT INTO votes (person_id, vote_type, cookie_id, ip_address)
-         SELECT $1, 'dislike', 'admin_dislike_' || g::text || '_' || $3, NULL FROM generate_series(1, $2) g`,
+        `INSERT INTO votes (person_id, vote_type, cookie_id)
+         SELECT $1, 'dislike', 'admin_dislike_' || g::text || '_' || $3 FROM generate_series(1, $2) g`,
         [personId, dislikes, String(stamp)]
       );
     }

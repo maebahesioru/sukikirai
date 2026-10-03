@@ -79,7 +79,6 @@ export async function POST(request: Request) {
       content,
       parentCommentId,
       cookieId: userToken,
-      ip,
     });
 
     if (!result.ok) {

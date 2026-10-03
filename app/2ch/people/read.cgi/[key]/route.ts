@@ -82,7 +82,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
     content: message,
     cookieId: token,
     parentCommentId: null,
-    ip,
   });
   if (!r.ok) {
     return new NextResponse(r.error, { status: r.status, headers: TEXT_HEADERS });

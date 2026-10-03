@@ -10,6 +10,31 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export const NONAME = "名無しさん";
 export const ABONE = "あぼーん<>あぼーん<>あぼーん<>あぼーん<>あぼーん";
 
+// cp932にエンコードできない文字（絵文字など）を数値文字参照 &#N; に置換する。
+// 810ch実測フォーマット: 絵文字は &#128560; のような10進数値参照のASCIIとしてdatに載り、
+// 専ブラ（Siki等）側が文字参照をデコードして絵文字に戻す。
+// iconv-lite の cp932 は該当文字をそのまま '?' にしてしまうため、事前に置換しておく。
+// ⚠️ & をエスケープする処理（esc2ch / sanitizeField）の「後」に適用すること。
+//   先に適用すると & が &amp; になり参照が壊れる。
+function entityizeUnmappable(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined || cp < 0x80) {
+      out += ch;
+      continue;
+    }
+    const buf = iconv.encode(ch, "cp932");
+    // マップ不能な文字は '?' 1バイトになる（cp932の正規文字は1〜2バイト）
+    if (buf.length === 1 && buf[0] === 0x3f) {
+      out += `&#${cp};`;
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
 // スレッドキー = スレ立て時刻のUNIX秒。
 // ⚠️ 5ch互換ブラウザ（Siki等）は threadkey をそのまま「epoch秒」とみなして
 //    pubdate = key*1000 でスレ立て日時を表示する（810ch実測: key 1781526063 → 2026/06/15）。
@@ -56,22 +81,26 @@ export function fmt2chDate(input: string | Date): string {
 
 // 名前・タイトル用: 区切り文字(<>,)を壊す文字を全角に置換
 export function sanitizeField(s: string, max = 200): string {
-  return s
-    .replace(/[\r\n\t]+/g, " ")
-    .replace(/</g, "＜")
-    .replace(/>/g, "＞")
-    .replace(/&/g, "＆")
-    .trim()
-    .slice(0, max);
+  return entityizeUnmappable(
+    s
+      .replace(/[\r\n\t]+/g, " ")
+      .replace(/</g, "＜")
+      .replace(/>/g, "＞")
+      .replace(/&/g, "＆")
+      .trim()
+      .slice(0, max)
+  );
 }
 
 // 本文用: HTMLエスケープ + 改行を <br> に（2ch dat 形式）
 export function esc2ch(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\r?\n/g, "<br>");
+  return entityizeUnmappable(
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\r?\n/g, "<br>")
+  );
 }
 
 // cp932 でレスポンス（810chと同じ Content-Type）

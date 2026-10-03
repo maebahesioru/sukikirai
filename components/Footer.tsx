@@ -17,17 +17,6 @@ export default function Footer() {
             人物一覧
           </Link>
         </div>
-        <p>
-          姉妹サイト:{" "}
-          <a
-            href="https://nareaitter.hikamers.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-x hover:underline"
-          >
-            馴れ合いサークル（nareaitter）
-          </a>
-        </p>
         <p className="leading-relaxed">
           本サイトは誰でも匿名でXユーザーの好き嫌い・評価を書き込める非公式のまとめサイトです。X Corp.
           および各対象者とは関係ありません。誹謗中傷・個人情報の投稿は禁止です。

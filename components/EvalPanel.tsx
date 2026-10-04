@@ -138,7 +138,7 @@ export default function EvalPanel({
           const count = stats.counts[item.key] ?? 0;
           const myVal = saved ? mine?.[item.key] ?? null : draft[item.key] ?? null;
           return (
-            <div key={item.key} className="flex items-center gap-3 flex-wrap">
+            <div key={item.key} className="flex items-center gap-2 flex-wrap">
               <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((v) => (
@@ -147,7 +147,7 @@ export default function EvalPanel({
                     type="button"
                     disabled={!hasVoted || saved || busy}
                     onClick={() => setDraft({ ...draft, [item.key]: v })}
-                    className={`p-1 transition ${
+                    className={`p-0.5 transition ${
                       !hasVoted || saved ? "cursor-default" : "hover:scale-110"
                     }`}
                     aria-label={`${item.label} ${v}`}
@@ -162,7 +162,7 @@ export default function EvalPanel({
                   </button>
                 ))}
               </div>
-              <span className="text-sm font-bold w-10 text-right">
+              <span className="text-sm font-bold w-8 sm:w-10 text-right">
                 {avg != null ? avg.toFixed(1) : "—"}
               </span>
               <span className="text-xs text-mut">（{count}）</span>

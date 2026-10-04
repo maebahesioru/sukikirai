@@ -3,6 +3,8 @@ import { addPersonFromX } from "@/lib/queries";
 import { autoTagPerson } from "@/lib/autotag";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { str } from "@/lib/validate";
+import { pingIndexNow } from "@/lib/indexnow";
+import { SITE_URL } from "@/lib/site";
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +35,8 @@ export async function POST(request: Request) {
     if (result.created) {
       // 新規追加はタグを自動付与（バックグラウンド・失敗しても応答には影響しない）
       void autoTagPerson(result.person.id).catch((e) => console.error("[autotag]", e));
+      // 検索エンジンへ即時通知（IndexNow）
+      void pingIndexNow([`${SITE_URL}/person/${result.person.id}`]);
     }
     return NextResponse.json({
       success: true,

@@ -3,6 +3,8 @@ import { createPoll } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { isValidToken, str } from "@/lib/validate";
 import { isSpamContent } from "@/lib/spam-filter";
+import { pingIndexNow } from "@/lib/indexnow";
+import { SITE_URL } from "@/lib/site";
 import type { PollType } from "@/lib/types";
 
 const TYPES: PollType[] = ["two_choice", "three_plus_fixed", "three_plus_open"];
@@ -77,6 +79,8 @@ export async function POST(request: Request) {
       relatedPersonIds,
       creatorCookieId: userToken,
     });
+    // 検索エンジンへ即時通知（IndexNow）
+    void pingIndexNow([`${SITE_URL}/polls/${pollId}`]);
     return NextResponse.json({ success: true, pollId });
   } catch (e) {
     console.error("poll create error:", e);

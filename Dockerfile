@@ -1,19 +1,17 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine AS base
-RUN corepack enable
+FROM oven/bun:1-alpine AS base
+WORKDIR /app
 
 FROM base AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm-store-suki,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+COPY package.json bun.lock ./
+RUN --mount=type=cache,id=bun-cache-suki,target=/root/.bun/install/cache bun install --frozen-lockfile
 
 FROM base AS builder
-WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN --mount=type=cache,id=suki-next-cache,target=/app/.next/cache pnpm run build
+RUN --mount=type=cache,id=suki-next-cache,target=/app/.next/cache bun run build
 
-FROM base AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV production
 

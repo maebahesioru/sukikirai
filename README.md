@@ -15,21 +15,22 @@ Xユーザーの「好き嫌い」と「8項目評価」を匿名で書き込め
 ## スタック
 
 - Next.js 15 (App Router) / React 19 / Tailwind CSS 4
+- パッケージマネージャ: **Bun**（2026-10-04にpnpmから移行・インストールとビルド実行）
 - PostgreSQL（node-postgres）※自鯖 Coolify 上で運用
 - ホスティング: Coolify (VM100) / ドメイン: tsuittara-yoron.hikamers.app（旧: hikamer-suki-kira.hikamers.app → 301）
 
 ## 開発
 
 ```bash
-pnpm install
-DATABASE_URL=postgres://user:pass@host:5432/db pnpm dev
+bun install
+DATABASE_URL=postgres://user:pass@host:5432/db bun run dev
 ```
 
 ## ビルド / 起動
 
 ```bash
-pnpm build
-DATABASE_URL=... pnpm start
+bun run build
+DATABASE_URL=... bun run start
 ```
 
 ## データベース

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation } from "@/lib/queries";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter } from "@/lib/rate-limit";
 import { isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
 
@@ -25,6 +25,13 @@ export async function POST(request: Request) {
     if (!rateLimit(`eval:ipday:${ip}`, 1000, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の評価数が上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
+    // cookieリセット連投対策: 同一IPから「新規トークン」で評価できるのは1日 NEW_VOTER_MAX 個まで
+    if (!allowNewVoter(ip, userToken)) {
+      return NextResponse.json(
+        { success: false, error: "同一ネットワークからの本日の評価上限に達しました。明日またお試しください" },
         { status: 429 }
       );
     }

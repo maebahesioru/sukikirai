@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPoll, votePoll } from "@/lib/queries";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter } from "@/lib/rate-limit";
 import { isValidToken, isUuid, str } from "@/lib/validate";
 
 export async function POST(request: Request) {
@@ -21,6 +21,13 @@ export async function POST(request: Request) {
     if (!rateLimit(`pollvote:ipday:${ip}`, 1000, 24 * 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "本日の投票数が上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
+    // cookieリセット連投対策: 同一IPから「新規トークン」で投票できるのは1日 NEW_VOTER_MAX 個まで
+    if (!allowNewVoter(ip, userToken)) {
+      return NextResponse.json(
+        { success: false, error: "同一ネットワークからの本日の投票上限に達しました。明日またお試しください" },
         { status: 429 }
       );
     }

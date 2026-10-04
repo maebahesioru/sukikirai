@@ -21,6 +21,34 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
   return true;
 }
 
+// ---- 「1日1回系」の新規トークン枠（cookieリセット連投対策・メモリ内のみ・保存なし）----
+// 同一IPから「初めて見るトークン」で投票/評価できるのは1日 NEW_VOTER_MAX 個まで。
+// 既知トークン（当日そのIPで既に活動済み）は制限なし＝1日1回の重複判定は各ルート側の既存ロジックが担う。
+// ※プロセス再起動でリセットされる（既存のレート制限と同様）。
+export const NEW_VOTER_MAX = 30;
+const voterSets = new Map<string, { day: string; ids: Set<string> }>();
+
+function jstDayKey(): string {
+  return new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+}
+
+/** 許可なら true。ipごとに「新しいトークン」を1日 NEW_VOTER_MAX 個まで受け付ける。 */
+export function allowNewVoter(ip: string, token: string): boolean {
+  const day = jstDayKey();
+  if (voterSets.size > 20_000) {
+    for (const [k, v] of voterSets) if (v.day !== day) voterSets.delete(k);
+  }
+  let entry = voterSets.get(ip);
+  if (!entry || entry.day !== day) {
+    entry = { day, ids: new Set() };
+    voterSets.set(ip, entry);
+  }
+  if (entry.ids.has(token)) return true;
+  if (entry.ids.size >= NEW_VOTER_MAX) return false;
+  entry.ids.add(token);
+  return true;
+}
+
 /**
  * クライアントIP取得。
  * 経路: client → Cloudflare → cloudflared(VM100) → Traefik → app。

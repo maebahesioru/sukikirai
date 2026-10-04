@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Star } from "lucide-react";
 import { EVAL_ITEMS } from "@/lib/constants";
 import type { EvalStats } from "@/lib/types";
+import { getFingerprint } from "@/lib/fingerprint";
 
 export default function EvalPanel({
   personId,
@@ -52,7 +53,7 @@ export default function EvalPanel({
       const res = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personId, userToken: token, scores: draft }),
+        body: JSON.stringify({ personId, userToken: token, scores: draft, fp: await getFingerprint() }),
       });
       const data = await res.json();
       if (data.success) {

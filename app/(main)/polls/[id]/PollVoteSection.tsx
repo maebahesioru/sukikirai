@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Crown, Plus } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
 import Avatar from "@/components/Avatar";
+import { getFingerprint } from "@/lib/fingerprint";
 import { bigAvatarUrl, findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import type { PollOption, PollType } from "@/lib/types";
 
@@ -81,7 +82,7 @@ export default function PollVoteSection({
       const res = await fetch("/api/polls/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pollId, optionId, userToken: token }),
+        body: JSON.stringify({ pollId, optionId, userToken: token, fp: await getFingerprint() }),
       });
       const data = await res.json();
       if (data.success) {

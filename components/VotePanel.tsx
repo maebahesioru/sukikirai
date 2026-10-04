@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Cookies from "js-cookie";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { getFingerprint } from "@/lib/fingerprint";
 
 export type VoteInfo = {
   voted: boolean;
@@ -52,7 +53,7 @@ export default function VotePanel({
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personId, voteType: t, userToken: token }),
+        body: JSON.stringify({ personId, voteType: t, userToken: token, fp: await getFingerprint() }),
       });
       const data = await res.json();
       if (data.success) {

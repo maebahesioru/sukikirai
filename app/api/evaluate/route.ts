@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter } from "@/lib/rate-limit";
-import { isValidToken, str } from "@/lib/validate";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
+import { isValidFp, isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
 
 export async function POST(request: Request) {
@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const personId = str(body.personId, 100);
     const userToken = body.userToken;
+    const fp = isValidFp(body.fp) ? body.fp : null;
     const rawScores = (body.scores ?? {}) as Record<string, unknown>;
 
     if (!personId || !isValidToken(userToken)) {
@@ -29,11 +30,13 @@ export async function POST(request: Request) {
       );
     }
     // cookieリセット連投対策: 同一IPから「新規トークン」で評価できるのは1日 NEW_VOTER_MAX 個まで
-    if (!allowNewVoter(ip, userToken)) {
-      return NextResponse.json(
-        { success: false, error: "同一ネットワークからの本日の評価上限に達しました。明日またお試しください" },
-        { status: 429 }
-      );
+    const nv = allowNewVoter(ip, userToken);
+    if (!nv.ok) {
+      const error =
+        nv.reason === "burst"
+          ? "短時間に評価が集中しています。しばらく待ってからお試しください"
+          : "同一ネットワークからの本日の評価上限に達しました。明日またお試しください";
+      return NextResponse.json({ success: false, error }, { status: 429 });
     }
 
     const scores: Record<string, number | null> = {};
@@ -57,8 +60,20 @@ export async function POST(request: Request) {
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "評価できません" }, { status: 403 });
     }
+    // 端末フィンガープリント対策: cookieを消しても同一端末×同一人物の同日重複評価は不可
+    if (fp && fpTargetBlocked(fp, "eval", person.id)) {
+      const [stats, mine] = await Promise.all([
+        getEvalStats(personId),
+        getMyEvalToday(personId, userToken),
+      ]);
+      return NextResponse.json(
+        { success: false, error: "今日は既に評価済みです。明日また書き込めます。", stats, mine },
+        { status: 409 }
+      );
+    }
 
     const r = await insertEvaluation(personId, userToken, scores);
+    if (r.ok && fp) markFpTarget(fp, "eval", person.id);
     if (r.ok) {
       const stats = await getEvalStats(personId);
       return NextResponse.json({ success: true, stats, mine: scores });

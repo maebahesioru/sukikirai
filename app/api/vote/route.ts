@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPerson, getVoteStats, insertVote } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter } from "@/lib/rate-limit";
-import { isValidToken, str } from "@/lib/validate";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
+import { isValidFp, isValidToken, str } from "@/lib/validate";
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const personId = str(body.personId, 100);
     const voteType = body.voteType;
     const userToken = body.userToken;
+    const fp = isValidFp(body.fp) ? body.fp : null;
 
     if (!personId || (voteType !== "like" && voteType !== "dislike")) {
       return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
@@ -32,11 +33,13 @@ export async function POST(request: Request) {
       );
     }
     // cookieリセット連投対策: 同一IPから「新規トークン」で投票できるのは1日 NEW_VOTER_MAX 個まで
-    if (!allowNewVoter(ip, userToken)) {
-      return NextResponse.json(
-        { success: false, error: "同一ネットワークからの本日の投票上限に達しました。明日またお試しください" },
-        { status: 429 }
-      );
+    const nv = allowNewVoter(ip, userToken);
+    if (!nv.ok) {
+      const error =
+        nv.reason === "burst"
+          ? "短時間に投票が集中しています。しばらく待ってからお試しください"
+          : "同一ネットワークからの本日の投票上限に達しました。明日またお試しください";
+      return NextResponse.json({ success: false, error }, { status: 429 });
     }
 
     const person = await getPerson(personId);
@@ -46,9 +49,23 @@ export async function POST(request: Request) {
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "投票できません" }, { status: 403 });
     }
+    // 端末フィンガープリント対策: cookieを消しても同一端末×同一人物の同日重複投票は不可
+    if (fp && fpTargetBlocked(fp, "vote", person.id)) {
+      const stats = await getVoteStats(person.id);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "今日は既に投票済みです。明日また投票できます。",
+          voteType: null,
+          ...stats,
+        },
+        { status: 429 }
+      );
+    }
 
     const r = await insertVote(person.id, voteType, userToken);
     const stats = await getVoteStats(person.id);
+    if (r.ok && fp) markFpTarget(fp, "vote", person.id);
 
     if (!r.ok) {
       return NextResponse.json(

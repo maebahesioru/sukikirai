@@ -6,6 +6,13 @@ export function isValidToken(s: unknown): s is string {
   return typeof s === "string" && TOKEN_RE.test(s);
 }
 
+/** 端末フィンガープリント（クライアント生成のハッシュ・16進） */
+export const FP_RE = /^[a-z0-9]{8,80}$/i;
+
+export function isValidFp(s: unknown): s is string {
+  return typeof s === "string" && FP_RE.test(s);
+}
+
 /** 半角1・全角2で数える（旧サイト互換） */
 export function charCount(s: string): number {
   let c = 0;

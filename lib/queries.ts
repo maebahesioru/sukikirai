@@ -1153,8 +1153,8 @@ export async function listPeopleFor2ch(): Promise<
   { id: string; name: string; created_at: string; res_count: number; last_at: string | null }[]
 > {
   return sql(
-    `SELECT p.id, p.name, p.created_at, GREATEST(COALESCE(c.cnt,0),1)::int AS res_count, c.last_at
-     FROM people p
+    `SELECT p.id, p.name, p.created_at, (COALESCE(c.cnt,0) + 1)::int AS res_count, c.last_at
+    FROM people p
      LEFT JOIN (
        SELECT person_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,
               MAX(created_at) FILTER (WHERE NOT is_hidden AND COALESCE(lower(btrim(mail)), '') <> 'sage') AS last_bump
@@ -1188,7 +1188,7 @@ export async function listPollsFor2ch(): Promise<
   { id: string; title: string; created_at: string; res_count: number; last_at: string | null }[]
 > {
   return sql(
-    `SELECT p.id, p.title, p.created_at, GREATEST(COALESCE(c.cnt,0),1)::int AS res_count, c.last_at
+    `SELECT p.id, p.title, p.created_at, (COALESCE(c.cnt,0) + 1)::int AS res_count, c.last_at
      FROM polls p
      LEFT JOIN (
        SELECT poll_id, COUNT(*) AS cnt, MAX(created_at) AS last_at,

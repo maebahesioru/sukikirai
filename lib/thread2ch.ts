@@ -36,7 +36,10 @@ export async function resolvePollThread(rawKey: string): Promise<ResolvedThread 
   return t ? { kind: "poll", id: t.id, title: t.title, createdAt: t.created_at } : null;
 }
 
-/** コメント0件のスレに置く仮OP行（datを空にしない。2chではスレに必ず>>1が存在する） */
+/** スレ先頭のOP行（>>1）。2chでは全スレに必ず存在する。
+ *  ⚠️ コメント0件のときだけ出す「仮OP」ではない: Siki等の専ブラは新着を
+ *  「dat行数-1（OPを除いたレス数）」の増分で検知するため、OPは常に行1として
+ *  置き続ける必要がある（初コメントで行数が増えず通知が漏れるバグの修正）。 */
 export function buildOpLine(
   kind: "person" | "poll",
   label: string,
@@ -80,10 +83,10 @@ export async function buildPersonDat(thread: {
       sanitizeField(c.mail ?? "", 64)
     );
   });
-  if (lines.length === 0) {
-    return buildOpLine("person", thread.name, title, thread.createdAt ?? "", thread.id);
-  }
-  return lines.join("\n") + "\n";
+  // 行1 = OP（固定）、行2以降 = コメント。専ブラの新着検知は行数-1で数えるため
+  // OPを常に先頭に置く（空スレの仮OPはそのまま初コメント後もOPとして残る）
+  const op = buildOpLine("person", thread.name, title, thread.createdAt ?? "", thread.id);
+  return op + (lines.length ? lines.join("\n") + "\n" : "");
 }
 
 /** 投票トークスレのdat本文を組み立てる */
@@ -109,8 +112,7 @@ export async function buildPollDat(thread: {
       sanitizeField(c.mail ?? "", 64)
     );
   });
-  if (lines.length === 0) {
-    return buildOpLine("poll", thread.title, title, thread.createdAt ?? "", thread.id);
-  }
-  return lines.join("\n") + "\n";
+  // 行1 = OP（固定）、行2以降 = コメント（人物スレと同じ理由）
+  const op = buildOpLine("poll", thread.title, title, thread.createdAt ?? "", thread.id);
+  return op + (lines.length ? lines.join("\n") + "\n" : "");
 }

@@ -75,12 +75,12 @@ export default function PersonClient({
               </p>
             )}
             <div className="flex flex-wrap gap-1.5 mt-3">
-              <span className="text-xs px-2.5 py-1 rounded-full bg-xsoft text-x">{person.category}</span>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-xsoft text-x whitespace-nowrap">{person.category}</span>
               {person.tags.map((t) => (
                 <Link
                   key={t}
                   href={`/tag/${encodeURIComponent(t)}`}
-                  className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line text-mut hover:text-x hover:border-line2 transition"
+                  className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line text-mut hover:text-x hover:border-line2 transition whitespace-nowrap"
                 >
                   #{t}
                 </Link>
@@ -103,7 +103,7 @@ export default function PersonClient({
               </div>
             )}
           </div>
-          <div className="text-center shrink-0 px-5 py-3 rounded-xl bg-panel2 border border-line">
+          <div className="text-center shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-panel2 border border-line">
             <div className="text-xs text-mut mb-1">総合評価</div>
             <div className="text-3xl font-black text-gold">{overall != null ? overall.toFixed(1) : "—"}</div>
             <div className="text-[11px] text-mut mt-1">回答 {evalStats.total}人</div>

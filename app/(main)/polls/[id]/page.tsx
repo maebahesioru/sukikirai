@@ -64,7 +64,7 @@ export default async function PollPage({ params }: Params) {
               <Link
                 key={p.id}
                 href={`/person/${p.id}`}
-                className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line hover:border-line2 transition"
+                className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line hover:border-line2 transition whitespace-nowrap"
               >
                 {p.name}
               </Link>

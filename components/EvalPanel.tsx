@@ -101,7 +101,7 @@ export default function EvalPanel({
             const count = stats.counts[item.key] ?? 0;
             return (
               <div key={item.key} className="flex items-center gap-3">
-                <span className="w-24 text-sm text-mut shrink-0">{item.label}</span>
+                <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
                 <span className="text-sm font-bold w-10 text-right">
                   {avg != null ? avg.toFixed(1) : "—"}
                 </span>
@@ -139,7 +139,7 @@ export default function EvalPanel({
           const myVal = saved ? mine?.[item.key] ?? null : draft[item.key] ?? null;
           return (
             <div key={item.key} className="flex items-center gap-3 flex-wrap">
-              <span className="w-24 text-sm text-mut shrink-0">{item.label}</span>
+              <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map((v) => (
                   <button
@@ -147,13 +147,13 @@ export default function EvalPanel({
                     type="button"
                     disabled={!hasVoted || saved || busy}
                     onClick={() => setDraft({ ...draft, [item.key]: v })}
-                    className={`p-0.5 transition ${
+                    className={`p-1 transition ${
                       !hasVoted || saved ? "cursor-default" : "hover:scale-110"
                     }`}
                     aria-label={`${item.label} ${v}`}
                   >
                     <Star
-                      className={`w-5 h-5 ${
+                      className={`w-6 h-6 ${
                         (myVal ?? 0) >= v
                           ? "text-gold fill-gold"
                           : "text-line2 fill-transparent"

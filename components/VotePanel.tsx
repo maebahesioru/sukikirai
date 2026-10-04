@@ -64,7 +64,7 @@ export default function VotePanel({
         if (tweet) {
           const totalN = data.likes + data.dislikes;
           const lp = totalN > 0 ? Math.round((data.likes / totalN) * 100) : 0;
-          const text = `【${t === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${lp}% vs【嫌い派】${100 - lp}%\n#ツイッタラー世論調査`;
+          const text = `【${t === "like" ? "好き派" : "嫌い派"}】${personName}に投票しました！\n【好き派】${lp}% vs【嫌い派】${100 - lp}%\n#ツイッタラー世論調査`;
           window.open(
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
             "_blank"

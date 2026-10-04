@@ -73,6 +73,7 @@ export default async function PollPage({ params }: Params) {
         pollType={poll.poll_type}
         options={poll.options}
         initialVoteOptionId={myVote.optionId}
+        related={related.map((p) => ({ id: p.id, name: p.name, avatar_url: p.avatar_url }))}
       />
 
       <PollComments pollId={poll.id} />

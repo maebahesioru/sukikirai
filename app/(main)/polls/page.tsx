@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PlusCircle, Vote } from "lucide-react";
-import { listPolls } from "@/lib/queries";
+import { getPeopleByIds, listPolls } from "@/lib/queries";
+import type { PollPersonLite } from "@/lib/pollui";
 import PollCard from "@/components/PollCard";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,13 @@ export const metadata: Metadata = {
 
 export default async function PollsPage() {
   const polls = await listPolls(100);
+
+  // 関連人物のアイコンを選択肢に自動表示するため、一覧分をまとめて取得
+  const relIds = [...new Set(polls.flatMap((p) => p.related_person_ids ?? []))];
+  const relPeople = await getPeopleByIds(relIds);
+  const relById = new Map<string, PollPersonLite>(
+    relPeople.map((p) => [p.id, { id: p.id, name: p.name, avatar_url: p.avatar_url }])
+  );
 
   return (
     <div className="space-y-5">
@@ -43,7 +51,13 @@ export default async function PollsPage() {
       ) : (
         <div className="space-y-4">
           {polls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} />
+            <PollCard
+              key={poll.id}
+              poll={poll}
+              related={(poll.related_person_ids ?? [])
+                .map((id) => relById.get(id))
+                .filter((x): x is PollPersonLite => !!x)}
+            />
           ))}
         </div>
       )}

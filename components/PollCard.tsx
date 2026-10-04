@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import Avatar from "@/components/Avatar";
+import { bigAvatarUrl, findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import type { Poll, PollOption } from "@/lib/types";
 import { formatJST } from "@/lib/format";
 
 export default function PollCard({
   poll,
+  related = [],
 }: {
   poll: Poll & { options: PollOption[]; comment_count: number };
+  related?: PollPersonLite[];
 }) {
   const total = poll.options.reduce((a, o) => a + Number(o.vote_count), 0);
   return (
@@ -23,11 +27,16 @@ export default function PollCard({
         {poll.options.slice(0, 4).map((o) => {
           const count = Number(o.vote_count);
           const pct = total > 0 ? (count / total) * 100 : 0;
+          const person = findOptionPerson(o.option_text, related);
+          const avatar = bigAvatarUrl(person?.avatar_url);
           return (
             <div key={o.id}>
-              <div className="flex justify-between text-xs mb-0.5">
+              <div className="flex items-center gap-2 text-xs mb-0.5">
+                {!o.image_url && avatar && (
+                  <Avatar name={person?.name ?? o.option_text} avatarUrl={avatar} size={18} />
+                )}
                 <span className="truncate mr-2">{o.option_text}</span>
-                <span className="text-mut shrink-0">
+                <span className="text-mut shrink-0 ml-auto">
                   {count}票（{pct.toFixed(0)}%）
                 </span>
               </div>

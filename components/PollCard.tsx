@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import { bigAvatarUrl, findOptionPerson, type PollPersonLite } from "@/lib/pollui";
+import { findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import type { Poll, PollOption } from "@/lib/types";
 import { formatJST } from "@/lib/format";
 
@@ -28,7 +28,8 @@ export default function PollCard({
           const count = Number(o.vote_count);
           const pct = total > 0 ? (count / total) * 100 : 0;
           const person = findOptionPerson(o.option_text, related);
-          const avatar = bigAvatarUrl(person?.avatar_url);
+          // 一覧は18px表示なので48px版のまま（400x400版は重い）
+          const avatar = person?.avatar_url ?? null;
           return (
             <div key={o.id}>
               <div className="flex items-center gap-2 text-xs mb-0.5">

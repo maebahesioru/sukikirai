@@ -60,6 +60,24 @@ export const viewport: Viewport = {
    保存設定が無い間は OS 設定変更にも追従する。 */
 const THEME_INIT = `(function(){try{var m=window.matchMedia("(prefers-color-scheme: dark)");function ap(){var t=null;try{t=localStorage.getItem("theme")}catch(e){}var d=t==="dark"||(t!=="light"&&m.matches);var e=document.documentElement;e.classList.toggle("dark",d);e.classList.toggle("light",!d)}ap();m.addEventListener("change",function(){var t=null;try{t=localStorage.getItem("theme")}catch(e){}if(t!=="dark"&&t!=="light")ap()})}catch(e){}})();`;
 
+/* サイト全体の構造化データ（WebSite + 検索アクション） */
+const WEBSITE_JSONLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  inLanguage: "ja",
+  description: SITE_DESC,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -71,6 +89,11 @@ export default function RootLayout({
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: THEME_INIT }}
+        />
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: WEBSITE_JSONLD }}
         />
         <ServiceWorkerRegister />
         {children}

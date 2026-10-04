@@ -1662,3 +1662,96 @@ export async function suggestPeople(
     [query, h, nq]
   );
 }
+
+/* ================= 管理スレ（meta） ================= */
+
+export async function getMetaPostsFor2ch() {
+  return sql<{
+    id: string;
+    name: string | null;
+    content: string;
+    created_at: string;
+    cookie_id: string | null;
+    mail: string | null;
+    is_hidden: boolean;
+  }>(
+    `SELECT id, name, content, created_at, cookie_id, mail, is_hidden
+     FROM meta_posts
+     ORDER BY created_at ASC, id ASC`
+  );
+}
+
+export async function getMetaPosts(limit = 500) {
+  const rows = await sql<{
+    id: string;
+    name: string | null;
+    content: string;
+    created_at: string;
+    cookie_id: string | null;
+    is_hidden: boolean;
+  }>(
+    `SELECT id, name, content, created_at, cookie_id, is_hidden
+     FROM meta_posts
+     WHERE NOT is_hidden
+     ORDER BY created_at ASC, id ASC
+     LIMIT $1`,
+    [limit]
+  );
+  return rows.map((r) => {
+    const { cookie_id, ...rest } = r;
+    return { ...rest, anon_id: anonId(cookie_id ?? null, r.id) };
+  });
+}
+
+export async function getMetaResCount(): Promise<number> {
+  const rows = await sql<{ c: number }>(`SELECT (COUNT(*) + 1)::int AS c FROM meta_posts`);
+  return rows[0]?.c ?? 1;
+}
+
+export async function insertMetaPost(input: {
+  name: string | null;
+  content: string;
+  cookieId: string;
+  mail?: string | null;
+}): Promise<
+  | { ok: true; post: { id: string; name: string | null; content: string; created_at: string; is_hidden: boolean } }
+  | { ok: false; error: string; status: number }
+> {
+  const spam = isSpamContent(input.content);
+  if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
+  if (input.name) {
+    const s = isSpamContent(input.name);
+    if (s.isSpam) return { ok: false, error: `名前に不適切な内容が含まれています: ${s.reason}`, status: 400 };
+  }
+
+  return withTx(async (c) => {
+    const oneMin = await c.query<{ c: number }>(
+      `SELECT COUNT(*)::int AS c FROM meta_posts WHERE cookie_id = $1 AND created_at >= now() - interval '1 minute'`,
+      [input.cookieId]
+    );
+    if ((oneMin.rows[0]?.c ?? 0) >= 10) {
+      return { ok: false as const, error: "投稿が早すぎます。少し間隔をあけてください", status: 429 };
+    }
+    const tenMin = await c.query<{ c: number }>(
+      `SELECT COUNT(*)::int AS c FROM meta_posts WHERE cookie_id = $1 AND created_at >= now() - interval '10 minutes'`,
+      [input.cookieId]
+    );
+    if ((tenMin.rows[0]?.c ?? 0) >= 30) {
+      return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
+    }
+
+    const inserted = await c.query<{
+      id: string;
+      name: string | null;
+      content: string;
+      created_at: string;
+      is_hidden: boolean;
+    }>(
+      `INSERT INTO meta_posts (name, content, cookie_id, mail)
+       VALUES ($1,$2,$3,$4)
+       RETURNING id, name, content, created_at, is_hidden`,
+      [input.name, input.content, input.cookieId, input.mail ?? null]
+    );
+    return { ok: true as const, post: inserted.rows[0] };
+  });
+}

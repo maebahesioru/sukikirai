@@ -146,6 +146,7 @@ export default function PersonClient({
       {/* 8項目評価 */}
       <EvalPanel
         personId={person.id}
+        personName={person.name}
         initialStats={evalStats}
         hasVoted={voted}
         initialMine={myEval}

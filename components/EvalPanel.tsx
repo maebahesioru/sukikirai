@@ -8,12 +8,14 @@ import type { EvalStats } from "@/lib/types";
 
 export default function EvalPanel({
   personId,
+  personName,
   initialStats,
   hasVoted,
   initialMine,
   archived = false,
 }: {
   personId: string;
+  personName: string;
   initialStats: EvalStats;
   hasVoted: boolean;
   initialMine: Record<string, number | null> | null;
@@ -29,6 +31,7 @@ export default function EvalPanel({
       : {}
   );
   const [busy, setBusy] = useState(false);
+  const [tweet, setTweet] = useState(true);
 
   const saved = !!mine;
   const overall = stats.overall;
@@ -55,6 +58,14 @@ export default function EvalPanel({
       if (data.success) {
         setStats(data.stats);
         setMine(data.mine ?? draft);
+        if (tweet) {
+          const ov = data.stats?.overall;
+          const text = `「${personName}」の8項目評価を書き込みました！\n総合 ${ov != null ? Number(ov).toFixed(1) : "—"}/5.0\n#ツイッタラー世論調査`;
+          window.open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
+            "_blank"
+          );
+        }
       } else {
         alert(data.error || "評価の送信に失敗しました");
       }
@@ -161,10 +172,21 @@ export default function EvalPanel({
       </div>
 
       {hasVoted && !saved && (
+        <label className="flex items-center justify-center gap-2 text-sm text-mut cursor-pointer mt-5">
+          <input
+            type="checkbox"
+            checked={tweet}
+            onChange={(e) => setTweet(e.target.checked)}
+            className="w-4 h-4 accent-sky-500"
+          />
+          Xでツイートする
+        </label>
+      )}
+      {hasVoted && !saved && (
         <button
           onClick={submit}
           disabled={busy || answered === 0}
-          className={`mt-5 w-full py-3 rounded-xl font-bold transition ${
+          className={`mt-3 w-full py-3 rounded-xl font-bold transition ${
             busy || answered === 0
               ? "bg-panel2 text-mut cursor-not-allowed"
               : "bg-x text-white hover:opacity-90"

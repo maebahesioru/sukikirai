@@ -16,6 +16,9 @@ export default function Footer() {
           <Link href="/people" className="hover:text-txt transition">
             人物一覧
           </Link>
+          <Link href="/meta" className="hover:text-txt transition">
+            管理スレ（要望・バグ報告）
+          </Link>
         </div>
         <p className="leading-relaxed">
           本サイトは誰でも匿名でXユーザーの好き嫌い・評価を書き込める非公式のまとめサイトです。X Corp.

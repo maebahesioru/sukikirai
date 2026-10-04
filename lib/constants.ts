@@ -46,6 +46,13 @@ export const MAX_COMMENT_CHARS = 280; // 全角140文字相当
 export const MAX_NAME_LENGTH = 50;
 export const MAX_DESCRIPTION_LENGTH = 500;
 
+// 管理スレ（要望・バグ報告）: 単一固定スレッド。スレキー=createdAtのepoch秒（2ch互換）
+export const META_THREAD = {
+  id: "meta",
+  title: "管理スレ（要望・バグ報告・その他）",
+  createdAt: "2026-10-04T08:40:00.000Z",
+} as const;
+
 // 投票は1日1回（JSTの日付が変わるまで）
 export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 

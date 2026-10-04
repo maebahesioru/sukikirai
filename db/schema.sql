@@ -203,3 +203,15 @@ CREATE TRIGGER polls_set_updated BEFORE UPDATE ON polls FOR EACH ROW EXECUTE FUN
 -- 2ch互換: メール欄（sage判定・datパススルー用）
 ALTER TABLE comments ADD COLUMN IF NOT EXISTS mail TEXT;
 ALTER TABLE poll_comments ADD COLUMN IF NOT EXISTS mail TEXT;
+
+-- 管理スレ（要望・バグ報告）: 単一固定スレッド
+CREATE TABLE IF NOT EXISTS meta_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT,
+  mail TEXT,
+  content TEXT NOT NULL,
+  cookie_id TEXT,
+  is_hidden BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_meta_posts_created ON meta_posts(created_at);

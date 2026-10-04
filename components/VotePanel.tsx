@@ -35,6 +35,7 @@ export default function VotePanel({
   const [voted, setVoted] = useState(initialVoted);
   const [voteType, setVoteType] = useState<"like" | "dislike" | null>(initialVoteType);
   const [busy, setBusy] = useState(false);
+  const [tweet, setTweet] = useState(true);
 
   const total = likes + dislikes;
   const likePct = total > 0 ? (likes / total) * 100 : 50;
@@ -60,6 +61,15 @@ export default function VotePanel({
         setVoted(true);
         setVoteType(t);
         onVotedChange?.({ voted: true, voteType: t, likes: data.likes, dislikes: data.dislikes });
+        if (tweet) {
+          const totalN = data.likes + data.dislikes;
+          const lp = totalN > 0 ? Math.round((data.likes / totalN) * 100) : 0;
+          const text = `【${t === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${lp}% vs【嫌い派】${100 - lp}%\n#ツイッタラー世論調査`;
+          window.open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
+            "_blank"
+          );
+        }
       } else if (res.status === 429 && data.voteType) {
         setLikes(data.likes ?? likes);
         setDislikes(data.dislikes ?? dislikes);
@@ -133,6 +143,15 @@ export default function VotePanel({
               嫌い
             </button>
           </div>
+          <label className="flex items-center justify-center gap-2 text-sm text-mut cursor-pointer mt-4">
+            <input
+              type="checkbox"
+              checked={tweet}
+              onChange={(e) => setTweet(e.target.checked)}
+              className="w-4 h-4 accent-sky-500"
+            />
+            Xでツイートする
+          </label>
         </>
       ) : (
         <div>

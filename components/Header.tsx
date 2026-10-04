@@ -13,6 +13,7 @@ const NAV = [
   { href: "/people", label: "人物一覧" },
   { href: "/polls", label: "投票トーク" },
   { href: "/stats", label: "統計" },
+  { href: "/meta", label: "管理スレ" },
   { href: "/search", label: "Xユーザーを追加" },
 ];
 

@@ -78,7 +78,7 @@ export default function Sidebar({
                 </span>
                 <span className="text-[10px] text-mut shrink-0">{timeAgo(c.created_at)}</span>
               </div>
-              <p className="text-mut line-clamp-2 leading-snug">{c.content}</p>
+              <p className="text-mut line-clamp-5 leading-snug">{c.content}</p>
             </div>
           ))}
           {recentComments.length === 0 && <p className="text-sm text-mut">まだコメントがありません</p>}

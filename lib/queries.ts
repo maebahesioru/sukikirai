@@ -175,6 +175,51 @@ export async function getHomeStats(): Promise<{
   return row ?? { people: 0, votes: 0, comments: 0, today_votes: 0 };
 }
 
+/** 直近N日の日別推移（JST日付・投票/コメント/評価/新規人物） */
+export async function getDailyTrend(days = 7): Promise<
+  { day: string; votes: number; comments: number; evals: number; newPeople: number }[]
+> {
+  const since = new Date(Date.now() - (days + 1) * 86400_000 - 9 * 3600_000);
+  const [v, c, e, p] = await Promise.all([
+    sql<{ day: string; c: number }>(
+      `SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text AS day, COUNT(*)::int AS c
+       FROM votes WHERE created_at >= $1 GROUP BY 1`,
+      [since]
+    ),
+    sql<{ day: string; c: number }>(
+      `SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text AS day, COUNT(*)::int AS c
+       FROM comments WHERE created_at >= $1 GROUP BY 1`,
+      [since]
+    ),
+    sql<{ day: string; c: number }>(
+      `SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text AS day, COUNT(*)::int AS c
+       FROM evaluations WHERE created_at >= $1 GROUP BY 1`,
+      [since]
+    ),
+    sql<{ day: string; c: number }>(
+      `SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text AS day, COUNT(*)::int AS c
+       FROM people WHERE created_at >= $1 GROUP BY 1`,
+      [since]
+    ),
+  ]);
+  const mv = new Map(v.map((r) => [r.day, r.c]));
+  const mc = new Map(c.map((r) => [r.day, r.c]));
+  const me = new Map(e.map((r) => [r.day, r.c]));
+  const mp = new Map(p.map((r) => [r.day, r.c]));
+  const out: { day: string; votes: number; comments: number; evals: number; newPeople: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = new Date(Date.now() + 9 * 3600_000 - i * 86400_000).toISOString().slice(0, 10);
+    out.push({
+      day,
+      votes: mv.get(day) ?? 0,
+      comments: mc.get(day) ?? 0,
+      evals: me.get(day) ?? 0,
+      newPeople: mp.get(day) ?? 0,
+    });
+  }
+  return out;
+}
+
 // ============================================================
 // votes
 // ============================================================
@@ -231,7 +276,10 @@ export async function insertVote(
 // rankings
 // ============================================================
 
-export type RankingType = "popularity" | "unpopular" | "trending" | "score";
+export type RankingType = "popularity" | "unpopular" | "trending" | "score" | "lowscore";
+
+// 総合評価ランキング（score / lowscore）に掲載するのに必要な最低評価数
+export const EVAL_RANK_MIN = 5;
 
 export async function getRanking(type: RankingType, limit = 50): Promise<RankingRow[]> {
   if (type === "trending") {
@@ -254,7 +302,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
     }));
   }
 
-  if (type === "score") {
+  if (type === "score" || type === "lowscore") {
     const rows = await sql<Record<string, unknown>>(
       `SELECT p.*, e.cnt::int AS eval_count,
               e.fun_avg::float AS fun_avg, e.accuracy_avg::float AS accuracy_avg,
@@ -266,7 +314,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
                 AVG(fun) AS fun_avg, AVG(accuracy) AS accuracy_avg, AVG(influence) AS influence_avg,
                 AVG(knowledge) AS knowledge_avg, AVG(humanity) AS humanity_avg, AVG(charisma) AS charisma_avg,
                 AVG(favor) AS favor_avg, AVG(reply) AS reply_avg
-         FROM evaluations GROUP BY person_id HAVING COUNT(*) >= 1
+         FROM evaluations GROUP BY person_id HAVING COUNT(*) >= ${EVAL_RANK_MIN}
        ) e ON e.person_id = p.id
        WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')`
     );
@@ -286,7 +334,11 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
         overall,
       } as RankingRow;
     });
-    mapped.sort((a, b) => (b.overall ?? -1) - (a.overall ?? -1));
+    mapped.sort((a, b) =>
+      type === "score"
+        ? (b.overall ?? -1) - (a.overall ?? -1) || (b.evalCount ?? 0) - (a.evalCount ?? 0)
+        : (a.overall ?? 99) - (b.overall ?? 99) || (b.evalCount ?? 0) - (a.evalCount ?? 0)
+    );
     return mapped.slice(0, limit);
   }
 

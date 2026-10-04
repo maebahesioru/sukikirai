@@ -85,6 +85,10 @@ export default function CreatePollForm() {
       alert(`選択肢を${minOptions}つ以上入力してください`);
       return;
     }
+    if (related.length === 0) {
+      alert("関連する人物を1人以上選んでください");
+      return;
+    }
     const token = Cookies.get("user_token");
     if (!token) {
       alert("作成には利用規約への同意が必要です。ページを再読み込みしてください。");
@@ -221,7 +225,9 @@ export default function CreatePollForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-bold mb-1.5">関連する人物（任意・最大5人）</label>
+        <label className="block text-sm font-bold mb-1.5">
+          関連する人物 <span className="text-bad">*</span>（最大5人）
+        </label>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut" />

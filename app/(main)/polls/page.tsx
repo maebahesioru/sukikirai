@@ -40,7 +40,7 @@ export default async function PollsPage() {
         </div>
         <p className="text-sm text-mut mt-3 leading-relaxed">
           テーマは自由。2択・3択以上のアンケートを誰でも作成できて、みんなで投票＆コメントできます。
-          気になる人物と関連付けることもできます。
+          関連する人物を1人以上選んで作成します（アイコンや関連表示に使われます）。
         </p>
       </section>
 

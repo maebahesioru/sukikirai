@@ -2,7 +2,7 @@ import Link from "next/link";
 import Avatar from "./Avatar";
 import type { RankingRow } from "@/lib/types";
 
-export type RankKind = "popularity" | "unpopular" | "trending" | "score";
+export type RankKind = "popularity" | "unpopular" | "trending" | "score" | "lowscore";
 
 export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: RankKind }) {
   return (
@@ -12,9 +12,9 @@ export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: Ra
         let metric: React.ReactNode;
         if (kind === "trending") {
           metric = <span className="text-sm font-bold text-x">{p.recentVotes ?? 0}票</span>;
-        } else if (kind === "score") {
+        } else if (kind === "score" || kind === "lowscore") {
           metric = (
-            <span className="text-sm font-bold text-gold">
+            <span className={`text-sm font-bold ${kind === "score" ? "text-gold" : "text-bad"}`}>
               {p.overall != null ? p.overall.toFixed(2) : "—"}
               <span className="text-xs text-mut ml-1">（{p.evalCount ?? 0}人）</span>
             </span>

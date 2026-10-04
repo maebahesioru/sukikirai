@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   getCategoryStats,
+  getDailyTrend,
   getEvalCorrelation,
   getEvalTotalCount,
   getHomeStats,
+  getRanking,
   getScoreDistribution,
   getTagStats,
 } from "@/lib/queries";
 import { EVAL_ITEMS } from "@/lib/constants";
 import { num } from "@/lib/format";
+import Avatar from "@/components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +32,21 @@ function corrColor(v: number): string {
 }
 
 export default async function StatsPage() {
-  const [stats, evalTotal, categories, tags, corr, dist] = await Promise.all([
+  const [stats, evalTotal, categories, tags, corr, dist, trend, topScore, lowScore] = await Promise.all([
     getHomeStats(),
     getEvalTotalCount(),
     getCategoryStats(),
     getTagStats(2, 20),
     getEvalCorrelation(),
     getScoreDistribution(),
+    getDailyTrend(7),
+    getRanking("score", 5),
+    getRanking("lowscore", 5),
   ]);
+  const today = trend[trend.length - 1];
+  const maxV = Math.max(1, ...trend.map((d) => d.votes));
+  const maxC = Math.max(1, ...trend.map((d) => d.comments));
+  const maxE = Math.max(1, ...trend.map((d) => d.evals));
 
   const corrMap = new Map(corr.map((c) => [`${c.a}__${c.b}`, c.value]));
   const corrOf = (a: string, b: string): number | null => {
@@ -56,6 +66,105 @@ export default async function StatsPage() {
           <Stat label="コメント" value={num(stats.comments)} />
           <Stat label="8項目評価" value={num(evalTotal)} />
           <Stat label="今日の投票" value={num(stats.today_votes)} accent />
+        </div>
+        {today && (
+          <p className="text-xs text-mut mt-3">
+            今日（JST）: 投票 {num(today.votes)}・コメント {num(today.comments)}・評価 {num(today.evals)}・新規人物{" "}
+            {num(today.newPeople)}
+          </p>
+        )}
+      </section>
+
+      {/* 直近7日の推移 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">直近7日の推移</h2>
+        <p className="text-xs text-mut mb-4">日別のカウント（JST）。棒の長さは各指標の最大値比。</p>
+        <div className="space-y-2.5">
+          {trend.map((d) => (
+            <div key={d.day} className="flex items-center gap-3 text-xs">
+              <span className="w-12 text-mut shrink-0">{d.day.slice(5).replace("-", "/")}</span>
+              <div className="flex-1 space-y-1">
+                <div className="h-1.5 rounded bg-panel2 overflow-hidden">
+                  <div className="h-full bg-like" style={{ width: `${(d.votes / maxV) * 100}%` }} />
+                </div>
+                <div className="h-1.5 rounded bg-panel2 overflow-hidden">
+                  <div className="h-full bg-x" style={{ width: `${(d.comments / maxC) * 100}%` }} />
+                </div>
+                <div className="h-1.5 rounded bg-panel2 overflow-hidden">
+                  <div className="h-full bg-gold" style={{ width: `${(d.evals / maxE) * 100}%` }} />
+                </div>
+              </div>
+              <span className="hidden sm:block w-56 text-right text-mut shrink-0">
+                投票 {num(d.votes)}・コメ {num(d.comments)}・評価 {num(d.evals)}・新規 {num(d.newPeople)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 mt-3 text-[10px] text-mut">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-1.5 rounded bg-like" />
+            投票
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-1.5 rounded bg-x" />
+            コメント
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-1.5 rounded bg-gold" />
+            評価
+          </span>
+        </div>
+      </section>
+
+      {/* 総合評価トップ / 低評価ワースト */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="bg-panel border border-line rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold">総合評価トップ5</h2>
+            <Link href="/ranking/score" className="text-xs text-x hover:underline">
+              もっと見る
+            </Link>
+          </div>
+          {topScore.map((p, i) => (
+            <Link
+              key={p.id}
+              href={`/person/${p.id}`}
+              className="flex items-center gap-3 py-2 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1"
+            >
+              <span className="w-5 text-center font-black text-gold shrink-0">{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
+              <span className="text-sm truncate flex-1">{p.name}</span>
+              <span className="text-sm font-bold text-gold shrink-0">
+                {p.overall != null ? p.overall.toFixed(2) : "—"}
+                <span className="text-[10px] text-mut ml-1">（{p.evalCount ?? 0}人）</span>
+              </span>
+            </Link>
+          ))}
+          {topScore.length === 0 && <p className="text-sm text-mut py-3">まだデータがありません（5人以上の評価が必要）</p>}
+        </div>
+        <div className="bg-panel border border-line rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold">低評価ワースト5</h2>
+            <Link href="/ranking/lowscore" className="text-xs text-x hover:underline">
+              もっと見る
+            </Link>
+          </div>
+          {lowScore.map((p, i) => (
+            <Link
+              key={p.id}
+              href={`/person/${p.id}`}
+              className="flex items-center gap-3 py-2 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1"
+            >
+              <span className="w-5 text-center font-black text-bad shrink-0">{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
+              <span className="text-sm truncate flex-1">{p.name}</span>
+              <span className="text-sm font-bold text-bad shrink-0">
+                {p.overall != null ? p.overall.toFixed(2) : "—"}
+                <span className="text-[10px] text-mut ml-1">（{p.evalCount ?? 0}人）</span>
+              </span>
+            </Link>
+          ))}
+          {lowScore.length === 0 && <p className="text-sm text-mut py-3">まだデータがありません（5人以上の評価が必要）</p>}
         </div>
       </section>
 

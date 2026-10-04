@@ -41,6 +41,9 @@ export async function POST(request: Request) {
     if (pollType !== "two_choice" && options.length < 3) {
       return NextResponse.json({ success: false, error: "3択以上の場合は選択肢を3つ以上入力してください" }, { status: 400 });
     }
+    if (relatedPersonIds.length === 0) {
+      return NextResponse.json({ success: false, error: "関連する人物を1人以上指定してください" }, { status: 400 });
+    }
     const titleSpam = isSpamContent(title);
     if (titleSpam.isSpam) {
       return NextResponse.json(

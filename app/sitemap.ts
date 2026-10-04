@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/ranking/unpopular`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${SITE_URL}/ranking/trending`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
     { url: `${SITE_URL}/ranking/score`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
+    { url: `${SITE_URL}/ranking/lowscore`, lastModified: now, changeFrequency: "hourly", priority: 0.8 },
     { url: `${SITE_URL}/polls`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/stats`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
     { url: `${SITE_URL}/search`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },

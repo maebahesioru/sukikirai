@@ -138,9 +138,9 @@ export default function EvalPanel({
           const count = stats.counts[item.key] ?? 0;
           const myVal = saved ? mine?.[item.key] ?? null : draft[item.key] ?? null;
           return (
-            <div key={item.key} className="flex items-center gap-2 flex-wrap">
+            <div key={item.key} className="flex items-center gap-1.5 flex-wrap">
               <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
-              <div className="flex gap-0.5">
+              <div className="flex gap-0">
                 {[1, 2, 3, 4, 5].map((v) => (
                   <button
                     key={v}

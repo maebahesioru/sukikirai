@@ -104,14 +104,15 @@ export function esc2ch(s: string): string {
 }
 
 // cp932 でレスポンス（810chと同じ Content-Type）
-export function to2chResponse(body: string, cacheSeconds = 60): Response {
+// ※キャッシュ禁止: Sikiの新着チェックが常に最新のdat/subjectを見るように no-store
+export function to2chResponse(body: string, _cacheSeconds = 60): Response {
   const buf = iconv.encode(body, "cp932");
   return new Response(new Uint8Array(buf), {
     status: 200,
     headers: {
       "Content-Type": "text/plain; charset=shift_jis",
       "X-Content-Type-Options": "nosniff",
-      "Cache-Control": `public, s-maxage=${cacheSeconds}`,
+      "Cache-Control": "no-store",
     },
   });
 }

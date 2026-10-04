@@ -21,6 +21,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: poll ? poll.title : "投票トーク",
     description: poll?.description ?? undefined,
     alternates: { canonical: `/polls/${id}` },
+    openGraph: {
+      title: poll ? poll.title : "投票トーク",
+      description: poll?.description ?? undefined,
+      images: ["/og.png"],
+    },
   };
 }
 

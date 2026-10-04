@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "投票トーク",
   description: "みんなで作るアンケート「投票トーク」。誰でも作成・投票・コメントできます。",
+  alternates: { canonical: "/polls" },
 };
 
 export default async function PollsPage() {

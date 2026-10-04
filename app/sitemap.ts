@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllTags, listSitemapEntries } from "@/lib/queries";
+import { getAllTags, listPolls, listSitemapEntries } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let people: { id: string; updated_at: string }[] = [];
   let tags: { tag: string; count: number }[] = [];
+  let polls: { id: string }[] = [];
   try {
     people = await listSitemapEntries();
   } catch {
@@ -16,6 +17,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     tags = (await getAllTags()).slice(0, 30);
   } catch {
     tags = [];
+  }
+  try {
+    polls = await listPolls(200);
+  } catch {
+    polls = [];
   }
   const now = new Date();
 
@@ -48,5 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...tagPages, ...personPages];
+  const pollPages: MetadataRoute.Sitemap = polls.map((p) => ({
+    url: `${SITE_URL}/polls/${p.id}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...pollPages, ...tagPages, ...personPages];
 }

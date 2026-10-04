@@ -6,6 +6,11 @@ import PersonCard from "@/components/PersonCard";
 import Sidebar from "@/components/Sidebar";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export const dynamic = "force-dynamic";
 

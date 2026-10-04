@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "Xユーザーを検索・追加",
   description:
     "XのID（@xxx）や名前で検索。未登録のXユーザーも、X上の候補から選ぶかIDを直接入力すればその場でページを作成して、好き嫌い投票・評価を書き込めます。",
+  alternates: { canonical: "/search" },
 };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;

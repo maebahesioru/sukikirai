@@ -20,7 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `「${tag}」の人物一覧`,
     description: `「${tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。`,
     alternates: { canonical: `/tag/${encodeURIComponent(tag)}` },
-    openGraph: { title: `「${tag}」の人物一覧` },
+    openGraph: {
+      title: `「${tag}」の人物一覧`,
+      description: `「${tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。`,
+      images: ["/og.png"],
+    },
   };
 }
 

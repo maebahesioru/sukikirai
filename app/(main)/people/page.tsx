@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "人物一覧",
   description: "登録されている全人物の一覧。タグ・カテゴリ・並び替え・検索で気になる人を探せます。",
+  alternates: { canonical: "/people" },
 };
 
 const PER = 48;

@@ -32,10 +32,12 @@ const isSageMail = (m?: string | null) => (m ?? "").trim().toLowerCase() === "sa
 
 export default function CommentSection({
   personId,
+  personName,
   hasVoted,
   archived = false,
 }: {
   personId: string;
+  personName: string;
   hasVoted: boolean;
   archived?: boolean;
 }) {
@@ -177,7 +179,7 @@ export default function CommentSection({
         </div>
       ) : (
         <>
-          <CommentForm personId={personId} onPosted={fetchComments} />
+          <CommentForm personId={personId} personName={personName} onPosted={fetchComments} />
           {list}
         </>
       )}
@@ -189,11 +191,13 @@ export default function CommentSection({
 
 function CommentForm({
   personId,
+  personName,
   parentCommentId,
   parentNumber,
   onPosted,
 }: {
   personId: string;
+  personName?: string;
   parentCommentId?: string;
   parentNumber?: number;
   onPosted: () => void;
@@ -243,7 +247,7 @@ function CommentForm({
         return;
       }
       if (tweet && !parentCommentId) {
-        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】としてコメントを投稿しました！\n\n「${content.trim()}」\n\n#ツイッタラー世論調査`;
+        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName ?? ""}へのコメントを投稿しました！\n\n「${content.trim()}」\n\n#ツイッタラー世論調査`;
         window.open(
           `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
           "_blank"

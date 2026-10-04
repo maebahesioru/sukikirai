@@ -25,7 +25,7 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
 // 同一IPから「初めて見るトークン」で投票/評価できるのは1日 NEW_VOTER_MAX 個まで。
 // 既知トークン（当日そのIPで既に活動済み）は制限なし＝1日1回の重複判定は各ルート側の既存ロジックが担う。
 // ※プロセス再起動でリセットされる（既存のレート制限と同様）。
-export const NEW_VOTER_MAX = 30;
+export const NEW_VOTER_MAX = 100;
 const voterSets = new Map<string, { day: string; ids: Set<string> }>();
 
 function jstDayKey(): string {

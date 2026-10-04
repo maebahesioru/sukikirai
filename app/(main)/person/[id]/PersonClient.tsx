@@ -231,7 +231,7 @@ export default function PersonClient({
       )}
 
       {/* コメント */}
-      <CommentSection personId={person.id} hasVoted={voted} archived={archived} />
+      <CommentSection personId={person.id} personName={person.name} hasVoted={voted} archived={archived} />
     </div>
   );
 }

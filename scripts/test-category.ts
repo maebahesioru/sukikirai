@@ -20,6 +20,11 @@ const cases: [string, string, string, string][] = [
   ["テスト", "showroomでライバーしてます", "test6", "配信者"],
   ["テスト", "中の人はいません。自動でツイートします", "test7", "BOT"],
   ["テスト", "Live2Dで活動してます", "test8", "Vtuber"],
+  ["ソフトバンク", "ソフトバンク公式Xアカウントです。新商品やイベント", "SoftBank", "企業・サービス"],
+  ["NOPE", "サントリーのギルティ炭酸NOPEの公式\nアカウントです。欲望のままに", "NOPE_jp", "企業・サービス"],
+  ["テスト", "このアカウントは非公式です！ハズビンホテル関係の情報", "HazbinHotel_88", "その他"],
+  ["motomachimayuge", "横浜バニラ株式会社 代表取締役社長CEO", "motomachimayuge", "企業・サービス"],
+  ["予兆", "予兆の公式Xです！AIや人間の心を読もう！", "YochoKoshiki", "企業・サービス"],
 ];
 
 let ng = 0;

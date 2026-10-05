@@ -315,7 +315,10 @@ export function classifyWithAuto(
 /* ================= カテゴリ自動判定 ================= */
 
 /** 企業・サービス（bio側は法人自認の言い回しのみ） */
-const COMPANY_ANY = ["公式アカウント", "運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp.", "official account", "official twitter", "official youtube"];
+const COMPANY_ANY = ["運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp.", "代表取締役"];
+/** 企業（「公式」系）— 「非公式」を除外したうえで判定する（非公式アカウントの誤判定防止） */
+const COMPANY_ANY_OFFICIAL = ["公式アカウント", "公式xアカウント", "公式xです", "公式twitter", "公式ツイッター", "officialaccount", "officialtwitter", "officialyoutube"];
+const UNOFFICIAL_RE = /非公式|unofficial|パロディ|parody/;
 /** 企業名らしさ（アカウント名に法人格がある場合のみ。bioの勤務先言及では誤判定するため） */
 const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
 /** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
@@ -345,13 +348,15 @@ const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
  */
 export function classifyCategory(name: string, bio: string, legacyHikamer = false, handle = "", wikiHikamer = false): string {
   const n = (name || "").normalize("NFKC").trim();
-  const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
+  // キーワード判定用テキストは空白（改行含む）を全除去 — bioの改行で「公式アカウント」等が分断されるのを防ぐ
+  const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
   const h = (handle || "").normalize("NFKC").toLowerCase();
 
   if (
     COMPANY_NAME_RE.test(n) ||
     COMPANY_NAME_ORG_RE.test(n) ||
-    COMPANY_ANY.some((k) => text.includes(k))
+    COMPANY_ANY.some((k) => text.includes(k)) ||
+    (!UNOFFICIAL_RE.test(text) && COMPANY_ANY_OFFICIAL.some((k) => text.includes(k)))
   ) {
     return "企業・サービス";
   }

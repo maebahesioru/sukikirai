@@ -69,3 +69,11 @@ export const REPORT_REASONS = [
   "自分のコメントを消してほしい",
 ] as const;
 export type ReportReason = (typeof REPORT_REASONS)[number];
+
+// 第1回ツイッタラー総選挙（期間限定イベント・2026-10-05実装）
+export const SOUSENKYO = {
+  title: "第1回ツイッタラー総選挙",
+  startIso: "2026-10-06T00:00:00+09:00",
+  endIso: "2026-10-12T23:59:59+09:00",
+  periodLabel: "10/6(火) 0:00 〜 10/12(月) 23:59",
+} as const;

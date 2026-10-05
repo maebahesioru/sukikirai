@@ -2,7 +2,7 @@ import Link from "next/link";
 import Avatar from "./Avatar";
 import type { RankingRow } from "@/lib/types";
 
-export type RankKind = "popularity" | "unpopular" | "trending" | "score" | "lowscore";
+export type RankKind = "popularity" | "unpopular" | "trending" | "daily" | "score" | "lowscore";
 
 export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: RankKind }) {
   return (
@@ -10,7 +10,7 @@ export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: Ra
       {rows.map((p, i) => {
         const rank = i + 1;
         let metric: React.ReactNode;
-        if (kind === "trending") {
+        if (kind === "trending" || kind === "daily") {
           metric = <span className="text-sm font-bold text-x">{p.recentVotes ?? 0}票</span>;
         } else if (kind === "score" || kind === "lowscore") {
           metric = (

@@ -1,6 +1,6 @@
 // サーバー専用データアクセス層（PostgreSQL / node-postgres）
 import { sql, sql1, withTx, jstDayStart } from "./db";
-import { EVAL_KEYS, DEFAULT_CATEGORY } from "./constants";
+import { EVAL_KEYS, DEFAULT_CATEGORY, SOUSENKYO } from "./constants";
 import { isSpamContent, calculateSimilarity } from "./spam-filter";
 import { fetchFxUser } from "./fxtwitter";
 import { anonId } from "./bbs2ch";
@@ -276,17 +276,18 @@ export async function insertVote(
 // rankings
 // ============================================================
 
-export type RankingType = "popularity" | "unpopular" | "trending" | "score" | "lowscore";
+export type RankingType = "popularity" | "unpopular" | "trending" | "daily" | "score" | "lowscore";
 
 // 総合評価ランキング（score / lowscore）に掲載するのに必要な最低評価数
 export const EVAL_RANK_MIN = 5;
 
 export async function getRanking(type: RankingType, limit = 50): Promise<RankingRow[]> {
-  if (type === "trending") {
+  if (type === "trending" || type === "daily") {
+    const win = type === "daily" ? "24 hours" : "7 days";
     const rows = await sql<Record<string, unknown>>(
       `SELECT p.*, COUNT(*)::int AS recent_votes
        FROM votes v JOIN people p ON p.id = v.person_id
-       WHERE v.created_at >= now() - interval '7 days' AND NOT p.is_hidden
+       WHERE v.created_at >= now() - interval '${win}' AND NOT p.is_hidden
          AND (p.x_status IS NULL OR p.x_status = 'ok')
        GROUP BY p.id
        ORDER BY recent_votes DESC, p.name ASC
@@ -1806,4 +1807,70 @@ export async function insertMetaPost(input: {
     );
     return { ok: true as const, post: inserted.rows[0] };
   });
+}
+
+// ============================================================
+// 今日のまとめ / 総選挙
+// ============================================================
+
+export async function getTodayStats(): Promise<{
+  votes: number;
+  voters: number;
+  comments: number;
+  newPeople: number;
+}> {
+  const day = jstDayStart();
+  const [v, uv, c, np] = await Promise.all([
+    sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM votes WHERE created_at >= $1", [day]),
+    sql1<{ c: number }>("SELECT COUNT(DISTINCT cookie_id)::int AS c FROM votes WHERE created_at >= $1", [day]),
+    sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM comments WHERE created_at >= $1 AND NOT is_hidden", [day]),
+    sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM people WHERE created_at >= $1 AND NOT is_hidden", [day]),
+  ]);
+  return { votes: v?.c ?? 0, voters: uv?.c ?? 0, comments: c?.c ?? 0, newPeople: np?.c ?? 0 };
+}
+
+export async function getNewPeopleToday(limit = 6): Promise<PersonWithVotes[]> {
+  return sql<PersonWithVotes>(
+    `SELECT p.*, COALESCE(v.likes,0)::int AS likes, COALESCE(v.dislikes,0)::int AS dislikes, COALESCE(v.total,0)::int AS total
+     FROM people p
+     LEFT JOIN (
+       SELECT person_id,
+         COUNT(*) FILTER (WHERE vote_type='like') AS likes,
+         COUNT(*) FILTER (WHERE vote_type='dislike') AS dislikes,
+         COUNT(*) AS total
+       FROM votes GROUP BY person_id
+     ) v ON v.person_id = p.id
+     WHERE p.created_at >= $1 AND NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     ORDER BY p.created_at DESC
+     LIMIT ${limit}`,
+    [jstDayStart()]
+  );
+}
+
+export type SousenkyoRow = {
+  id: string;
+  name: string;
+  handle: string | null;
+  avatar_url: string | null;
+  recentVotes: number;
+};
+
+export async function getSousenkyoRanking(limit = 20): Promise<SousenkyoRow[]> {
+  const rows = await sql<Record<string, unknown>>(
+    `SELECT p.*, COUNT(*)::int AS recent_votes
+     FROM votes v JOIN people p ON p.id = v.person_id
+     WHERE v.created_at >= $1 AND NOT p.is_hidden
+       AND (p.x_status IS NULL OR p.x_status = 'ok')
+     GROUP BY p.id
+     ORDER BY recent_votes DESC, p.name ASC
+     LIMIT ${limit}`,
+    [SOUSENKYO.startIso]
+  );
+  return rows.map((r) => ({
+    id: r.id as string,
+    name: r.name as string,
+    handle: (r.handle as string | null) ?? null,
+    avatar_url: (r.avatar_url as string | null) ?? null,
+    recentVotes: (r.recent_votes as number) ?? 0,
+  }));
 }

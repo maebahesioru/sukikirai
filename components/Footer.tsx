@@ -13,6 +13,12 @@ export default function Footer() {
           <Link href="/ranking/popularity" className="hover:text-txt transition">
             ランキング
           </Link>
+          <Link href="/today" className="hover:text-txt transition">
+            今日のまとめ
+          </Link>
+          <Link href="/sousenkyo" className="hover:text-txt transition">
+            総選挙
+          </Link>
           <Link href="/people" className="hover:text-txt transition">
             人物一覧
           </Link>

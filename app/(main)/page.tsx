@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp } from "lucide-react";
+import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp, Trophy } from "lucide-react";
 import { getHomeStats, getPeople, getRanking, getRecentComments } from "@/lib/queries";
+import { SOUSENKYO } from "@/lib/constants";
 import HeroSearch from "@/components/HeroSearch";
 import PersonCard from "@/components/PersonCard";
 import Sidebar from "@/components/Sidebar";
@@ -15,17 +16,43 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [stats, trending, recent, newPeople, scoreTop] = await Promise.all([
+  const [stats, trending, daily, recent, newPeople, scoreTop] = await Promise.all([
     getHomeStats(),
     getRanking("trending", 10),
+    getRanking("daily", 10),
     getRecentComments(6),
     getPeople({ sort: "new", perPage: 6 }),
     getRanking("score", 5),
   ]);
+  const now = Date.now();
+  const skStart = Date.parse(SOUSENKYO.startIso);
+  const skEnd = Date.parse(SOUSENKYO.endIso);
+  const skPhase: "before" | "live" | "after" = now < skStart ? "before" : now <= skEnd ? "live" : "after";
+  const jstNow = new Date(now + 9 * 3600_000);
+  const todayLabel = `${jstNow.getUTCMonth() + 1}/${jstNow.getUTCDate()}`;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
+        {/* 総選挙バナー */}
+        <Link
+          href="/sousenkyo"
+          className="block bg-gradient-to-r from-like/15 via-panel to-dislike/15 border border-line rounded-2xl p-4 hover:border-line2 transition group"
+        >
+          <div className="flex items-center gap-3">
+            <Trophy className="w-5 h-5 text-gold shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-sm group-hover:text-x transition">{SOUSENKYO.title}</div>
+              <div className="text-xs text-mut mt-0.5">
+                {skPhase === "before" && "10/6(火) 0:00 開幕！期間中の投票で王者を決めよう"}
+                {skPhase === "live" && "開催中！10/12(月)まで — 毎日投票で推しを押し上げよう"}
+                {skPhase === "after" && "閉幕！結果をチェック"}
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-mut shrink-0" />
+          </div>
+        </Link>
+
         {/* Hero */}
         <section className="relative overflow-hidden bg-panel border border-line rounded-3xl p-6 md:p-10">
           <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-like/20 blur-3xl" />
@@ -49,6 +76,11 @@ export default async function HomePage() {
               <Stat label="コメント" value={num(stats.comments)} />
               <Stat label="今日の投票" value={num(stats.today_votes)} accent />
             </div>
+            <div className="mt-5">
+              <Link href="/today" className="inline-flex items-center gap-1.5 text-sm text-x hover:underline font-medium">
+                今日のまとめ（{todayLabel}）を見る <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -60,19 +92,19 @@ export default async function HomePage() {
           <RankLink href="/ranking/score" icon={<Star className="w-5 h-5" />} title="総合評価" desc="8項目の平均点" color="text-gold" />
         </section>
 
-        {/* Trending */}
+        {/* Trending (24h) */}
         <section className="bg-panel border border-line rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-x" />
-              今週の急上昇
+              24時間の急上昇
             </h2>
-            <Link href="/ranking/trending" className="text-xs text-x hover:underline flex items-center gap-0.5">
+            <Link href="/ranking/daily" className="text-xs text-x hover:underline flex items-center gap-0.5">
               もっと見る <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-1.5">
-            {trending.map((p, i) => (
+            {daily.map((p, i) => (
               <Link
                 key={p.id}
                 href={`/person/${p.id}`}
@@ -90,7 +122,7 @@ export default async function HomePage() {
                 <span className="text-xs font-bold text-x shrink-0">{p.recentVotes ?? 0}票</span>
               </Link>
             ))}
-            {trending.length === 0 && <p className="text-sm text-mut text-center py-4">まだデータがありません</p>}
+            {daily.length === 0 && <p className="text-sm text-mut text-center py-4">まだデータがありません</p>}
           </div>
         </section>
 

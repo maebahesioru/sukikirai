@@ -325,7 +325,7 @@ const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "
 /** 芸能人 */
 const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌手", "お笑いコンビ", "お笑い芸人"];
 /** Vtuber */
-const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー", "live2d", "バ美肉"];
+const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー", "live2d", "バ美肉", "にじさんじ", "nijisanji", "ホロライブ", "hololive", "ぶいすぽ", "vspo", "りぶはあと"];
 /** BOT（bio側の言い回し） */
 const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる", "（bot）", "(bot)", "中の人はいません", "自動でツイート", "botが投稿"];
 /** YouTuber（リンク・定型文も信号にする） */

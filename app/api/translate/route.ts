@@ -5,9 +5,9 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-/** 自前ホストのNLLB翻訳サービス（MAINPC GPU） */
+/** 自前ホストのNLLB翻訳サービス（VM100 CPU・24/7） */
 const TRANSLATE_SERVICE_URL =
-  process.env.TRANSLATE_SERVICE_URL || "http://192.168.1.4:5100/translate";
+  process.env.TRANSLATE_SERVICE_URL || "http://192.168.1.73:5100/translate";
 
 const TARGETS = ["en", "zh-Hans", "zh-Hant", "ko", "es", "fr"];
 

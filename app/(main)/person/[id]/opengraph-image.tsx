@@ -40,7 +40,7 @@ export default async function PersonOgImage({ params }: { params: Promise<{ id: 
   const font = await loadFont();
 
   const name = person?.name ?? "ツイッタラー世論調査";
-  const nameSize = name.length > 30 ? 34 : name.length > 20 ? 42 : 52;
+  const nameSize = name.length > 28 ? 32 : name.length > 18 ? 38 : 46;
 
   let total = 0;
   let likePct: number | null = null;
@@ -67,40 +67,41 @@ export default async function PersonOgImage({ params }: { params: Promise<{ id: 
           flexDirection: "column",
           background: "#0b0f16",
           color: "#e9edf5",
-          padding: "56px 64px",
+          padding: "48px 64px",
           fontFamily: "NotoJP",
         }}
       >
+        {/* 人物ヘッダー */}
         <div style={{ display: "flex", alignItems: "center" }}>
           {avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatar}
-              width={88}
-              height={88}
+              width={92}
+              height={92}
               style={{ borderRadius: 999, objectFit: "cover" }}
               alt=""
             />
           ) : (
             <div
               style={{
-                width: 88,
-                height: 88,
+                width: 92,
+                height: 92,
                 borderRadius: 999,
                 background: "linear-gradient(135deg, #f91880, #8b5cf6)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 40,
+                fontSize: 42,
                 fontWeight: 700,
               }}
             >
               {initial}
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", marginLeft: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", marginLeft: 26 }}>
             <div style={{ fontSize: nameSize, fontWeight: 700, lineHeight: 1.15 }}>
-              {truncate(name, 40)}
+              {truncate(name, 36)}
             </div>
             {person?.handle ? (
               <div style={{ display: "flex", fontSize: 24, color: "#8b98ad", marginTop: 6 }}>
@@ -110,34 +111,55 @@ export default async function PersonOgImage({ params }: { params: Promise<{ id: 
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", marginTop: 44 }}>
-          <div style={{ fontSize: 34, color: "#8b98ad", marginRight: 20 }}>好き率</div>
-          {likePct != null ? (
-            <div style={{ fontSize: 132, fontWeight: 700, color: "#f91880", lineHeight: 1 }}>
-              {`${likePct}%`}
-            </div>
-          ) : (
-            <div style={{ fontSize: 44, color: "#8b98ad" }}>まだ投票がありません</div>
-          )}
-          {likePct != null ? (
-            <div style={{ display: "flex", flexDirection: "column", marginLeft: 40 }}>
-              <div style={{ fontSize: 32, color: "#8b5cf6", fontWeight: 700 }}>
-                {`嫌い ${100 - likePct}%`}
+        {/* 数字（主役）: 好き vs 嫌い を左右に大きく */}
+        {likePct != null ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              marginTop: 30,
+              flexGrow: 1,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 36, color: "#f91880", fontWeight: 700 }}>好き</div>
+              <div style={{ fontSize: 168, fontWeight: 700, color: "#f91880", lineHeight: 1 }}>
+                {`${likePct}%`}
               </div>
-              <div style={{ fontSize: 24, color: "#8b98ad", marginTop: 8 }}>{`${total}票`}</div>
             </div>
-          ) : null}
-        </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <div style={{ fontSize: 36, color: "#8b5cf6", fontWeight: 700 }}>嫌い</div>
+              <div style={{ fontSize: 168, fontWeight: 700, color: "#8b5cf6", lineHeight: 1 }}>
+                {`${100 - likePct}%`}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexGrow: 1,
+              fontSize: 48,
+              color: "#8b98ad",
+            }}
+          >
+            まだ投票がありません — 最初の1票を！
+          </div>
+        )}
 
+        {/* バー */}
         {likePct != null ? (
           <div
             style={{
               display: "flex",
               width: "100%",
-              height: 22,
-              borderRadius: 11,
+              height: 26,
+              borderRadius: 13,
               overflow: "hidden",
-              marginTop: 32,
+              marginTop: 26,
               background: "#263043",
             }}
           >
@@ -146,16 +168,21 @@ export default async function PersonOgImage({ params }: { params: Promise<{ id: 
           </div>
         ) : null}
 
+        {/* フッター */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: "auto",
+            marginTop: 26,
           }}
         >
-          <div style={{ fontSize: 30, fontWeight: 700 }}>ツイッタラー世論調査</div>
-          <div style={{ fontSize: 24, color: "#1d9bf0" }}>tsuittara-yoron.hikamers.app</div>
+          <div style={{ display: "flex", fontSize: 28, fontWeight: 700 }}>
+            {likePct != null ? `総投票 ${total.toLocaleString("ja-JP")}票` : "ツイッタラー世論調査"}
+          </div>
+          <div style={{ display: "flex", fontSize: 24, color: "#1d9bf0" }}>
+            tsuittara-yoron.hikamers.app
+          </div>
         </div>
       </div>
     ),

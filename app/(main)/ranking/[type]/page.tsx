@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRanking, type RankingType } from "@/lib/queries";
@@ -22,6 +24,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ type: string }>;
 }): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   const { type } = await params;
   const item = TYPES[type as RankingType];
@@ -29,7 +32,7 @@ export async function generateMetadata({
   return {
     title: t("{label}ランキング", { label: t(item.label) }),
     description: t(item.desc),
-    alternates: { canonical: `/ranking/${type}` },
+    alternates: { canonical: localePath(locale, `/ranking/${type}`) },
   };
 }
 

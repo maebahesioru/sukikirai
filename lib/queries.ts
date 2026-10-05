@@ -1,4 +1,5 @@
 // サーバー専用データアクセス層（PostgreSQL / node-postgres）
+import { createHash } from "crypto";
 import { sql, sql1, withTx, jstDayStart } from "./db";
 import { EVAL_KEYS, DEFAULT_CATEGORY, SOUSENKYO } from "./constants";
 import { isSpamContent, calculateSimilarity } from "./spam-filter";
@@ -1873,4 +1874,20 @@ export async function getSousenkyoRanking(limit = 20): Promise<SousenkyoRow[]> {
     avatar_url: (r.avatar_url as string | null) ?? null,
     recentVotes: (r.recent_votes as number) ?? 0,
   }));
+}
+
+/** 発行済みトークンか（トークン状態化・偽造トークンでの投票防止） */
+export async function isKnownToken(token: string): Promise<boolean> {
+  const hash = createHash("sha256").update(token).digest("hex");
+  const rows = await sql(`SELECT 1 FROM voter_tokens WHERE token_hash = $1 AND expires_at > now() LIMIT 1`, [hash]);
+  return rows.length > 0;
+}
+
+/** トークンを発行済みとして登録（/api/terms用） */
+export async function registerToken(token: string, expiresAt: Date): Promise<void> {
+  const hash = createHash("sha256").update(token).digest("hex");
+  await sql(
+    `INSERT INTO voter_tokens (token_hash, expires_at) VALUES ($1, $2) ON CONFLICT (token_hash) DO NOTHING`,
+    [hash, expiresAt]
+  );
 }

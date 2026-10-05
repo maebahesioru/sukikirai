@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp, Trophy } from "lucide-react";
 import { getHomeStats, getPeople, getRanking, getRecentComments } from "@/lib/queries";
 import { SOUSENKYO } from "@/lib/constants";
@@ -10,9 +12,12 @@ import { num } from "@/lib/format";
 import type { Metadata } from "next";
 import { getServerT } from "@/lib/i18n-server";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+  alternates: { canonical: localePath(locale, "/") },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

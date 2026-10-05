@@ -7,6 +7,7 @@ import { fmtTime2ch } from "@/lib/format";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
 import { useT } from "@/lib/i18n-client";
+import TranslateBox from "@/components/TranslateBox";
 
 type MetaPost = {
   id: string;
@@ -91,7 +92,7 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
                 <span>{fmtTime2ch(p.created_at)}</span>
                 <span className="font-mono text-[11px]">ID:{p.anon_id}</span>
               </div>
-              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{p.content}</p>
+              <TranslateBox text={p.content} variant="plain" className="text-sm whitespace-pre-wrap break-words leading-relaxed" />
             </div>
           ))
         )}

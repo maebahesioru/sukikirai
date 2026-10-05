@@ -17,6 +17,7 @@ import CommentText from "./CommentText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
 import { useT, useLocale } from "@/lib/i18n-client";
+import TranslateBox from "./TranslateBox";
 
 type FilterType = "all" | "like" | "dislike";
 type SortType = "newest" | "popular";
@@ -506,7 +507,7 @@ function CommentItem({
         )}
       </div>
 
-      <CommentText content={comment.content} className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
+      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
 
       <div className="flex items-center gap-4 text-sm">
         <button
@@ -647,7 +648,7 @@ function ReplyItem({
         <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>
         <span className="ml-auto" />
       </div>
-      <CommentText content={reply.content} className="whitespace-pre-wrap mb-2" />
+      <TranslateBox text={reply.content} variant="comment" className="whitespace-pre-wrap mb-2" />
       <div className="flex items-center gap-3 text-xs">
         <button
           onClick={() => react("good")}

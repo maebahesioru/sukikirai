@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPoll, votePoll } from "@/lib/queries";
+import { getPoll, votePoll, isKnownToken } from "@/lib/queries";
 import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, isUuid, str } from "@/lib/validate";
 
@@ -12,6 +12,10 @@ export async function POST(request: Request) {
     const fp = isValidFp(body.fp) ? body.fp : null;
 
     if (!isUuid(pollId) || !isUuid(optionId) || !isValidToken(userToken)) {
+      return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
+    }
+    // 発行済みトークンのみ受け付け（偽造トークン対策）
+    if (!(await isKnownToken(userToken))) {
       return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
     }
 

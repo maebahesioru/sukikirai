@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import { Search, UserPlus } from "lucide-react";
 import { findPersonByHandleOrId, normalizeHandle, searchPeople } from "@/lib/queries";
@@ -11,13 +13,14 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   return {
     title: t("Xユーザーを検索・追加"),
     description: t(
       "XのID（@xxx）や名前で検索。未登録のXユーザーも、X上の候補から選ぶかIDを直接入力すればその場でページを作成して、好き嫌い投票・評価を書き込めます。"
     ),
-    alternates: { canonical: "/search" },
+    alternates: { canonical: localePath(locale, "/search") },
   };
 }
 

@@ -6,6 +6,7 @@ import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
 import CommentText from "@/components/CommentText";
+import TranslateBox from "@/components/TranslateBox";
 import { useT, useLocale } from "@/lib/i18n-client";
 import type { ReportReason } from "@/lib/constants";
 
@@ -357,7 +358,7 @@ function PollCommentItem({
           {t("「{option}」に投票しました！", { option: comment.voted_option })}
         </p>
       )}
-      <CommentText content={comment.content} className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
+      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
       <div className="flex items-center gap-4 text-sm">
         <button
           onClick={() => react("good")}
@@ -418,7 +419,7 @@ function PollCommentItem({
                   {t("「{option}」に投票しました！", { option: r.voted_option })}
                 </p>
               )}
-              <CommentText content={r.content} className="whitespace-pre-wrap" />
+              <TranslateBox text={r.content} variant="comment" className="whitespace-pre-wrap" />
             </div>
           ))}
         </div>

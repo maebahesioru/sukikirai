@@ -72,6 +72,9 @@ export default function EvalPanel({
             "_blank"
           );
         }
+      } else if (data.error === "Invalid user token") {
+        Cookies.remove("user_token");
+        location.reload();
       } else {
         alert(data.error || t("評価の送信に失敗しました"));
       }

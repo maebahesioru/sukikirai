@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation } from "@/lib/queries";
+import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation, isKnownToken } from "@/lib/queries";
 import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
@@ -13,6 +13,10 @@ export async function POST(request: Request) {
     const rawScores = (body.scores ?? {}) as Record<string, unknown>;
 
     if (!personId || !isValidToken(userToken)) {
+      return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
+    }
+    // 発行済みトークンのみ受け付け（偽造トークン対策）
+    if (!(await isKnownToken(userToken))) {
       return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
     }
 

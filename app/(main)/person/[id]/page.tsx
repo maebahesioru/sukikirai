@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
@@ -24,6 +26,7 @@ export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const locale = await getLocale();
   const { id } = await params;
   const p = await getPerson(decodeURIComponent(id));
   if (!p || p.is_hidden) return { title: "人物が見つかりません" };
@@ -34,7 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       p.x_description ||
       p.description ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
-    alternates: { canonical: `/person/${p.id}` },
+    alternates: { canonical: localePath(locale, `/person/${p.id}`) },
     ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import type { Metadata } from "next";
 import { PlusCircle, Vote } from "lucide-react";
 import { getPeopleByIds, listPolls } from "@/lib/queries";
@@ -9,11 +11,12 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   return {
     title: t("投票トーク"),
     description: t("みんなで作るアンケート「投票トーク」。誰でも作成・投票・コメントできます。"),
-    alternates: { canonical: "/polls" },
+    alternates: { canonical: localePath(locale, "/polls") },
   };
 }
 

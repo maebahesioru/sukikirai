@@ -26,8 +26,8 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
 // さらに短時間の連投（cookieリセット連打）を抑えるため、10分あたり NEW_VOTER_BURST 個までに制限。
 // 既知トークン（当日そのIPで既に活動済み）は制限なし＝1日1回の重複判定は各ルート側の既存ロジックが担う。
 // ※プロセス再起動でリセットされる（既存のレート制限と同様）。
-export const NEW_VOTER_MAX = 100;
-export const NEW_VOTER_BURST = 12;
+export const NEW_VOTER_MAX = 40;
+export const NEW_VOTER_BURST = 8;
 const voterSets = new Map<string, { day: string; ids: Set<string> }>();
 
 function jstDayKey(): string {

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPeople } from "@/lib/queries";
@@ -15,6 +17,7 @@ type Props = {
 const PER = 48;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
@@ -24,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       "「{tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。",
       { tag }
     ),
-    alternates: { canonical: `/tag/${encodeURIComponent(tag)}` },
+    alternates: { canonical: localePath(locale, `/tag/${encodeURIComponent(tag)}`) },
     openGraph: {
       title: t("「{tag}」の人物一覧", { tag }),
       description: t(

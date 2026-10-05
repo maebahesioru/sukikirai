@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import type { Metadata } from "next";
 import { Search } from "lucide-react";
 import { getAllTags, getPeople, type PeopleSort } from "@/lib/queries";
@@ -8,11 +10,14 @@ import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
   title: "人物一覧",
   description: "登録されている全人物の一覧。タグ・カテゴリ・並び替え・検索で気になる人を探せます。",
-  alternates: { canonical: "/people" },
-};
+  alternates: { canonical: localePath(locale, "/people") },
+  };
+}
 
 const PER = 48;
 const SORTS: { key: PeopleSort; label: string }[] = [

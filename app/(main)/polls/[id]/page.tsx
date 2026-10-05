@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -15,6 +17,7 @@ type Params = { params: Promise<{ id: string }> };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   const { id } = await params;
   if (!UUID_RE.test(id)) return { title: t("投票トーク") };
@@ -22,7 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: poll ? poll.title : t("投票トーク"),
     description: poll?.description ?? undefined,
-    alternates: { canonical: `/polls/${id}` },
+    alternates: { canonical: localePath(locale, `/polls/${id}`) },
     openGraph: {
       title: poll ? poll.title : t("投票トーク"),
       description: poll?.description ?? undefined,

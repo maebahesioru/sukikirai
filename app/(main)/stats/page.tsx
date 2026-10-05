@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import {
   getCategoryStats,
@@ -18,13 +20,14 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   return {
     title: t("統計"),
     description: t(
       "ツイッタラー世論調査の統計。カテゴリ別・タグ別の傾向、8項目評価の相関とスコア分布を公開しています。"
     ),
-    alternates: { canonical: "/stats" },
+    alternates: { canonical: localePath(locale, "/stats") },
   };
 }
 

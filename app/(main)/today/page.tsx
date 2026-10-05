@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import { getNewPeopleToday, getRanking, getRecentComments, getTodayStats } from "@/lib/queries";
 import RankTable from "@/components/RankTable";
@@ -12,13 +14,14 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   return {
     title: t("今日のまとめ"),
     description: t(
       "今日の投票数・24時間の急上昇ランキング・新しく追加されたXユーザー・新着コメントをまとめてチェック。"
     ),
-    alternates: { canonical: "/today" },
+    alternates: { canonical: localePath(locale, "/today") },
     openGraph: {
       title: t("今日のまとめ - ツイッタラー世論調査"),
       description: t(

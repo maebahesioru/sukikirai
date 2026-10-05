@@ -217,3 +217,20 @@ CREATE TABLE IF NOT EXISTS meta_posts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_meta_posts_created ON meta_posts(created_at);
+
+-- 翻訳キャッシュ（原文ハッシュ×対象言語で一意・NLLB自前翻訳）
+CREATE TABLE IF NOT EXISTS translations (
+  text_hash TEXT NOT NULL,
+  target TEXT NOT NULL,
+  source_text TEXT NOT NULL,
+  result TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (text_hash, target)
+);
+
+-- 発行済みトークン（状態化・偽造トークンでの投票防止）
+CREATE TABLE IF NOT EXISTS voter_tokens (
+  token_hash TEXT PRIMARY KEY,
+  issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
+);

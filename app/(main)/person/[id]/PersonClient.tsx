@@ -10,6 +10,7 @@ import ShareButtons from "@/components/ShareButtons";
 import CommentSection from "@/components/CommentSection";
 import type { EvalStats, Person, PollWithOptions, VoteStats } from "@/lib/types";
 import { useT } from "@/lib/i18n-client";
+import TranslateBox from "@/components/TranslateBox";
 
 type RankInfo = { rank: number; total: number } | null;
 
@@ -72,9 +73,11 @@ export default function PersonClient({
               )}
             </div>
             {profileText && (
-              <p className="text-mut text-sm mt-2 leading-relaxed whitespace-pre-wrap">
-                {profileText}
-              </p>
+              <TranslateBox
+                text={profileText}
+                variant="plain"
+                className="text-mut text-sm mt-2 leading-relaxed whitespace-pre-wrap"
+              />
             )}
             <div className="flex flex-wrap gap-1.5 mt-3">
               <span className="text-xs px-2.5 py-1 rounded-full bg-xsoft text-x whitespace-nowrap">{person.category}</span>

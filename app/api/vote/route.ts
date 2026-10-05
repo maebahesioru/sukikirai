@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPerson, getVoteStats, insertVote } from "@/lib/queries";
+import { getPerson, getVoteStats, insertVote, isKnownToken } from "@/lib/queries";
 import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 
@@ -15,6 +15,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
     }
     if (!isValidToken(userToken)) {
+      return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
+    }
+    // 発行済みトークンのみ受け付け（偽造トークンでの投票防止）
+    if (!(await isKnownToken(userToken))) {
       return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
     }
 
@@ -45,6 +49,13 @@ export async function POST(request: Request) {
     const person = await getPerson(personId);
     if (!person || person.is_hidden) {
       return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
+    }
+    // 対象ごとの速度キャップ（スクリプトによる一斉フラッド対策・2026-10-06）
+    if (!rateLimit(`vote:target:${person.id}`, 150, 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "投票が集中しています。少し時間をおいてお試しください" },
+        { status: 429 }
+      );
     }
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "投票できません" }, { status: 403 });

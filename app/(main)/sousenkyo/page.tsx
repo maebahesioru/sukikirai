@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { localePath } from "@/lib/i18n-core";
+import { getLocale } from "@/lib/i18n-server";
 import { Trophy } from "lucide-react";
 import { getSousenkyoRanking } from "@/lib/queries";
 import { SOUSENKYO } from "@/lib/constants";
@@ -11,11 +13,12 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
   const t = await getServerT();
   return {
     title: t(SOUSENKYO.title),
     description: t("期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。"),
-    alternates: { canonical: "/sousenkyo" },
+    alternates: { canonical: localePath(locale, "/sousenkyo") },
     openGraph: {
       title: t("{title} - 10/6開幕", { title: t(SOUSENKYO.title) }),
       description: t("期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。"),

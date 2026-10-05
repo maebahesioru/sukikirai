@@ -128,6 +128,17 @@ export default async function PersonOgImage({ params }: { params: Promise<{ id: 
                 {`${likePct}%`}
               </div>
             </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 60,
+                fontWeight: 700,
+                color: "#3d4a61",
+                paddingBottom: 26,
+              }}
+            >
+              vs
+            </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ fontSize: 36, color: "#8b5cf6", fontWeight: 700 }}>嫌い</div>
               <div style={{ fontSize: 168, fontWeight: 700, color: "#8b5cf6", lineHeight: 1 }}>

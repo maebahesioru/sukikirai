@@ -27,8 +27,8 @@ async function getPromoted() {
 
 /** 人物のタグとカテゴリを自動判定して保存（新規追加時フック用） */
 export async function autoTagPerson(personId: string): Promise<void> {
-  const rows = await sql<{ name: string; handle: string | null; bio: string; x_website: string | null }>(
-    `SELECT name, handle, x_website, COALESCE(NULLIF(x_description, ''), description, '') AS bio
+  const rows = await sql<{ name: string; handle: string | null; bio: string; x_website: string | null; x_tweet_signals: string | null }>(
+    `SELECT name, handle, x_website, x_tweet_signals, COALESCE(NULLIF(x_description, ''), description, '') AS bio
      FROM people WHERE id = $1`,
     [personId]
   );
@@ -38,7 +38,7 @@ export async function autoTagPerson(personId: string): Promise<void> {
   const tags = classifyWithAuto(p.name, p.bio, promoted);
   const category = classifyCategory(
     p.name,
-    [p.bio, p.x_website].filter(Boolean).join("\n"),
+    [p.bio, p.x_website, p.x_tweet_signals].filter(Boolean).join("\n"),
     false,
     p.handle ?? "",
     inHikamerWiki(p.handle)
@@ -62,7 +62,7 @@ export async function retagEveryone(
     const tags = classifyWithAuto(r.name, r.bio, promoted);
     const category = classifyCategory(
       r.name,
-      [r.bio, r.x_website].filter(Boolean).join("\n"),
+      [r.bio, r.x_website, r.x_tweet_signals].filter(Boolean).join("\n"),
       r.category === "ヒカマー",
       r.handle ?? "",
       inHikamerWiki(r.handle)

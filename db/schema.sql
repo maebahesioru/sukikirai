@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS people (
   x_checked_at TIMESTAMPTZ,
   x_description TEXT,
   x_website TEXT,
+  x_tweet_signals TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

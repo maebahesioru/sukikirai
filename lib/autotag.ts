@@ -19,8 +19,8 @@ async function getPromoted() {
 
 /** 人物のタグとカテゴリを自動判定して保存（新規追加時フック用） */
 export async function autoTagPerson(personId: string): Promise<void> {
-  const rows = await sql<{ name: string; bio: string }>(
-    `SELECT name, COALESCE(NULLIF(x_description, ''), description, '') AS bio
+  const rows = await sql<{ name: string; handle: string | null; bio: string }>(
+    `SELECT name, handle, COALESCE(NULLIF(x_description, ''), description, '') AS bio
      FROM people WHERE id = $1`,
     [personId]
   );
@@ -28,7 +28,7 @@ export async function autoTagPerson(personId: string): Promise<void> {
   if (!p) return;
   const promoted = await getPromoted();
   const tags = classifyWithAuto(p.name, p.bio, promoted);
-  const category = classifyCategory(p.name, p.bio);
+  const category = classifyCategory(p.name, p.bio, false, p.handle ?? "");
   await sql(`UPDATE people SET tags = $2, category = $3 WHERE id = $1`, [
     personId,
     tags,
@@ -46,7 +46,7 @@ export async function retagEveryone(
   const updates: { id: string; tags: string[]; category: string }[] = [];
   for (const r of targets) {
     const tags = classifyWithAuto(r.name, r.bio, promoted);
-    const category = classifyCategory(r.name, r.bio, r.category === "ヒカマー");
+    const category = classifyCategory(r.name, r.bio, r.category === "ヒカマー", r.handle ?? "");
     const cur = r.tags ?? [];
     const sameTags = tags.length === cur.length && tags.every((t, i) => t === cur[i]);
     if (!sameTags || category !== r.category) {

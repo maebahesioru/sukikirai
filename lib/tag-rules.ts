@@ -315,7 +315,7 @@ export function classifyWithAuto(
 /* ================= カテゴリ自動判定 ================= */
 
 /** 企業・サービス（bio側は法人自認の言い回しのみ） */
-const COMPANY_ANY = ["公式アカウント", "運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp."];
+const COMPANY_ANY = ["公式アカウント", "運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp.", "official account", "official twitter", "official youtube"];
 /** 企業名らしさ（アカウント名に法人格がある場合のみ。bioの勤務先言及では誤判定するため） */
 const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
 /** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
@@ -325,15 +325,17 @@ const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "
 /** 芸能人 */
 const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌手", "お笑いコンビ", "お笑い芸人"];
 /** Vtuber */
-const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー"];
+const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー", "live2d", "バ美肉"];
 /** BOT（bio側の言い回し） */
-const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる"];
-/** YouTuber */
-const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー"];
-/** 配信者 */
-const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer"];
+const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる", "（bot）", "(bot)", "中の人はいません", "自動でツイート", "botが投稿"];
+/** YouTuber（リンク・定型文も信号にする） */
+const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube.com", "youtu.be", "チャンネル登録"];
+/** 配信者（配信プラットフォームのURLも信号にする） */
+const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer", "twitcasting.tv", "showroom", "openrec.tv", "mildom", "iriam", "ポコチャ"];
 /** クリエイター */
-const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター"];
+const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com"];
+/** 界隈の命名文化（ハンドル側の判定用）: _mania系・hikakin系 */
+const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
 
 /**
  * 名前とプロフィール文からカテゴリを決める（純ローカル・自動）。
@@ -341,9 +343,10 @@ const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画�
  * legacyHikamer=true（既にヒカマーカテゴリの人）は、明示タイプ（企業等）に該当しない限りヒカマーを維持
  * ＝既存の界隈名簿を尊重しつつ、新規追加は完全自動で分類する。
  */
-export function classifyCategory(name: string, bio: string, legacyHikamer = false): string {
+export function classifyCategory(name: string, bio: string, legacyHikamer = false, handle = ""): string {
   const n = (name || "").normalize("NFKC").trim();
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
+  const h = (handle || "").normalize("NFKC").toLowerCase();
 
   if (
     COMPANY_NAME_RE.test(n) ||
@@ -356,7 +359,14 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
   if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";
   if (/bot$/i.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
-  if (legacyHikamer || HIKAMER_RE.test(text) || HIKAMER_NAME_RE.test(n)) return "ヒカマー";
+  if (
+    legacyHikamer ||
+    HIKAMER_RE.test(text) ||
+    HIKAMER_NAME_RE.test(n) ||
+    (h.length > 0 && HIKAMER_HANDLE_RE.test(h))
+  ) {
+    return "ヒカマー";
+  }
   if (YOUTUBER_ANY.some((k) => text.includes(k))) return "YouTuber";
   if (STREAMER_ANY.some((k) => text.includes(k))) return "配信者";
   if (CREATOR_ANY.some((k) => text.includes(k))) return "クリエイター";

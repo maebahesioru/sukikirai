@@ -14,6 +14,12 @@ const BLOCKED_KEYWORDS = [
   "t.me/", // Telegram
   "bit.ly",
   "tinyurl.com",
+  "is.gd",
+  "ow.ly",
+  "buff.ly",
+  "cutt.ly",
+  "shorturl.at",
+  "goo.gl",
 ];
 
 const URL_PATTERN =
@@ -21,10 +27,14 @@ const URL_PATTERN =
 
 const BLOCKED_UNICODE_RANGES = [{ start: 0xfdfd, end: 0xfdfd }];
 
-export function isSpamContent(content: string): { isSpam: boolean; reason?: string } {
+export function isSpamContent(
+  content: string,
+  opts?: { allowUrls?: boolean }
+): { isSpam: boolean; reason?: string } {
   const contentLower = content.toLowerCase();
 
-  if (URL_PATTERN.test(content)) {
+  // コメント欄ではURLを許可（allowUrls）。短縮URL等のスパムキーワードは下で引き続きブロック。
+  if (!opts?.allowUrls && URL_PATTERN.test(content)) {
     return { isSpam: true, reason: "URLの投稿は禁止されています" };
   }
 

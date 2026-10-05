@@ -532,7 +532,7 @@ export type CommentInput = {
 export async function postComment(
   input: CommentInput
 ): Promise<{ ok: true; comment: CommentRow } | { ok: false; error: string; status: number }> {
-  const spam = isSpamContent(input.content);
+  const spam = isSpamContent(input.content, { allowUrls: true });
   if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
   if (input.name) {
     const s = isSpamContent(input.name);
@@ -1083,7 +1083,7 @@ export async function insertPollComment(input: {
   cookieId: string;
   mail?: string | null;
 }): Promise<{ ok: true; comment: PollCommentRow } | { ok: false; error: string; status: number }> {
-  const spam = isSpamContent(input.content);
+  const spam = isSpamContent(input.content, { allowUrls: true });
   if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
   if (input.name) {
     const s = isSpamContent(input.name);
@@ -1769,7 +1769,7 @@ export async function insertMetaPost(input: {
   | { ok: true; post: { id: string; name: string | null; content: string; created_at: string; is_hidden: boolean } }
   | { ok: false; error: string; status: number }
 > {
-  const spam = isSpamContent(input.content);
+  const spam = isSpamContent(input.content, { allowUrls: true });
   if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
   if (input.name) {
     const s = isSpamContent(input.name);

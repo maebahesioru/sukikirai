@@ -4,8 +4,10 @@ import { useState } from "react";
 import Cookies from "js-cookie";
 import { ScrollText } from "lucide-react";
 import TermsContent from "./TermsContent";
+import { useT } from "@/lib/i18n-client";
 
 export default function TermsModal({ onAgree }: { onAgree: () => void }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
 
   const agree = async () => {
@@ -14,7 +16,7 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
       const res = await fetch("/api/terms", { method: "POST" });
       const data = await res.json();
       if (!data?.success) {
-        alert("エラーが発生しました。ページをリロードして再度お試しください。");
+        alert(t("エラーが発生しました。ページをリロードして再度お試しください。"));
         setBusy(false);
         return;
       }
@@ -24,7 +26,7 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
       });
       onAgree();
     } catch {
-      alert("エラーが発生しました。");
+      alert(t("エラーが発生しました。"));
       setBusy(false);
     }
   };
@@ -37,7 +39,7 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
             <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-like to-dislike flex items-center justify-center">
               <ScrollText className="w-5 h-5 text-white" />
             </span>
-            <h2 className="text-xl font-bold">利用規約への同意</h2>
+            <h2 className="text-xl font-bold">{t("利用規約への同意")}</h2>
           </div>
 
           <div className="bg-panel2 rounded-xl p-5 mb-6 max-h-96 overflow-y-auto border border-line">
@@ -45,7 +47,7 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
           </div>
 
           <p className="text-sm text-mut mb-4">
-            上記の利用規約をお読みいただき、同意される場合は「同意する」ボタンをクリックしてください。
+            {t("上記の利用規約をお読みいただき、同意される場合は「同意する」ボタンをクリックしてください。")}
           </p>
 
           <button
@@ -57,11 +59,11 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
                 : "bg-gradient-to-r from-like to-dislike hover:opacity-90"
             }`}
           >
-            {busy ? "処理中..." : "同意する"}
+            {busy ? t("処理中...") : t("同意する")}
           </button>
 
           <p className="text-xs text-mut mt-4 text-center">
-            ※同意することで匿名の書き込み用IDが発行されます（1年間有効）
+            {t("※同意することで匿名の書き込み用IDが発行されます（1年間有効）")}
           </p>
         </div>
       </div>

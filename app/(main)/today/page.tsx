@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   description:
     "今日の投票数・24時間の急上昇ランキング・新しく追加されたXユーザー・新着コメントをまとめてチェック。",
   alternates: { canonical: "/today" },
+  openGraph: {
+    title: "今日のまとめ - ツイッタラー世論調査",
+    description:
+      "今日の投票数・24時間の急上昇ランキング・新しく追加されたXユーザー・新着コメントをまとめてチェック。",
+    images: ["/og.png"],
+  },
 };
 
 export default async function TodayPage() {

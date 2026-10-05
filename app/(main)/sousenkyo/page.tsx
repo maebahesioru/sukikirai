@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   title: SOUSENKYO.title,
   description: "期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。",
   alternates: { canonical: "/sousenkyo" },
+  openGraph: {
+    title: `${SOUSENKYO.title} - 10/6開幕`,
+    description: "期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。",
+    images: ["/og.png"],
+  },
 };
 
 export default async function SousenkyoPage() {

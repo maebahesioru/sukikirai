@@ -16,7 +16,7 @@ import ReportModal from "./ReportModal";
 import CommentText from "./CommentText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
-import { useT } from "@/lib/i18n-client";
+import { useT, useLocale } from "@/lib/i18n-client";
 
 type FilterType = "all" | "like" | "dislike";
 type SortType = "newest" | "popular";
@@ -398,6 +398,7 @@ function CommentItem({
   const [showReport, setShowReport] = useState(false);
   const [reportBusy, setReportBusy] = useState(false);
   const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
     setLocal(comment);
@@ -488,7 +489,7 @@ function CommentItem({
           >
             {comment.vote_type === "like" ? t("好き派") : t("嫌い派")}
           </span>
-          <span className="text-xs text-mut" title={timeAgo(comment.created_at)}>
+          <span className="text-xs text-mut" title={timeAgo(comment.created_at, locale)}>
             {fmtTime2ch(comment.created_at)}
           </span>
           <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
@@ -582,6 +583,7 @@ function ReplyItem({
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
   const t = useT();
+  const locale = useLocale();
 
   useEffect(() => {
     setLocal(reply);
@@ -639,7 +641,7 @@ function ReplyItem({
         >
           {reply.vote_type === "like" ? t("好き派") : t("嫌い派")}
         </span>
-        <span className="text-xs text-mut" title={timeAgo(reply.created_at)}>
+        <span className="text-xs text-mut" title={timeAgo(reply.created_at, locale)}>
           {fmtTime2ch(reply.created_at)}
         </span>
         <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>

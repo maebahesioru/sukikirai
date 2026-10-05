@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { translate, type Locale } from "./i18n-core";
 
 /** JSTフォーマット（例: 2026/10/01 12:34） */
 export function formatJST(
@@ -12,16 +13,17 @@ export function formatJST(
 }
 
 /** 「3分前」のような相対表記（7日以上は日付） */
-export function timeAgo(input: string | Date): string {
+
+export function timeAgo(input: string | Date, locale: Locale = "ja"): string {
   const d = typeof input === "string" ? new Date(input) : input;
   const diff = Date.now() - d.getTime();
   const min = Math.floor(diff / 60000);
-  if (min < 1) return "たった今";
-  if (min < 60) return `${min}分前`;
+  if (min < 1) return translate(locale, "たった今");
+  if (min < 60) return translate(locale, "{n}分前", { n: min });
   const hours = Math.floor(min / 60);
-  if (hours < 24) return `${hours}時間前`;
+  if (hours < 24) return translate(locale, "{n}時間前", { n: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}日前`;
+  if (days < 7) return translate(locale, "{n}日前", { n: days });
   return formatJST(d, "yyyy/MM/dd");
 }
 

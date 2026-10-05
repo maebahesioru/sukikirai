@@ -3,7 +3,7 @@ import { Flame, MessageCircle } from "lucide-react";
 import Avatar from "./Avatar";
 import { timeAgo } from "@/lib/format";
 import type { RankingRow } from "@/lib/types";
-import { getServerT } from "@/lib/i18n-server";
+import { getServerT, getLocale } from "@/lib/i18n-server";
 
 export default async function Sidebar({
   trending,
@@ -20,6 +20,7 @@ export default async function Sidebar({
   }[];
 }) {
   const t = await getServerT();
+  const locale = await getLocale();
   return (
     <aside className="space-y-4">
       <div className="bg-panel border border-line rounded-2xl p-5">
@@ -78,7 +79,7 @@ export default async function Sidebar({
                 >
                   {c.vote_type === "like" ? t("好き派") : t("嫌い派")}
                 </span>
-                <span className="text-[10px] text-mut shrink-0">{timeAgo(c.created_at)}</span>
+                <span className="text-[10px] text-mut shrink-0">{timeAgo(c.created_at, locale)}</span>
               </div>
               <p className="text-mut line-clamp-5 leading-snug">{c.content}</p>
             </div>

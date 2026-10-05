@@ -6,7 +6,7 @@ import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
 import CommentText from "@/components/CommentText";
-import { useT } from "@/lib/i18n-client";
+import { useT, useLocale } from "@/lib/i18n-client";
 import type { ReportReason } from "@/lib/constants";
 
 type PollComment = {
@@ -40,6 +40,7 @@ function getCharCount(text: string): number {
 
 export default function PollComments({ pollId }: { pollId: string }) {
   const t = useT();
+  const locale = useLocale();
   const [comments, setComments] = useState<PollComment[]>([]);
   const [total, setTotal] = useState(0);
   const [name, setName] = useState("");
@@ -226,6 +227,7 @@ function PollCommentItem({
   onHide: (id: string) => void;
 }) {
   const t = useT();
+  const locale = useLocale();
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
   const [counts, setCounts] = useState({ good: comment.good_count, bad: comment.bad_count });
   const [showReply, setShowReply] = useState(false);
@@ -329,7 +331,7 @@ function PollCommentItem({
             sage
           </span>
         )}
-        <span className="text-xs text-mut" title={timeAgo(comment.created_at)}>
+        <span className="text-xs text-mut" title={timeAgo(comment.created_at, locale)}>
           {fmtTime2ch(comment.created_at)}
         </span>
         <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
@@ -399,7 +401,7 @@ function PollCommentItem({
                     sage
                   </span>
                 )}
-                <span className="text-xs text-mut" title={timeAgo(r.created_at)}>
+                <span className="text-xs text-mut" title={timeAgo(r.created_at, locale)}>
                   {fmtTime2ch(r.created_at)}
                 </span>
                 <span className="text-[11px] text-mut font-mono">ID:{r.anon_id}</span>

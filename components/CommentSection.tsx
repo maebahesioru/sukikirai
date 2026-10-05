@@ -34,11 +34,13 @@ export default function CommentSection({
   personId,
   personName,
   hasVoted,
+  myVoteType = null,
   archived = false,
 }: {
   personId: string;
   personName: string;
   hasVoted: boolean;
+  myVoteType?: "like" | "dislike" | null;
   archived?: boolean;
 }) {
   const [comments, setComments] = useState<CommentWithReplies[]>([]);
@@ -76,7 +78,7 @@ export default function CommentSection({
     <>
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
         {comments.map((c) => (
-          <CommentItem key={c.id} comment={c} onUpdate={fetchComments} locked={archived} />
+          <CommentItem key={c.id} comment={c} myVoteType={myVoteType} onUpdate={fetchComments} locked={archived} />
         ))}
         {comments.length === 0 && !loading && (
           <p className="text-center text-mut py-8 text-sm">
@@ -179,7 +181,7 @@ export default function CommentSection({
         </div>
       ) : (
         <>
-          <CommentForm personId={personId} personName={personName} onPosted={fetchComments} />
+          <CommentForm personId={personId} personName={personName} myVoteType={myVoteType} onPosted={fetchComments} />
           {list}
         </>
       )}
@@ -192,22 +194,30 @@ export default function CommentSection({
 function CommentForm({
   personId,
   personName,
+  myVoteType = null,
   parentCommentId,
   parentNumber,
   onPosted,
 }: {
   personId: string;
   personName?: string;
+  myVoteType?: "like" | "dislike" | null;
   parentCommentId?: string;
   parentNumber?: number;
   onPosted: () => void;
 }) {
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
-  const [voteType, setVoteType] = useState<"like" | "dislike">("like");
+  const [voteType, setVoteType] = useState<"like" | "dislike">(myVoteType ?? "like");
+  const [stanceTouched, setStanceTouched] = useState(false);
   const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
   const [tweet, setTweet] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  // 自分の投票（好き/嫌い）が判明しているときはデフォルトを合わせる（手動変更後は尊重）
+  useEffect(() => {
+    if (!stanceTouched && myVoteType) setVoteType(myVoteType);
+  }, [myVoteType, stanceTouched]);
 
   const count = getCharCount(content);
 
@@ -291,7 +301,10 @@ function CommentForm({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => setVoteType("like")}
+          onClick={() => {
+            setStanceTouched(true);
+            setVoteType("like");
+          }}
           className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
             voteType === "like"
               ? "bg-gradient-to-r from-like to-pink-600 text-white"
@@ -302,7 +315,10 @@ function CommentForm({
         </button>
         <button
           type="button"
-          onClick={() => setVoteType("dislike")}
+          onClick={() => {
+            setStanceTouched(true);
+            setVoteType("dislike");
+          }}
           className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${
             voteType === "dislike"
               ? "bg-gradient-to-r from-dislike to-indigo-600 text-white"
@@ -359,10 +375,12 @@ function CommentForm({
 
 function CommentItem({
   comment,
+  myVoteType = null,
   onUpdate,
   locked = false,
 }: {
   comment: CommentWithReplies;
+  myVoteType?: "like" | "dislike" | null;
   onUpdate: () => void;
   locked?: boolean;
 }) {
@@ -523,6 +541,7 @@ function CommentItem({
         <div className="mt-3">
           <CommentForm
             personId={comment.person_id}
+            myVoteType={myVoteType}
             parentCommentId={comment.id}
             parentNumber={comment.comment_number}
             onPosted={() => {

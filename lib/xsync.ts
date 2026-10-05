@@ -39,7 +39,14 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
     if (!res.ok) return; // 一時的なエラー等は何もしない
 
     const data = (await res.json()) as {
-      user?: { id?: string; name?: string; description?: string; avatar_url?: string; followers?: number };
+      user?: {
+        id?: string;
+        name?: string;
+        description?: string;
+        avatar_url?: string;
+        followers?: number;
+        website?: { url?: string };
+      };
     };
     const u = data.user;
     if (!u) {
@@ -60,6 +67,10 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
       typeof u.avatar_url === "string" && u.avatar_url.startsWith("http")
         ? u.avatar_url.slice(0, 500)
         : null;
+    const website =
+      typeof u.website?.url === "string" && u.website.url.startsWith("http")
+        ? u.website.url.slice(0, 300)
+        : null;
 
     await sql(
       `UPDATE people SET
@@ -69,9 +80,10 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
          x_description = $4,
          name = CASE WHEN $5 <> '' THEN $5 ELSE name END,
          avatar_url = COALESCE($6, avatar_url),
+         x_website = $7,
          x_checked_at = now()
        WHERE id = $1`,
-      [p.id, uid, followers, desc, name, avatar]
+      [p.id, uid, followers, desc, name, avatar, website]
     );
   } catch {
     // 一時的なネットワークエラーは無視（日次チェッカーが拾う）

@@ -19,7 +19,7 @@ export type TagRule = {
 export type PromotedTag = { tag: string; count: number };
 
 /** ヒカマー界隈の命名規則（名前で判定） */
-const HIKAMER_NAME_RE = /mani|マニ|キン$|bot$/i;
+const HIKAMER_NAME_RE = /mani|マニ|まに|キン$|bot$/i;
 
 /** 成人向けシグナル（成人ヒカマー判定に使用） */
 const ADULT_RE = /r18|r-18|18\+|18禁|成人向け|エロ|えっち|えちえち|ぴんく|nsfw|fanbox|fantia|アダルト/;

@@ -1553,9 +1553,9 @@ export async function getPollUpload(id: string): Promise<{ mime: string; data: B
 /** タグ自動付与の対象一覧（mode=empty はタグが空の人だけ） */
 export async function listTagTargets(
   mode: "all" | "empty"
-): Promise<{ id: string; name: string; handle: string | null; tags: string[]; category: string; bio: string }[]> {
-  return sql<{ id: string; name: string; handle: string | null; tags: string[]; category: string; bio: string }>(
-    `SELECT id, name, handle, tags, category, COALESCE(NULLIF(x_description, ''), description, '') AS bio
+): Promise<{ id: string; name: string; handle: string | null; tags: string[]; category: string; bio: string; x_website: string | null }[]> {
+  return sql<{ id: string; name: string; handle: string | null; tags: string[]; category: string; bio: string; x_website: string | null }>(
+    `SELECT id, name, handle, tags, category, x_website, COALESCE(NULLIF(x_description, ''), description, '') AS bio
      FROM people
      WHERE NOT is_hidden ${mode === "empty" ? "AND tags = '{}'::text[]" : ""}`
   );

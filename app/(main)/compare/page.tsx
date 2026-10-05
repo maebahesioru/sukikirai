@@ -6,22 +6,24 @@ import { EVAL_ITEMS } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import ComparePicker from "@/components/ComparePicker";
 import { num } from "@/lib/format";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 type Props = { searchParams: Promise<{ a?: string; b?: string }> };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const t = await getServerT();
   const sp = await searchParams;
   const [a, b] = await Promise.all([
     sp.a ? getPerson(sp.a) : null,
     sp.b ? getPerson(sp.b) : null,
   ]);
-  const title = a && b ? `${a.name} vs ${b.name} 比較` : "ツイッタラー比較";
+  const title = a && b ? t("{a} vs {b} 比較", { a: a.name, b: b.name }) : t("ツイッタラー比較");
   const description =
     a && b
-      ? `${a.name} と ${b.name} の好き嫌い率・8項目評価・票数を並べて比較。`
-      : "2人のXユーザー（ツイッタラー）を並べて比較できるページです。";
+      ? t("{a} と {b} の好き嫌い率・8項目評価・票数を並べて比較。", { a: a.name, b: b.name })
+      : t("2人のXユーザー（ツイッタラー）を並べて比較できるページです。");
   return { title, description, robots: { index: false } };
 }
 
@@ -33,6 +35,7 @@ function overallOf(e: EvalStats): number | null {
 }
 
 export default async function ComparePage({ searchParams }: Props) {
+  const t = await getServerT();
   const sp = await searchParams;
   const baseA = sp.a ? await getPerson(sp.a) : null;
   const baseB = sp.b ? await getPerson(sp.b) : null;
@@ -55,9 +58,9 @@ export default async function ComparePage({ searchParams }: Props) {
   return (
     <div className="space-y-5">
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h1 className="text-xl font-black">ツイッタラー比較</h1>
+        <h1 className="text-xl font-black">{t("ツイッタラー比較")}</h1>
         <p className="text-sm text-mut mt-1">
-          2人の好き嫌い率と8項目評価を並べて比較できます。
+          {t("2人の好き嫌い率と8項目評価を並べて比較できます。")}
         </p>
         <div className="mt-4">
           <ComparePicker
@@ -69,7 +72,7 @@ export default async function ComparePage({ searchParams }: Props) {
 
       {!pa || !pb || !va || !vb || !ea || !eb ? (
         <p className="text-sm text-mut px-1">
-          {!pa && !pb ? "2人を選んでください。" : "もう1人選ぶと比較が表示されます。"}
+          {!pa && !pb ? t("2人を選んでください。") : t("もう1人選ぶと比較が表示されます。")}
         </p>
       ) : (
         <>
@@ -88,11 +91,14 @@ export default async function ComparePage({ searchParams }: Props) {
                 </Link>
                 {p.handle && <div className="text-xs text-mut truncate">@{p.handle}</div>}
                 <div className="text-xs text-mut mt-1">
-                  {p.category !== "その他" ? p.category : ""}
-                  {p.followers ? ` ・ ${num(p.followers)}フォロワー` : ""}
+                  {p.category !== "その他" ? t(p.category) : ""}
+                  {p.followers ? ` ${t("・ {n}フォロワー", { n: num(p.followers) })}` : ""}
                 </div>
                 <div className="text-xs text-mut mt-1">
-                  {v.total}票 ・ 評価 {ea && eb ? (p === pa ? ea.total : eb.total) : 0}人
+                  {t("{votes}票 ・ 評価 {ratings}人", {
+                    votes: v.total,
+                    ratings: ea && eb ? (p === pa ? ea.total : eb.total) : 0,
+                  })}
                 </div>
               </div>
             ))}
@@ -100,7 +106,7 @@ export default async function ComparePage({ searchParams }: Props) {
 
           {/* 好き率 */}
           <section className="bg-panel border border-line rounded-2xl p-5">
-            <h2 className="font-bold mb-4">好き / 嫌い</h2>
+            <h2 className="font-bold mb-4">{t("好き / 嫌い")}</h2>
             <div className="space-y-4">
               {[
                 { p: pa, v: va },
@@ -109,7 +115,7 @@ export default async function ComparePage({ searchParams }: Props) {
                 <div key={p.id}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium truncate mr-2">{p.name}</span>
-                    <span className="text-mut shrink-0">{v.total}票</span>
+                    <span className="text-mut shrink-0">{t("{n}票", { n: v.total })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-like font-bold text-sm w-14 text-right shrink-0">
@@ -130,7 +136,7 @@ export default async function ComparePage({ searchParams }: Props) {
 
           {/* 総合評価 */}
           <section className="bg-panel border border-line rounded-2xl p-5">
-            <h2 className="font-bold mb-4">総合評価（8項目の平均）</h2>
+            <h2 className="font-bold mb-4">{t("総合評価（8項目の平均）")}</h2>
             <div className="grid grid-cols-2 gap-3 text-center">
               {[
                 { p: pa, e: ea },
@@ -151,7 +157,7 @@ export default async function ComparePage({ searchParams }: Props) {
 
           {/* 8項目 */}
           <section className="bg-panel border border-line rounded-2xl p-5">
-            <h2 className="font-bold mb-4">8項目の比較</h2>
+            <h2 className="font-bold mb-4">{t("8項目の比較")}</h2>
             <div className="space-y-3">
               {EVAL_ITEMS.map((item) => {
                 const av = ea.avgs[item.key];
@@ -171,7 +177,7 @@ export default async function ComparePage({ searchParams }: Props) {
                         />
                       </div>
                     </div>
-                    <span className="text-xs text-mut w-20 text-center shrink-0">{item.label}</span>
+                    <span className="text-xs text-mut w-20 text-center shrink-0">{t(item.label)}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-2 bg-line rounded-full overflow-hidden">
                         <div

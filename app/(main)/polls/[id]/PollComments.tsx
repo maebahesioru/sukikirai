@@ -6,6 +6,7 @@ import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
 import CommentText from "@/components/CommentText";
+import { useT } from "@/lib/i18n-client";
 import type { ReportReason } from "@/lib/constants";
 
 type PollComment = {
@@ -38,6 +39,7 @@ function getCharCount(text: string): number {
 }
 
 export default function PollComments({ pollId }: { pollId: string }) {
+  const t = useT();
   const [comments, setComments] = useState<PollComment[]>([]);
   const [total, setTotal] = useState(0);
   const [name, setName] = useState("");
@@ -86,12 +88,12 @@ export default function PollComments({ pollId }: { pollId: string }) {
     e.preventDefault();
     if (!content.trim()) return;
     if (getCharCount(content) > 280) {
-      alert("コメントは全角140文字（半角280文字）以内です");
+      alert(t("コメントは全角140文字（半角280文字）以内です"));
       return;
     }
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("投稿には利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("投稿には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -109,14 +111,14 @@ export default function PollComments({ pollId }: { pollId: string }) {
       });
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || "投稿に失敗しました");
+        alert(data.error || t("投稿に失敗しました"));
         return;
       }
       setContent("");
       setName("");
       fetchComments();
     } catch {
-      alert("投稿に失敗しました");
+      alert(t("投稿に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -127,7 +129,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
       <div className="flex items-center gap-3 flex-wrap mb-4">
-        <h2 className="font-bold">コメント（{total}）</h2>
+        <h2 className="font-bold">{t("コメント（{n}）", { n: total })}</h2>
         <div className="ml-auto flex items-center gap-1.5 text-xs">
           {(
             [
@@ -142,7 +144,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
                 sort === s ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
               }`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -154,23 +156,23 @@ export default function PollComments({ pollId }: { pollId: string }) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 64))}
-            placeholder="名前（任意・#でトリップ）"
-            title="「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます"
+            placeholder={t("名前（任意・#でトリップ）")}
+            title={t("「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます")}
             className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
           <input
             type="text"
             value={mail}
             onChange={(e) => setMail(e.target.value.slice(0, 64))}
-            placeholder="メール（sageでageない）"
-            title="sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります"
+            placeholder={t("メール（sageでageない）")}
+            title={t("sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります")}
             className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
         </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="コメントを入力...（全角140文字まで）"
+          placeholder={t("コメントを入力...（全角140文字まで）")}
           rows={3}
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />
@@ -186,7 +188,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            {busy ? "投稿中..." : "投稿"}
+            {busy ? t("投稿中...") : t("投稿")}
           </button>
         </div>
       </form>
@@ -203,7 +205,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
           />
         ))}
         {visible.length === 0 && (
-          <p className="text-center text-mut py-6 text-sm">まだコメントがありません</p>
+          <p className="text-center text-mut py-6 text-sm">{t("まだコメントがありません")}</p>
         )}
       </div>
     </section>
@@ -223,6 +225,7 @@ function PollCommentItem({
   hiddenIds: string[];
   onHide: (id: string) => void;
 }) {
+  const t = useT();
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
   const [counts, setCounts] = useState({ good: comment.good_count, bad: comment.bad_count });
   const [showReply, setShowReply] = useState(false);
@@ -262,13 +265,13 @@ function PollCommentItem({
       });
       const data = await res.json();
       if (data.success) {
-        alert("通報を受け付けました。\n\nご協力ありがとうございます。");
+        alert(t("通報を受け付けました。\n\nご協力ありがとうございます。"));
         setShowReport(false);
       } else {
-        alert(data.error || "通報に失敗しました");
+        alert(data.error || t("通報に失敗しました"));
       }
     } catch {
-      alert("通報に失敗しました");
+      alert(t("通報に失敗しました"));
     } finally {
       setReportBusy(false);
     }
@@ -279,7 +282,7 @@ function PollCommentItem({
     if (!replyText.trim()) return;
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("返信には利用規約への同意が必要です");
+      alert(t("返信には利用規約への同意が必要です"));
       return;
     }
     setBusy(true);
@@ -298,14 +301,14 @@ function PollCommentItem({
       });
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || "返信に失敗しました");
+        alert(data.error || t("返信に失敗しました"));
         return;
       }
       setReplyText(`>>${comment.comment_number}\n`);
       setShowReply(false);
       onUpdate();
     } catch {
-      alert("返信に失敗しました");
+      alert(t("返信に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -317,11 +320,11 @@ function PollCommentItem({
     <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-center gap-2 flex-wrap mb-2 text-sm">
         <span className="text-mut text-xs">#{comment.comment_number}</span>
-        <span className="font-medium">{comment.name || "匿名"}</span>
+        <span className="font-medium">{comment.name || t("匿名")}</span>
         {isSageMail(comment.mail) && (
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
-            title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+            title={t("sage（2ch互換板のスレ一覧で上がらない投稿）")}
           >
             sage
           </span>
@@ -334,21 +337,23 @@ function PollCommentItem({
           <button
             onClick={() => setShowReport(true)}
             className="text-mut hover:text-bad transition"
-            title="通報"
+            title={t("通報")}
           >
             <Flag className="w-4 h-4" />
           </button>
           <button
             onClick={() => onHide(comment.id)}
             className="text-mut hover:text-txt transition"
-            title="非表示"
+            title={t("非表示")}
           >
             <EyeOff className="w-4 h-4" />
           </button>
         </span>
       </div>
       {comment.voted_option && (
-        <p className="text-sm font-bold text-x mb-1.5">「{comment.voted_option}」に投票しました！</p>
+        <p className="text-sm font-bold text-x mb-1.5">
+          {t("「{option}」に投票しました！", { option: comment.voted_option })}
+        </p>
       )}
       <CommentText content={comment.content} className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
       <div className="flex items-center gap-4 text-sm">
@@ -375,7 +380,7 @@ function PollCommentItem({
           className="flex items-center gap-1 text-mut hover:text-x transition"
         >
           <MessageCircle className="w-4 h-4" />
-          返信
+          {t("返信")}
         </button>
       </div>
 
@@ -385,11 +390,11 @@ function PollCommentItem({
             <div key={r.id} id={`c${r.comment_number}`} className="text-sm">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-mut text-xs">&gt;&gt;{comment.comment_number}</span>
-                <span className="font-medium">{r.name || "匿名"}</span>
+                <span className="font-medium">{r.name || t("匿名")}</span>
                 {isSageMail(r.mail) && (
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
-                    title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+                    title={t("sage（2ch互換板のスレ一覧で上がらない投稿）")}
                   >
                     sage
                   </span>
@@ -401,13 +406,15 @@ function PollCommentItem({
                 <button
                   onClick={() => onHide(r.id)}
                   className="ml-auto text-mut hover:text-txt transition"
-                  title="非表示"
+                  title={t("非表示")}
                 >
                   <EyeOff className="w-3.5 h-3.5" />
                 </button>
               </div>
               {r.voted_option && (
-                <p className="text-xs font-bold text-x mb-1">「{r.voted_option}」に投票しました！</p>
+                <p className="text-xs font-bold text-x mb-1">
+                  {t("「{option}」に投票しました！", { option: r.voted_option })}
+                </p>
               )}
               <CommentText content={r.content} className="whitespace-pre-wrap" />
             </div>
@@ -422,14 +429,14 @@ function PollCommentItem({
               type="text"
               value={replyName}
               onChange={(e) => setReplyName(e.target.value.slice(0, 64))}
-              placeholder="名前（任意・#でトリップ）"
+              placeholder={t("名前（任意・#でトリップ）")}
               className="w-full px-3 py-2 rounded-lg border border-line text-sm"
             />
             <input
               type="text"
               value={replyMail}
               onChange={(e) => setReplyMail(e.target.value.slice(0, 64))}
-              placeholder="メール（sageでageない）"
+              placeholder={t("メール（sageでageない）")}
               className="w-full px-3 py-2 rounded-lg border border-line text-sm"
             />
           </div>
@@ -445,14 +452,14 @@ function PollCommentItem({
               disabled={busy}
               className="px-4 py-1.5 rounded-lg bg-x text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
             >
-              返信を投稿
+              {t("返信を投稿")}
             </button>
             <button
               type="button"
               onClick={() => setShowReply(false)}
               className="px-4 py-1.5 rounded-lg bg-panel border border-line text-sm text-mut hover:text-txt transition"
             >
-              キャンセル
+              {t("キャンセル")}
             </button>
           </div>
         </form>

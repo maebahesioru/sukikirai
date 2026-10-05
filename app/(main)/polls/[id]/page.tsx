@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { checkPollVote, getPeopleByIds, getPoll } from "@/lib/queries";
 import { formatJST } from "@/lib/format";
+import { getServerT } from "@/lib/i18n-server";
 import PollVoteSection from "./PollVoteSection";
 import PollComments from "./PollComments";
 
@@ -14,15 +15,16 @@ type Params = { params: Promise<{ id: string }> };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const t = await getServerT();
   const { id } = await params;
-  if (!UUID_RE.test(id)) return { title: "投票トーク" };
+  if (!UUID_RE.test(id)) return { title: t("投票トーク") };
   const poll = await getPoll(id);
   return {
-    title: poll ? poll.title : "投票トーク",
+    title: poll ? poll.title : t("投票トーク"),
     description: poll?.description ?? undefined,
     alternates: { canonical: `/polls/${id}` },
     openGraph: {
-      title: poll ? poll.title : "投票トーク",
+      title: poll ? poll.title : t("投票トーク"),
       description: poll?.description ?? undefined,
       images: ["/og.png"],
     },
@@ -30,6 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function PollPage({ params }: Params) {
+  const t = await getServerT();
   const { id } = await params;
   if (!UUID_RE.test(id)) notFound();
   const poll = await getPoll(id);
@@ -47,7 +50,7 @@ export default async function PollPage({ params }: Params) {
       <section className="bg-panel border border-line rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs px-2 py-0.5 rounded-full bg-goodsoft text-good">
-            投票トーク
+            {t("投票トーク")}
           </span>
         </div>
         <h1 className="text-2xl font-black leading-snug">{poll.title}</h1>
@@ -55,11 +58,11 @@ export default async function PollPage({ params }: Params) {
           <p className="text-sm text-mut mt-2 leading-relaxed whitespace-pre-wrap">{poll.description}</p>
         )}
         <p className="text-xs text-mut mt-3">
-          {formatJST(poll.created_at)} 作成 ・ {poll.total_votes}票
+          {t("{date} 作成 ・ {n}票", { date: formatJST(poll.created_at), n: poll.total_votes })}
         </p>
         {related.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            <span className="text-xs text-mut self-center">関連:</span>
+            <span className="text-xs text-mut self-center">{t("関連:")}</span>
             {related.map((p) => (
               <Link
                 key={p.id}
@@ -84,7 +87,7 @@ export default async function PollPage({ params }: Params) {
       <PollComments pollId={poll.id} />
 
       <p className="text-center text-xs text-mut">
-        投票は1人1回まで（変更できません） ・ コメントは誰でも書き込めます
+        {t("投票は1人1回まで（変更できません） ・ コメントは誰でも書き込めます")}
       </p>
     </div>
   );

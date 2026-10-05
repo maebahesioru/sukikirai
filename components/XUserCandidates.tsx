@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, ChevronRight, Loader2 } from "lucide-react";
 import Avatar from "./Avatar";
 import type { XUserCandidate } from "@/lib/types";
+import { useT } from "@/lib/i18n-client";
 
 function fmtF(f: number) {
   return f >= 10000 ? `${(f / 10000).toFixed(1)}万` : f.toLocaleString();
@@ -18,6 +19,7 @@ export default function XUserCandidates({
   candidates: XUserCandidate[];
 }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState<string | null>(null);
 
   const add = async (c: XUserCandidate) => {
@@ -37,10 +39,10 @@ export default function XUserCandidates({
       if (data.success) {
         router.push(`/person/${data.person.id}`);
       } else {
-        alert(data.error || "追加に失敗しました");
+        alert(data.error || t("追加に失敗しました"));
       }
     } catch {
-      alert("追加に失敗しました");
+      alert(t("追加に失敗しました"));
     } finally {
       setBusy(null);
     }
@@ -48,9 +50,9 @@ export default function XUserCandidates({
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-5">
-      <h2 className="font-bold mb-1">Xで「{query}」の候補が見つかりました</h2>
+      <h2 className="font-bold mb-1">{t("Xで「{q}」の候補が見つかりました", { q: query })}</h2>
       <p className="text-xs text-mut mb-4">
-        この中の人ですか？ 選ぶとページを追加して移動します（登録済みならそのまま開きます）
+        {t("この中の人ですか？ 選ぶとページを追加して移動します（登録済みならそのまま開きます）")}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {candidates.map((c) => (
@@ -66,12 +68,12 @@ export default function XUserCandidates({
                 <span className="font-bold text-sm truncate">{c.name}</span>
                 {c.registered && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-xsoft text-x">
-                    登録済み
+                    {t("登録済み")}
                   </span>
                 )}
               </div>
               <p className="text-xs text-mut">
-                @{c.handle}・フォロワー{fmtF(c.followers)}
+                {t("@{handle}・フォロワー{n}", { handle: c.handle, n: fmtF(c.followers) })}
               </p>
               {c.description.trim() && (
                 <p className="text-xs text-mut line-clamp-2 mt-0.5 leading-snug whitespace-pre-wrap">

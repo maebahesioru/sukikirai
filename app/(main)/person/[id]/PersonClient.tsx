@@ -9,6 +9,7 @@ import EvalPanel from "@/components/EvalPanel";
 import ShareButtons from "@/components/ShareButtons";
 import CommentSection from "@/components/CommentSection";
 import type { EvalStats, Person, PollWithOptions, VoteStats } from "@/lib/types";
+import { useT } from "@/lib/i18n-client";
 
 type RankInfo = { rank: number; total: number } | null;
 
@@ -35,6 +36,7 @@ export default function PersonClient({
   relatedPolls: PollWithOptions[];
   likeRank: RankInfo;
 }) {
+  const t = useT();
   const [voteInfo, setVoteInfo] = useState<VoteInfo>({
     voted: initialVoted,
     voteType: initialVoteType,
@@ -91,32 +93,32 @@ export default function PersonClient({
                 ※{" "}
                 {person.x_status === "reused"
                   ? person.handle
-                    ? `@${person.handle} は現在、別のアカウントが使用されています（ID変更後に解放された可能性）。`
-                    : "このIDは現在、別のアカウントが使用されています。"
-                  : "このXアカウントは現在確認できません（凍結・削除・ID変更など）。"}
-                このページはアーカイブされました。
+                    ? t("@{handle} は現在、別のアカウントが使用されています（ID変更後に解放された可能性）。", { handle: person.handle })
+                    : t("このIDは現在、別のアカウントが使用されています。")
+                  : t("このXアカウントは現在確認できません（凍結・削除・ID変更など）。")}
+                {t("このページはアーカイブされました。")}
                 {person.x_checked_at && (
                   <span>
-                    （最終確認: {String(person.x_checked_at).slice(0, 10).replace(/-/g, "/")}）
+                    {t("（最終確認: {date}）", { date: String(person.x_checked_at).slice(0, 10).replace(/-/g, "/") })}
                   </span>
                 )}
               </div>
             )}
           </div>
           <div className="text-center shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-panel2 border border-line">
-            <div className="text-xs text-mut mb-1">総合評価</div>
+            <div className="text-xs text-mut mb-1">{t("総合評価")}</div>
             <div className="text-3xl font-black text-gold">{overall != null ? overall.toFixed(1) : "—"}</div>
-            <div className="text-[11px] text-mut mt-1">回答 {evalStats.total}人</div>
+            <div className="text-[11px] text-mut mt-1">{t("回答 {n}人", { n: evalStats.total })}</div>
             {likeRank && (
               <div className="text-[11px] text-mut mt-0.5">
-                好き率 {likeRank.rank}位 / {likeRank.total}人
+                {t("好き率 {rank}位 / {total}人", { rank: likeRank.rank, total: likeRank.total })}
               </div>
             )}
             <Link
               href={`/compare?a=${person.id}`}
               className="mt-2 inline-block text-xs px-3 py-1 rounded-lg border border-line text-mut hover:text-txt hover:border-line2 transition"
             >
-              比較する
+              {t("比較する")}
             </Link>
           </div>
         </div>
@@ -158,26 +160,26 @@ export default function PersonClient({
         <section className="bg-panel border border-line rounded-2xl p-5">
           <h2 className="font-bold mb-1 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-gold" />
-            タグ内好感度ランキング
+            {t("タグ内好感度ランキング")}
           </h2>
           <p className="text-xs text-mut mb-4">
-            「{person.tags.slice(0, 2).join("・")}」タグを持つ人物の中での好き率
+            {t("「{tags}」タグを持つ人物の中での好き率", { tags: person.tags.slice(0, 2).join("・") })}
           </p>
           <div className="space-y-3">
-            {tagRanking.map((t, i) => (
-              <div key={t.id} className="flex items-center gap-3">
+            {tagRanking.map((t2, i) => (
+              <div key={t2.id} className="flex items-center gap-3">
                 <span className={`w-6 text-center text-sm font-black ${i === 0 ? "text-gold" : "text-mut/70"}`}>
                   {i + 1}
                 </span>
-                <Link href={`/person/${t.id}`} className="flex-1 text-sm truncate hover:text-x transition">
-                  {t.name}
+                <Link href={`/person/${t2.id}`} className="flex-1 text-sm truncate hover:text-x transition">
+                  {t2.name}
                 </Link>
                 <div className="flex items-center gap-2 w-36 shrink-0">
                   <div className="flex-1 bg-line rounded-full h-1.5 overflow-hidden flex">
-                    <div className="bg-like h-full" style={{ width: `${t.likePct}%` }} />
-                    <div className="bg-dislike h-full" style={{ width: `${100 - t.likePct}%` }} />
+                    <div className="bg-like h-full" style={{ width: `${t2.likePct}%` }} />
+                    <div className="bg-dislike h-full" style={{ width: `${100 - t2.likePct}%` }} />
                   </div>
-                  <span className="text-xs font-bold text-like w-12 text-right">{t.likePct.toFixed(0)}%</span>
+                  <span className="text-xs font-bold text-like w-12 text-right">{t2.likePct.toFixed(0)}%</span>
                 </div>
               </div>
             ))}
@@ -190,7 +192,7 @@ export default function PersonClient({
         <section className="bg-panel border border-line rounded-2xl p-5">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <Users className="w-4 h-4 text-x" />
-            関連人物
+            {t("関連人物")}
           </h2>
           <div className="flex flex-wrap gap-2">
             {relatedPeople.map((p) => (
@@ -212,7 +214,7 @@ export default function PersonClient({
         <section className="bg-panel border border-line rounded-2xl p-5">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <Vote className="w-4 h-4 text-good" />
-            関連する投票トーク
+            {t("関連する投票トーク")}
           </h2>
           <div className="space-y-2">
             {relatedPolls.map((poll) => (
@@ -223,7 +225,7 @@ export default function PersonClient({
               >
                 <p className="font-bold text-sm truncate">{poll.title}</p>
                 {poll.description && <p className="text-xs text-mut truncate mt-0.5">{poll.description}</p>}
-                <p className="text-xs text-mut mt-1">{poll.total_votes}票</p>
+                <p className="text-xs text-mut mt-1">{t("{n}票", { n: poll.total_votes })}</p>
               </Link>
             ))}
           </div>

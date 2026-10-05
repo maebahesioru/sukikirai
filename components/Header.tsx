@@ -6,7 +6,9 @@ import { useState } from "react";
 import { Heart, Menu, X } from "lucide-react";
 import { SITE_NAME } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import SearchSuggest from "@/components/SearchSuggest";
+import { useT } from "@/lib/i18n-client";
 
 const NAV = [
   { href: "/ranking/popularity", label: "ランキング" },
@@ -20,6 +22,7 @@ const NAV = [
 export default function Header() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const t = useT();
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-ink/85 backdrop-blur">
@@ -29,7 +32,7 @@ export default function Header() {
             <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-like to-dislike flex items-center justify-center">
               <Heart className="w-4 h-4 text-white fill-white" />
             </span>
-            <span className="font-bold text-lg hidden sm:block">{SITE_NAME}</span>
+            <span className="font-bold text-lg hidden sm:block">{t(SITE_NAME)}</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 ml-2">
@@ -39,7 +42,7 @@ export default function Header() {
                 href={n.href}
                 className="px-3 py-1.5 rounded-full text-sm text-mut hover:text-txt hover:bg-panel2 transition"
               >
-                {n.label}
+                {t(n.label)}
               </Link>
             ))}
           </nav>
@@ -47,19 +50,20 @@ export default function Header() {
           <SearchSuggest
             formClassName="flex-1 min-w-0 ml-auto max-w-xs"
             inputClassName="w-full pl-9 pr-3 py-2 rounded-full border border-line bg-panel2 text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
-            placeholder="@ID・名前で検索"
+            placeholder={t("@ID・名前で検索")}
             onSubmit={(query) => {
               setOpen(false);
               router.push(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
             }}
           />
 
+          <LanguageSwitcher />
           <ThemeToggle />
 
           <button
             onClick={() => setOpen(!open)}
             className="md:hidden p-2 text-mut hover:text-txt"
-            aria-label="メニュー"
+            aria-label={t("メニュー")}
           >
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -74,7 +78,7 @@ export default function Header() {
                 onClick={() => setOpen(false)}
                 className="px-3 py-2 rounded-lg text-sm text-mut hover:text-txt hover:bg-panel2 transition"
               >
-                {n.label}
+                {t(n.label)}
               </Link>
             ))}
           </nav>

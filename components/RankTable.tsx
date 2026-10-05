@@ -1,22 +1,24 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
 import type { RankingRow } from "@/lib/types";
+import { getServerT } from "@/lib/i18n-server";
 
 export type RankKind = "popularity" | "unpopular" | "trending" | "daily" | "score" | "lowscore";
 
-export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: RankKind }) {
+export default async function RankTable({ rows, kind }: { rows: RankingRow[]; kind: RankKind }) {
+  const t = await getServerT();
   return (
     <div className="space-y-2">
       {rows.map((p, i) => {
         const rank = i + 1;
         let metric: React.ReactNode;
         if (kind === "trending" || kind === "daily") {
-          metric = <span className="text-sm font-bold text-x">{p.recentVotes ?? 0}票</span>;
+          metric = <span className="text-sm font-bold text-x">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>;
         } else if (kind === "score" || kind === "lowscore") {
           metric = (
             <span className={`text-sm font-bold ${kind === "score" ? "text-gold" : "text-bad"}`}>
               {p.overall != null ? p.overall.toFixed(2) : "—"}
-              <span className="text-xs text-mut ml-1">（{p.evalCount ?? 0}人）</span>
+              <span className="text-xs text-mut ml-1">{t("（{n}人）", { n: p.evalCount ?? 0 })}</span>
             </span>
           );
         } else {
@@ -34,7 +36,7 @@ export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: Ra
                 <div className="bg-like h-full" style={{ width: `${p.likePct}%` }} />
                 <div className="bg-dislike h-full" style={{ width: `${100 - p.likePct}%` }} />
               </div>
-              <span className="text-xs text-mut w-14 text-right">{p.total}票</span>
+              <span className="text-xs text-mut w-14 text-right">{t("{n}票", { n: p.total })}</span>
             </div>
           );
         }
@@ -68,7 +70,7 @@ export default function RankTable({ rows, kind }: { rows: RankingRow[]; kind: Ra
         );
       })}
       {rows.length === 0 && (
-        <p className="text-center text-mut py-10">まだデータがありません</p>
+        <p className="text-center text-mut py-10">{t("まだデータがありません")}</p>
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
+import { getServerT } from "@/lib/i18n-server";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const t = await getServerT();
   const [stats, trending, daily, recent, newPeople, scoreTop] = await Promise.all([
     getHomeStats(),
     getRanking("trending", 10),
@@ -42,11 +44,11 @@ export default async function HomePage() {
           <div className="flex items-center gap-3">
             <Trophy className="w-5 h-5 text-gold shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="font-bold text-sm group-hover:text-x transition">{SOUSENKYO.title}</div>
+              <div className="font-bold text-sm group-hover:text-x transition">{t(SOUSENKYO.title)}</div>
               <div className="text-xs text-mut mt-0.5">
-                {skPhase === "before" && "10/6(火) 0:00 開幕！期間中の投票で王者を決めよう"}
-                {skPhase === "live" && "開催中！10/12(月)まで — 毎日投票で推しを押し上げよう"}
-                {skPhase === "after" && "閉幕！結果をチェック"}
+                {skPhase === "before" && t("10/6(火) 0:00 開幕！期間中の投票で王者を決めよう")}
+                {skPhase === "live" && t("開催中！10/12(月)まで — 毎日投票で推しを押し上げよう")}
+                {skPhase === "after" && t("閉幕！結果をチェック")}
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-mut shrink-0" />
@@ -59,26 +61,28 @@ export default async function HomePage() {
           <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-dislike/20 blur-3xl" />
           <div className="relative">
             <h1 className="text-3xl md:text-5xl font-black leading-tight">
-              あのツイッタラーのこと、{" "}
+              {t("あのツイッタラーのこと、")}{" "}
               <span className="bg-gradient-to-r from-like to-dislike bg-clip-text text-transparent">
-                好き？嫌い？
+                {t("好き？嫌い？")}
               </span>
             </h1>
             <p className="text-mut mt-4 max-w-xl leading-relaxed text-sm md:text-base">
-              X全体のツイッタラーたちの「好き嫌い」と「8項目評価」をみんなで書き込める匿名サイトです。@IDで検索すると未登録のXユーザーもその場で追加できます。
+              {t(
+                "X全体のツイッタラーたちの「好き嫌い」と「8項目評価」をみんなで書き込める匿名サイトです。@IDで検索すると未登録のXユーザーもその場で追加できます。"
+              )}
             </p>
             <div className="mt-6">
               <HeroSearch />
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-3 mt-7 text-sm">
-              <Stat label="登録人物" value={num(stats.people)} />
-              <Stat label="総投票数" value={num(stats.votes)} />
-              <Stat label="コメント" value={num(stats.comments)} />
-              <Stat label="今日の投票" value={num(stats.today_votes)} accent />
+              <Stat label={t("登録人物")} value={num(stats.people)} />
+              <Stat label={t("総投票数")} value={num(stats.votes)} />
+              <Stat label={t("コメント")} value={num(stats.comments)} />
+              <Stat label={t("今日の投票")} value={num(stats.today_votes)} accent />
             </div>
             <div className="mt-5">
               <Link href="/today" className="inline-flex items-center gap-1.5 text-sm text-x hover:underline font-medium">
-                今日のまとめ（{todayLabel}）を見る <ArrowRight className="w-3.5 h-3.5" />
+                {t("今日のまとめ（{date}）を見る", { date: todayLabel })} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -86,10 +90,10 @@ export default async function HomePage() {
 
         {/* Ranking shortcuts */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <RankLink href="/ranking/popularity" icon={<ThumbsUp className="w-5 h-5" />} title="好感度" desc="好き率が高い人" color="text-like" />
-          <RankLink href="/ranking/unpopular" icon={<ThumbsDown className="w-5 h-5" />} title="不人気" desc="嫌い率が高い人" color="text-dislike" />
-          <RankLink href="/ranking/trending" icon={<TrendingUp className="w-5 h-5" />} title="トレンド" desc="今週の急上昇" color="text-x" />
-          <RankLink href="/ranking/score" icon={<Star className="w-5 h-5" />} title="総合評価" desc="8項目の平均点" color="text-gold" />
+          <RankLink href="/ranking/popularity" icon={<ThumbsUp className="w-5 h-5" />} title={t("好感度")} desc={t("好き率が高い人")} color="text-like" />
+          <RankLink href="/ranking/unpopular" icon={<ThumbsDown className="w-5 h-5" />} title={t("不人気")} desc={t("嫌い率が高い人")} color="text-dislike" />
+          <RankLink href="/ranking/trending" icon={<TrendingUp className="w-5 h-5" />} title={t("トレンド")} desc={t("今週の急上昇")} color="text-x" />
+          <RankLink href="/ranking/score" icon={<Star className="w-5 h-5" />} title={t("総合評価")} desc={t("8項目の平均点")} color="text-gold" />
         </section>
 
         {/* Trending (24h) */}
@@ -97,10 +101,10 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-x" />
-              24時間の急上昇
+              {t("24時間の急上昇")}
             </h2>
             <Link href="/ranking/daily" className="text-xs text-x hover:underline flex items-center gap-0.5">
-              もっと見る <ArrowRight className="w-3 h-3" />
+              {t("もっと見る")} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-1.5">
@@ -119,19 +123,19 @@ export default async function HomePage() {
                 </span>
                 <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
                 <span className="text-sm font-medium truncate flex-1">{p.name}</span>
-                <span className="text-xs font-bold text-x shrink-0">{p.recentVotes ?? 0}票</span>
+                <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
               </Link>
             ))}
-            {daily.length === 0 && <p className="text-sm text-mut text-center py-4">まだデータがありません</p>}
+            {daily.length === 0 && <p className="text-sm text-mut text-center py-4">{t("まだデータがありません")}</p>}
           </div>
         </section>
 
         {/* New people */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="font-bold">最近追加されたXユーザー</h2>
+            <h2 className="font-bold">{t("最近追加されたXユーザー")}</h2>
             <Link href="/people?sort=new" className="text-xs text-x hover:underline flex items-center gap-0.5">
-              一覧へ <ArrowRight className="w-3 h-3" />
+              {t("一覧へ")} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -147,10 +151,10 @@ export default async function HomePage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold flex items-center gap-2">
                 <Star className="w-4 h-4 text-gold" />
-                総合評価ランキング
+                {t("総合評価ランキング")}
               </h2>
               <Link href="/ranking/score" className="text-xs text-x hover:underline flex items-center gap-0.5">
-                もっと見る <ArrowRight className="w-3 h-3" />
+                {t("もっと見る")} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="space-y-1.5">

@@ -16,6 +16,7 @@ import ReportModal from "./ReportModal";
 import CommentText from "./CommentText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
+import { useT } from "@/lib/i18n-client";
 
 type FilterType = "all" | "like" | "dislike";
 type SortType = "newest" | "popular";
@@ -49,6 +50,7 @@ export default function CommentSection({
   const [sort, setSort] = useState<SortType>("newest");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const t = useT();
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
@@ -82,7 +84,7 @@ export default function CommentSection({
         ))}
         {comments.length === 0 && !loading && (
           <p className="text-center text-mut py-8 text-sm">
-            {archived ? "コメントはありません" : "まだコメントがありません。最初のコメントを書いてみよう！"}
+            {archived ? t("コメントはありません") : t("まだコメントがありません。最初のコメントを書いてみよう！")}
           </p>
         )}
       </div>
@@ -94,7 +96,7 @@ export default function CommentSection({
             disabled={page === 1}
             className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
           >
-            前へ
+            {t("前へ")}
           </button>
           <span className="text-sm text-mut">
             {page} / {totalPages}
@@ -104,7 +106,7 @@ export default function CommentSection({
             disabled={page === totalPages}
             className="px-4 py-2 rounded-lg bg-panel2 border border-line disabled:opacity-40 hover:border-line2 transition text-sm"
           >
-            次へ
+            {t("次へ")}
           </button>
         </div>
       )}
@@ -114,7 +116,7 @@ export default function CommentSection({
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-        <h2 className="text-xl font-bold">コメント（{total}）</h2>
+        <h2 className="text-xl font-bold">{t("コメント（{n}）", { n: total })}</h2>
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
@@ -139,10 +141,10 @@ export default function CommentSection({
                   : "bg-panel2 text-mut border-line hover:text-txt"
               }`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
-          <span className="text-mut text-sm ml-1">並び:</span>
+          <span className="text-mut text-sm ml-1">{t("並び:")}</span>
           <button
             onClick={() => {
               setSort("newest");
@@ -152,7 +154,7 @@ export default function CommentSection({
               sort === "newest" ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line"
             }`}
           >
-            新着順
+            {t("新着順")}
           </button>
           <button
             onClick={() => {
@@ -163,7 +165,7 @@ export default function CommentSection({
               sort === "popular" ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line"
             }`}
           >
-            人気順
+            {t("人気順")}
           </button>
         </div>
       </div>
@@ -171,13 +173,13 @@ export default function CommentSection({
       {archived ? (
         <>
           <div className="bg-panel2 border border-line rounded-xl p-3 mb-4 text-center text-xs text-mut">
-            このページはアーカイブされたため、コメントの新規投稿はできません
+            {t("このページはアーカイブされたため、コメントの新規投稿はできません")}
           </div>
           {list}
         </>
       ) : !hasVoted ? (
         <div className="bg-panel2 border border-line rounded-xl p-6 text-center text-mut">
-          コメントを見るには、まず上の「好き / 嫌い」に投票してください
+          {t("コメントを見るには、まず上の「好き / 嫌い」に投票してください")}
         </div>
       ) : (
         <>
@@ -213,6 +215,7 @@ function CommentForm({
   const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
   const [tweet, setTweet] = useState(true);
   const [busy, setBusy] = useState(false);
+  const t = useT();
 
   // 自分の投票（好き/嫌い）が判明しているときはデフォルトを合わせる（手動変更後は尊重）
   useEffect(() => {
@@ -224,16 +227,16 @@ function CommentForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      alert("コメントを入力してください");
+      alert(t("コメントを入力してください"));
       return;
     }
     if (count > MAX_COMMENT_CHARS) {
-      alert(`コメントは全角${Math.floor(MAX_COMMENT_CHARS / 2)}文字（半角${MAX_COMMENT_CHARS}文字）以内です`);
+      alert(t("コメントは全角{n}文字（半角{m}文字）以内です", { n: Math.floor(MAX_COMMENT_CHARS / 2), m: MAX_COMMENT_CHARS }));
       return;
     }
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("投稿には利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("投稿には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -253,11 +256,15 @@ function CommentForm({
       });
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || "投稿に失敗しました");
+        alert(data.error || t("投稿に失敗しました"));
         return;
       }
       if (tweet && !parentCommentId) {
-        const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName ?? ""}へのコメントを投稿しました！\n\n「${content.trim()}」\n\n#ツイッタラー世論調査`;
+        const text = t("【{side}】{name}へのコメントを投稿しました！\n\n「{content}」\n\n#ツイッタラー世論調査", {
+          side: t(voteType === "like" ? "好き派" : "嫌い派"),
+          name: personName ?? "",
+          content: content.trim(),
+        });
         window.open(
           `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
           "_blank"
@@ -265,10 +272,10 @@ function CommentForm({
       }
       setName("");
       setContent(parentNumber ? `>>${parentNumber}\n` : "");
-      if (!parentCommentId) alert("コメントを投稿しました");
+      if (!parentCommentId) alert(t("コメントを投稿しました"));
       onPosted();
     } catch {
-      alert("投稿に失敗しました");
+      alert(t("投稿に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -277,23 +284,23 @@ function CommentForm({
   return (
     <form onSubmit={submit} className="bg-panel2 border border-line rounded-xl p-4 space-y-3">
       {parentNumber && (
-        <p className="text-sm font-bold text-mut">&gt;&gt;{parentNumber} への返信</p>
+        <p className="text-sm font-bold text-mut">{t(">>{n} への返信", { n: parentNumber })}</p>
       )}
       <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 64))}
-          placeholder="名前（任意・#でトリップ）"
-          title="「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます"
+          placeholder={t("名前（任意・#でトリップ）")}
+          title={t("「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます")}
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <input
           type="text"
           value={mail}
           onChange={(e) => setMail(e.target.value.slice(0, 64))}
-          placeholder="メール（sageでageない）"
-          title="sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります"
+          placeholder={t("メール（sageでageない）")}
+          title={t("sage と入力すると2ch互換板のスレ一覧でこのスレが上がらなくなります")}
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
       </div>
@@ -311,7 +318,7 @@ function CommentForm({
               : "bg-panel text-mut border border-line hover:text-txt"
           }`}
         >
-          好き派として投稿
+          {t("好き派として投稿")}
         </button>
         <button
           type="button"
@@ -325,7 +332,7 @@ function CommentForm({
               : "bg-panel text-mut border border-line hover:text-txt"
           }`}
         >
-          嫌い派として投稿
+          {t("嫌い派として投稿")}
         </button>
       </div>
 
@@ -333,12 +340,12 @@ function CommentForm({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={parentNumber ? `>>${parentNumber}\n返信内容を入力...` : "コメントを入力...（全角140文字まで）"}
+          placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("コメントを入力...（全角140文字まで）")}
           rows={parentNumber ? 3 : 4}
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-mut">URLの投稿はできません</p>
+          <p className="text-xs text-mut">{t("URLの投稿はできません")}</p>
           <span className={`text-xs ${count > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
             {count} / {MAX_COMMENT_CHARS}
           </span>
@@ -353,7 +360,7 @@ function CommentForm({
             onChange={(e) => setTweet(e.target.checked)}
             className="w-4 h-4 accent-sky-500"
           />
-          Xでツイートする
+          {t("Xでツイートする")}
         </label>
       )}
 
@@ -365,7 +372,7 @@ function CommentForm({
         }`}
       >
         <Send className="w-4 h-4" />
-        {busy ? "投稿中..." : parentCommentId ? "返信を投稿" : "コメントを投稿"}
+        {busy ? t("投稿中...") : parentCommentId ? t("返信を投稿") : t("コメントを投稿")}
       </button>
     </form>
   );
@@ -390,6 +397,7 @@ function CommentItem({
   const [showReply, setShowReply] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportBusy, setReportBusy] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     setLocal(comment);
@@ -428,7 +436,7 @@ function CommentItem({
     if (!hidden.includes(comment.id)) hidden.push(comment.id);
     localStorage.setItem("hiddenComments", JSON.stringify(hidden));
     onUpdate();
-    alert("コメントを非表示にしました");
+    alert(t("コメントを非表示にしました"));
   };
 
   const report = async (reason: ReportReason, details: string) => {
@@ -442,13 +450,13 @@ function CommentItem({
       });
       const data = await res.json();
       if (data.success) {
-        alert("通報を受け付けました。\n\nご協力ありがとうございます。");
+        alert(t("通報を受け付けました。\n\nご協力ありがとうございます。"));
         setShowReport(false);
       } else {
-        alert(data.error || "通報に失敗しました");
+        alert(data.error || t("通報に失敗しました"));
       }
     } catch {
-      alert("通報に失敗しました");
+      alert(t("通報に失敗しました"));
     } finally {
       setReportBusy(false);
     }
@@ -459,7 +467,7 @@ function CommentItem({
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 flex-wrap text-sm">
           <span className="text-mut text-xs">#{comment.comment_number}</span>
-          <span className="font-medium">{comment.name || "匿名"}</span>
+          <span className="font-medium">{comment.name || t("匿名")}</span>
           {(comment.gender || comment.age_group) && (
             <span className="text-xs text-mut">
               （{[comment.gender, comment.age_group].filter(Boolean).join("・")}）
@@ -468,7 +476,7 @@ function CommentItem({
           {isSageMail(comment.mail) && (
             <span
               className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
-              title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+              title={t("sage（2ch互換板のスレ一覧で上がらない投稿）")}
             >
               sage
             </span>
@@ -478,7 +486,7 @@ function CommentItem({
               comment.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
             }`}
           >
-            {comment.vote_type === "like" ? "好き派" : "嫌い派"}
+            {comment.vote_type === "like" ? t("好き派") : t("嫌い派")}
           </span>
           <span className="text-xs text-mut" title={timeAgo(comment.created_at)}>
             {fmtTime2ch(comment.created_at)}
@@ -487,10 +495,10 @@ function CommentItem({
         </div>
         {!locked && (
           <div className="flex gap-2 shrink-0">
-            <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title="通報">
+            <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title={t("通報")}>
               <Flag className="w-4 h-4" />
             </button>
-            <button onClick={hide} className="text-mut hover:text-txt transition" title="非表示">
+            <button onClick={hide} className="text-mut hover:text-txt transition" title={t("非表示")}>
               <EyeOff className="w-4 h-4" />
             </button>
           </div>
@@ -524,7 +532,7 @@ function CommentItem({
             className="flex items-center gap-1 text-mut hover:text-x transition"
           >
             <MessageCircle className="w-4 h-4" />
-            返信
+            {t("返信")}
           </button>
         )}
       </div>
@@ -573,6 +581,7 @@ function ReplyItem({
 }) {
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
+  const t = useT();
 
   useEffect(() => {
     setLocal(reply);
@@ -609,7 +618,7 @@ function ReplyItem({
     <div id={`c${reply.comment_number}`} className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
         <span className="text-mut text-xs">&gt;&gt;{parentNumber}</span>
-        <span className="font-medium">{reply.name || "匿名"}</span>
+        <span className="font-medium">{reply.name || t("匿名")}</span>
         {(reply.gender || reply.age_group) && (
           <span className="text-xs text-mut">
             （{[reply.gender, reply.age_group].filter(Boolean).join("・")}）
@@ -618,7 +627,7 @@ function ReplyItem({
         {isSageMail(reply.mail) && (
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
-            title="sage（2ch互換板のスレ一覧で上がらない投稿）"
+            title={t("sage（2ch互換板のスレ一覧で上がらない投稿）")}
           >
             sage
           </span>
@@ -628,7 +637,7 @@ function ReplyItem({
             reply.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
           }`}
         >
-          {reply.vote_type === "like" ? "好き派" : "嫌い派"}
+          {reply.vote_type === "like" ? t("好き派") : t("嫌い派")}
         </span>
         <span className="text-xs text-mut" title={timeAgo(reply.created_at)}>
           {fmtTime2ch(reply.created_at)}

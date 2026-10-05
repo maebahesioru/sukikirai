@@ -4,16 +4,21 @@ import { PlusCircle, Vote } from "lucide-react";
 import { getPeopleByIds, listPolls } from "@/lib/queries";
 import type { PollPersonLite } from "@/lib/pollui";
 import PollCard from "@/components/PollCard";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "投票トーク",
-  description: "みんなで作るアンケート「投票トーク」。誰でも作成・投票・コメントできます。",
-  alternates: { canonical: "/polls" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t("投票トーク"),
+    description: t("みんなで作るアンケート「投票トーク」。誰でも作成・投票・コメントできます。"),
+    alternates: { canonical: "/polls" },
+  };
+}
 
 export default async function PollsPage() {
+  const t = await getServerT();
   const polls = await listPolls(100);
 
   // 関連人物のアイコンを選択肢に自動表示するため、一覧分をまとめて取得
@@ -29,25 +34,26 @@ export default async function PollsPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Vote className="w-6 h-6 text-good" />
-            <h1 className="text-2xl font-black">投票トーク</h1>
+            <h1 className="text-2xl font-black">{t("投票トーク")}</h1>
           </div>
           <Link
             href="/polls/create"
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
           >
             <PlusCircle className="w-4 h-4" />
-            投票を作成する
+            {t("投票を作成する")}
           </Link>
         </div>
         <p className="text-sm text-mut mt-3 leading-relaxed">
-          テーマは自由。2択・3択以上のアンケートを誰でも作成できて、みんなで投票＆コメントできます。
-          関連する人物を1人以上選んで作成します（アイコンや関連表示に使われます）。
+          {t(
+            "テーマは自由。2択・3択以上のアンケートを誰でも作成できて、みんなで投票＆コメントできます。関連する人物を1人以上選んで作成します（アイコンや関連表示に使われます）。"
+          )}
         </p>
       </section>
 
       {polls.length === 0 ? (
         <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
-          まだ投票トークがありません。最初の1つを作ってみよう！
+          {t("まだ投票トークがありません。最初の1つを作ってみよう！")}
         </div>
       ) : (
         <div className="space-y-4">

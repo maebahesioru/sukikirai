@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { useT } from "@/lib/i18n-client";
 
 type Result =
   | { status: "adding" }
@@ -19,6 +20,7 @@ type Result =
 
 /** 未登録の@IDをその場で追加する。追加後は結果カードを表示（自動遷移はしない） */
 export default function SearchAutoAdd({ query }: { query: string }) {
+  const t = useT();
   const [state, setState] = useState<Result>({ status: "adding" });
   const fired = useRef(false);
   const [attempt, setAttempt] = useState(0);
@@ -36,7 +38,7 @@ export default function SearchAutoAdd({ query }: { query: string }) {
         });
         const data = await res.json();
         if (!data.success) {
-          setState({ status: "error", message: data.error || "追加に失敗しました" });
+          setState({ status: "error", message: data.error || t("追加に失敗しました") });
           return;
         }
         setState({
@@ -48,7 +50,7 @@ export default function SearchAutoAdd({ query }: { query: string }) {
           created: data.created,
         });
       } catch {
-        setState({ status: "error", message: "通信エラーが発生しました" });
+        setState({ status: "error", message: t("通信エラーが発生しました") });
       }
     })();
   }, [query, attempt]);
@@ -56,11 +58,11 @@ export default function SearchAutoAdd({ query }: { query: string }) {
   if (state.status === "adding") {
     return (
       <section>
-        <h2 className="font-bold mb-3">検索結果</h2>
+        <h2 className="font-bold mb-3">{t("検索結果")}</h2>
         <div className="bg-panel border border-x/40 rounded-2xl p-8 text-center max-w-md">
           <Loader2 className="w-8 h-8 text-x animate-spin mx-auto mb-3" />
-          <p className="font-bold">「{query}」をXで検索して追加しています…</p>
-          <p className="text-xs text-mut mt-1">未登録のユーザーはその場でページを作成します</p>
+          <p className="font-bold">{t("「{q}」をXで検索して追加しています…", { q: query })}</p>
+          <p className="text-xs text-mut mt-1">{t("未登録のユーザーはその場でページを作成します")}</p>
         </div>
       </section>
     );
@@ -69,7 +71,7 @@ export default function SearchAutoAdd({ query }: { query: string }) {
   if (state.status === "done") {
     return (
       <section>
-        <h2 className="font-bold mb-3">検索結果</h2>
+        <h2 className="font-bold mb-3">{t("検索結果")}</h2>
         <div className="max-w-md">
           <Link
             href={`/person/${state.id}`}
@@ -84,10 +86,11 @@ export default function SearchAutoAdd({ query }: { query: string }) {
                 </div>
                 {state.handle && <div className="text-xs text-mut truncate">@{state.handle}</div>}
               </div>
-              <span className="text-xs text-x shrink-0">ページを見る →</span>
+              <span className="text-xs text-x shrink-0">{t("ページを見る →")}</span>
             </div>
             <p className="text-xs text-good mt-2">
-              {state.created ? "未登録だったので追加しました" : "登録済みでした"}（クリックでページを開きます）
+              {state.created ? t("未登録だったので追加しました") : t("登録済みでした")}
+              {t("（クリックでページを開きます）")}
             </p>
           </Link>
         </div>
@@ -97,10 +100,10 @@ export default function SearchAutoAdd({ query }: { query: string }) {
 
   return (
     <section>
-      <h2 className="font-bold mb-3">検索結果</h2>
+      <h2 className="font-bold mb-3">{t("検索結果")}</h2>
       <div className="bg-panel border border-bad/40 rounded-2xl p-6 text-center max-w-md">
         <AlertTriangle className="w-8 h-8 text-bad mx-auto mb-3" />
-        <p className="font-bold mb-1">追加できませんでした</p>
+        <p className="font-bold mb-1">{t("追加できませんでした")}</p>
         <p className="text-sm text-mut mb-4">{state.message}</p>
         <button
           onClick={() => {
@@ -110,7 +113,7 @@ export default function SearchAutoAdd({ query }: { query: string }) {
           }}
           className="px-5 py-2 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
         >
-          もう一度試す
+          {t("もう一度試す")}
         </button>
       </div>
     </section>

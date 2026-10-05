@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { getAllTags, getPeople, type PeopleSort } from "@/lib/queries";
 import PersonCard from "@/components/PersonCard";
 import { CATEGORIES } from "@/lib/constants";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ function one(v: string | string[] | undefined): string {
 }
 
 export default async function PeoplePage({ searchParams }: { searchParams: SP }) {
+  const t = await getServerT();
   const sp = await searchParams;
   const q = one(sp.q);
   const tag = one(sp.tag);
@@ -57,9 +59,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
   return (
     <div className="space-y-5">
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h1 className="text-2xl font-black mb-1">人物一覧</h1>
+        <h1 className="text-2xl font-black mb-1">{t("人物一覧")}</h1>
         <p className="text-sm text-mut mb-4">
-          登録されている全{total}人を表示中。XのID（@xxx）を検索すると新しいユーザーも追加できます。
+          {t("登録されている全{n}人を表示中。XのID（@xxx）を検索すると新しいユーザーも追加できます。", { n: total })}
         </p>
         <form method="get" action="/people" className="flex gap-2 max-w-lg">
           <div className="relative flex-1">
@@ -68,7 +70,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
               type="text"
               name="q"
               defaultValue={q}
-              placeholder="名前・IDで検索"
+              placeholder={t("名前・IDで検索")}
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
             />
           </div>
@@ -76,7 +78,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
           {cat && <input type="hidden" name="cat" value={cat} />}
           {sort !== "like" && <input type="hidden" name="sort" value={sort} />}
           <button type="submit" className="px-4 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition">
-            検索
+            {t("検索")}
           </button>
         </form>
       </section>
@@ -84,13 +86,13 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
         <aside className="lg:col-span-1 space-y-4">
           <div className="bg-panel border border-line rounded-2xl p-4">
-            <h2 className="font-bold text-sm mb-2">カテゴリ</h2>
+            <h2 className="font-bold text-sm mb-2">{t("カテゴリ")}</h2>
             <div className="flex flex-col gap-0.5 text-sm">
               <Link
                 href={href({ cat: "", page: "1" })}
                 className={`px-2.5 py-1.5 rounded-lg transition ${!cat ? "bg-xsoft text-x font-bold" : "text-mut hover:text-txt hover:bg-panel2"}`}
               >
-                すべて
+                {t("すべて")}
               </Link>
               {CATEGORIES.map((c) => (
                 <Link
@@ -98,14 +100,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
                   href={href({ cat: c, page: "1" })}
                   className={`px-2.5 py-1.5 rounded-lg transition ${cat === c ? "bg-xsoft text-x font-bold" : "text-mut hover:text-txt hover:bg-panel2"}`}
                 >
-                  {c}
+                  {t(c)}
                 </Link>
               ))}
             </div>
           </div>
 
           <div className="bg-panel border border-line rounded-2xl p-4">
-            <h2 className="font-bold text-sm mb-2">並び替え</h2>
+            <h2 className="font-bold text-sm mb-2">{t("並び替え")}</h2>
             <div className="flex flex-col gap-0.5 text-sm">
               {SORTS.map((s) => (
                 <Link
@@ -113,14 +115,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
                   href={href({ sort: s.key, page: "1" })}
                   className={`px-2.5 py-1.5 rounded-lg transition ${sort === s.key ? "bg-xsoft text-x font-bold" : "text-mut hover:text-txt hover:bg-panel2"}`}
                 >
-                  {s.label}
+                  {t(s.label)}
                 </Link>
               ))}
             </div>
           </div>
 
           <div className="bg-panel border border-line rounded-2xl p-4">
-            <h2 className="font-bold text-sm mb-2">タグ</h2>
+            <h2 className="font-bold text-sm mb-2">{t("タグ")}</h2>
             <div className="flex flex-wrap gap-1.5">
               <Link
                 href={href({ tag: "", page: "1" })}
@@ -128,19 +130,19 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
                   !tag ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
                 }`}
               >
-                すべて
+                {t("すべて")}
               </Link>
-              {tags.slice(0, 40).map((t) => (
+              {tags.slice(0, 40).map((tg) => (
                 <Link
-                  key={t.tag}
-                  href={`/tag/${encodeURIComponent(t.tag)}`}
+                  key={tg.tag}
+                  href={`/tag/${encodeURIComponent(tg.tag)}`}
                   className={`text-xs px-2.5 py-1 rounded-full border transition ${
-                    tag === t.tag
+                    tag === tg.tag
                       ? "bg-x text-white border-x"
                       : "bg-panel2 text-mut border-line hover:text-txt"
                   }`}
                 >
-                  {t.tag}（{t.count}）
+                  {tg.tag}{t("（{n}）", { n: tg.count })}
                 </Link>
               ))}
             </div>
@@ -149,15 +151,15 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
 
         <div className="lg:col-span-3">
           <div className="text-sm text-mut mb-3">
-            {q && <>「{q}」の検索結果：</>}
-            {total}人{totalPages > 1 && `（${page}/${totalPages}ページ）`}
+            {q && <>{t("「{q}」の検索結果：", { q })}</>}
+            {t("{n}人", { n: total })}{totalPages > 1 && t("（{page}/{total}ページ）", { page, total: totalPages })}
           </div>
           {rows.length === 0 ? (
             <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
-              該当する人物が見つかりませんでした。
+              {t("該当する人物が見つかりませんでした。")}
               <br />
               <Link href="/search" className="text-x hover:underline">
-                Xユーザーを検索・追加する
+                {t("Xユーザーを検索・追加する")}
               </Link>
             </div>
           ) : (
@@ -172,7 +174,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
             <div className="flex justify-center items-center gap-3 mt-6">
               {page > 1 && (
                 <Link href={href({ page: String(page - 1) })} className="px-4 py-2 rounded-lg bg-panel2 border border-line text-sm hover:border-line2 transition">
-                  前へ
+                  {t("前へ")}
                 </Link>
               )}
               <span className="text-sm text-mut">
@@ -180,7 +182,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: SP })
               </span>
               {page < totalPages && (
                 <Link href={href({ page: String(page + 1) })} className="px-4 py-2 rounded-lg bg-panel2 border border-line text-sm hover:border-line2 transition">
-                  次へ
+                  {t("次へ")}
                 </Link>
               )}
             </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ImagePlus, Link2, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n-client";
 
 /**
  * 画像URL入力 ＋ ファイルアップロードの両対応フィールド。
@@ -16,6 +17,7 @@ export default function ImageUploadField({
   onChange: (v: string) => void;
   className?: string;
 }) {
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -30,10 +32,10 @@ export default function ImageUploadField({
       fd.append("file", out, out instanceof File ? f.name : "upload.webp");
       const res = await fetch("/api/uploads", { method: "POST", body: fd });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || "アップロードに失敗しました");
+      if (!data.success) throw new Error(data.error || t("アップロードに失敗しました"));
       onChange(data.url);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "アップロードに失敗しました");
+      setErr(e instanceof Error ? e.message : t("アップロードに失敗しました"));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -49,7 +51,7 @@ export default function ImageUploadField({
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value.slice(0, 500))}
-            placeholder="画像URL（任意・https://…）またはここにアップロード"
+            placeholder={t("画像URL（任意・https://…）またはここにアップロード")}
             className="w-full pl-8 pr-2 py-1.5 rounded-lg border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-xs text-mut"
           />
         </div>
@@ -64,7 +66,7 @@ export default function ImageUploadField({
           ) : (
             <ImagePlus className="w-3.5 h-3.5" />
           )}
-          {busy ? "送信中" : "アップロード"}
+          {busy ? t("送信中") : t("アップロード")}
         </button>
         <input
           ref={fileRef}
@@ -88,7 +90,7 @@ export default function ImageUploadField({
             onClick={() => onChange("")}
             className="text-xs text-mut hover:text-bad transition"
           >
-            画像を外す
+            {t("画像を外す")}
           </button>
         </div>
       )}

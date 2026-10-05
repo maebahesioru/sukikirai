@@ -4,14 +4,16 @@ import Avatar from "@/components/Avatar";
 import { findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import type { Poll, PollOption } from "@/lib/types";
 import { formatJST } from "@/lib/format";
+import { getServerT } from "@/lib/i18n-server";
 
-export default function PollCard({
+export default async function PollCard({
   poll,
   related = [],
 }: {
   poll: Poll & { options: PollOption[]; comment_count: number };
   related?: PollPersonLite[];
 }) {
+  const t = await getServerT();
   const total = poll.options.reduce((a, o) => a + Number(o.vote_count), 0);
   return (
     <Link
@@ -38,7 +40,7 @@ export default function PollCard({
                 )}
                 <span className="truncate mr-2">{o.option_text}</span>
                 <span className="text-mut shrink-0 ml-auto">
-                  {count}票（{pct.toFixed(0)}%）
+                  {t("{n}票（{pct}%）", { n: count, pct: pct.toFixed(0) })}
                 </span>
               </div>
               <div className="w-full bg-line rounded-full h-2 overflow-hidden">
@@ -48,12 +50,12 @@ export default function PollCard({
           );
         })}
         {poll.options.length > 4 && (
-          <p className="text-xs text-mut">ほか {poll.options.length - 4} 個の選択肢</p>
+          <p className="text-xs text-mut">{t("ほか {n} 個の選択肢", { n: poll.options.length - 4 })}</p>
         )}
       </div>
 
       <div className="flex items-center gap-4 text-xs text-mut mt-3">
-        <span>{total}票</span>
+        <span>{t("{n}票", { n: total })}</span>
         <span className="flex items-center gap-1">
           <MessageCircle className="w-3 h-3" />
           {poll.comment_count}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRanking, type RankingType } from "@/lib/queries";
 import RankTable from "@/components/RankTable";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,17 +22,19 @@ export async function generateMetadata({
 }: {
   params: Promise<{ type: string }>;
 }): Promise<Metadata> {
+  const t = await getServerT();
   const { type } = await params;
-  const t = TYPES[type as RankingType];
-  if (!t) return { title: "ランキング" };
+  const item = TYPES[type as RankingType];
+  if (!item) return { title: t("ランキング") };
   return {
-    title: `${t.label}ランキング`,
-    description: t.desc,
+    title: t("{label}ランキング", { label: t(item.label) }),
+    description: t(item.desc),
     alternates: { canonical: `/ranking/${type}` },
   };
 }
 
 export default async function RankingPage({ params }: { params: Promise<{ type: string }> }) {
+  const t = await getServerT();
   const { type } = await params;
   if (!(type in TYPES)) notFound();
   const kind = type as RankingType;
@@ -40,20 +43,20 @@ export default async function RankingPage({ params }: { params: Promise<{ type: 
   return (
     <div className="space-y-5">
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h1 className="text-2xl font-black mb-1">ランキング</h1>
-        <p className="text-sm text-mut">{TYPES[kind].desc}</p>
+        <h1 className="text-2xl font-black mb-1">{t("ランキング")}</h1>
+        <p className="text-sm text-mut">{t(TYPES[kind].desc)}</p>
         <div className="flex flex-wrap gap-2 mt-4">
-          {ORDER.map((t) => (
+          {ORDER.map((k) => (
             <Link
-              key={t}
-              href={`/ranking/${t}`}
+              key={k}
+              href={`/ranking/${k}`}
               className={`px-4 py-2 rounded-full text-sm font-bold border transition ${
-                t === kind
+                k === kind
                   ? "bg-x text-white border-x"
                   : "bg-panel2 text-mut border-line hover:text-txt"
               }`}
             >
-              {TYPES[t].label}
+              {t(TYPES[k].label)}
             </Link>
           ))}
         </div>
@@ -62,7 +65,7 @@ export default async function RankingPage({ params }: { params: Promise<{ type: 
       <RankTable rows={rows} kind={kind} />
 
       <p className="text-xs text-mut text-center">
-        ※ランキングは書き込みのたびに更新されます。投票は1日1回、評価も毎日書き込めます。
+        {t("※ランキングは書き込みのたびに更新されます。投票は1日1回、評価も毎日書き込めます。")}
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useT } from "@/lib/i18n-client";
 
 type Item = { name: string; url: string; category: string };
 
@@ -48,6 +49,7 @@ type Props = {
  * 画像・価格はアソシエイト規約上Creators API経由でのみ表示可能なため、ここでは使わない。
  */
 export function AmazonPicks({ variant = "inline" }: Props) {
+  const t = useT();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [closed, setClosed] = useState(false);
@@ -84,9 +86,9 @@ export function AmazonPicks({ variant = "inline" }: Props) {
     <section className="rounded-2xl border border-line bg-panel p-4 text-left">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold">おすすめ商品</h2>
+          <h2 className="text-sm font-bold">{t("おすすめ商品")}</h2>
           <span className="rounded-md border border-line px-1.5 py-0.5 text-[10px] font-medium text-mut">
-            広告
+            {t("広告")}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -96,13 +98,13 @@ export function AmazonPicks({ variant = "inline" }: Props) {
             disabled={loading}
             className="rounded-lg border border-line bg-panel2 px-3 py-1 text-xs font-medium text-mut transition hover:border-line2 hover:text-txt disabled:opacity-50"
           >
-            {loading ? "読み込み中…" : "引き直す"}
+            {loading ? t("読み込み中…") : t("引き直す")}
           </button>
           <button
             type="button"
             onClick={handleClose}
-            aria-label="広告を閉じる"
-            title="閉じる"
+            aria-label={t("広告を閉じる")}
+            title={t("閉じる")}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line bg-panel2 text-sm leading-none text-mut transition hover:border-line2 hover:text-txt"
           >
             ✕
@@ -112,7 +114,7 @@ export function AmazonPicks({ variant = "inline" }: Props) {
       <ul className="space-y-2">
         {items.map((it, i) => (
           <li key={`${it.url}-${i}`} className="flex items-baseline gap-2 text-sm">
-            <span aria-hidden className="shrink-0 text-base leading-none" title={it.category}>
+            <span aria-hidden className="shrink-0 text-base leading-none" title={t(it.category)}>
               {categoryEmoji(it.category)}
             </span>
             <a
@@ -124,12 +126,12 @@ export function AmazonPicks({ variant = "inline" }: Props) {
             >
               {it.name}
             </a>
-            <span className="shrink-0 text-[10px] text-mut">{it.category}</span>
+            <span className="shrink-0 text-[10px] text-mut">{t(it.category)}</span>
           </li>
         ))}
       </ul>
       <p className="mt-3 text-[10px] leading-relaxed text-mut">
-        Amazonのアソシエイトとして、当サイトは適格販売により収入を得ています。価格・在庫はAmazonの商品ページでご確認ください。
+        {t("Amazonのアソシエイトとして、当サイトは適格販売により収入を得ています。価格・在庫はAmazonの商品ページでご確認ください。")}
       </p>
     </section>
   );

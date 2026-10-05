@@ -3,8 +3,9 @@ import { Flame, MessageCircle } from "lucide-react";
 import Avatar from "./Avatar";
 import { timeAgo } from "@/lib/format";
 import type { RankingRow } from "@/lib/types";
+import { getServerT } from "@/lib/i18n-server";
 
-export default function Sidebar({
+export default async function Sidebar({
   trending,
   recentComments,
 }: {
@@ -18,12 +19,13 @@ export default function Sidebar({
     created_at: string;
   }[];
 }) {
+  const t = await getServerT();
   return (
     <aside className="space-y-4">
       <div className="bg-panel border border-line rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Flame className="w-4 h-4 text-like" />
-          <h2 className="font-bold">今週の急上昇</h2>
+          <h2 className="font-bold">{t("今週の急上昇")}</h2>
         </div>
         <div className="space-y-1.5">
           {trending.slice(0, 8).map((p, i) => (
@@ -41,23 +43,23 @@ export default function Sidebar({
               </span>
               <Avatar name={p.name} avatarUrl={p.avatar_url} size={32} />
               <span className="text-sm truncate flex-1">{p.name}</span>
-              <span className="text-xs font-bold text-x shrink-0">{p.recentVotes ?? 0}票</span>
+              <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
             </Link>
           ))}
-          {trending.length === 0 && <p className="text-sm text-mut">まだデータがありません</p>}
+          {trending.length === 0 && <p className="text-sm text-mut">{t("まだデータがありません")}</p>}
         </div>
         <Link
           href="/ranking/trending"
           className="block text-center text-xs text-x hover:underline mt-3"
         >
-          トレンドランキングをもっと見る
+          {t("トレンドランキングをもっと見る")}
         </Link>
       </div>
 
       <div className="bg-panel border border-line rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <MessageCircle className="w-4 h-4 text-x" />
-          <h2 className="font-bold">新着コメント</h2>
+          <h2 className="font-bold">{t("新着コメント")}</h2>
         </div>
         <div className="space-y-3">
           {recentComments.map((c) => (
@@ -74,14 +76,14 @@ export default function Sidebar({
                     c.vote_type === "like" ? "bg-likesoft text-like" : "bg-dislikesoft text-dislike"
                   }`}
                 >
-                  {c.vote_type === "like" ? "好き派" : "嫌い派"}
+                  {c.vote_type === "like" ? t("好き派") : t("嫌い派")}
                 </span>
                 <span className="text-[10px] text-mut shrink-0">{timeAgo(c.created_at)}</span>
               </div>
               <p className="text-mut line-clamp-5 leading-snug">{c.content}</p>
             </div>
           ))}
-          {recentComments.length === 0 && <p className="text-sm text-mut">まだコメントがありません</p>}
+          {recentComments.length === 0 && <p className="text-sm text-mut">{t("まだコメントがありません")}</p>}
         </div>
       </div>
     </aside>

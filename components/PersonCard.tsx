@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
 import type { Person } from "@/lib/types";
+import { getServerT } from "@/lib/i18n-server";
 
 export type PersonCardData = Person & { likes?: number; dislikes?: number; total?: number };
 
-export default function PersonCard({ p }: { p: PersonCardData }) {
+export default async function PersonCard({ p }: { p: PersonCardData }) {
+  const t = await getServerT();
   const total = p.total ?? 0;
   const likePct = total > 0 ? ((p.likes ?? 0) / total) * 100 : null;
 
@@ -27,11 +29,11 @@ export default function PersonCard({ p }: { p: PersonCardData }) {
 
       <div className="flex flex-wrap gap-1 mt-auto">
         {p.category && p.category !== "その他" && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-xsoft text-x">{p.category}</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-xsoft text-x">{t(p.category)}</span>
         )}
-        {p.tags.slice(0, 3).map((t) => (
-          <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-panel2 text-mut border border-line">
-            {t}
+        {p.tags.slice(0, 3).map((tag) => (
+          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-panel2 text-mut border border-line">
+            {tag}
           </span>
         ))}
       </div>
@@ -40,9 +42,9 @@ export default function PersonCard({ p }: { p: PersonCardData }) {
         {likePct != null ? (
           <>
             <div className="flex items-center text-xs mb-1 gap-2">
-              <span className="text-like font-bold">好き {Math.round(likePct)}%</span>
-              <span className="text-dislike font-bold">嫌い {100 - Math.round(likePct)}%</span>
-              <span className="text-mut ml-auto shrink-0">{total}票</span>
+              <span className="text-like font-bold">{t("好き {n}%", { n: Math.round(likePct) })}</span>
+              <span className="text-dislike font-bold">{t("嫌い {n}%", { n: 100 - Math.round(likePct) })}</span>
+              <span className="text-mut ml-auto shrink-0">{t("{n}票", { n: total })}</span>
             </div>
             <div className="w-full bg-line rounded-full h-1.5 overflow-hidden flex">
               <div className="bg-like h-full" style={{ width: `${likePct}%` }} />
@@ -50,7 +52,7 @@ export default function PersonCard({ p }: { p: PersonCardData }) {
             </div>
           </>
         ) : (
-          <p className="text-xs text-mut">まだ投票がありません</p>
+          <p className="text-xs text-mut">{t("まだ投票がありません")}</p>
         )}
       </div>
     </Link>

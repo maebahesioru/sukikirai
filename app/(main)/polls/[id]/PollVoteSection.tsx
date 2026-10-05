@@ -7,6 +7,7 @@ import ImageUploadField from "@/components/ImageUploadField";
 import Avatar from "@/components/Avatar";
 import { getFingerprint } from "@/lib/fingerprint";
 import { bigAvatarUrl, findOptionPerson, type PollPersonLite } from "@/lib/pollui";
+import { useT } from "@/lib/i18n-client";
 import type { PollOption, PollType } from "@/lib/types";
 
 /** 選択肢のビジュアル: アップロード画像があればそれ、なければ関連人物のアイコン */
@@ -50,6 +51,7 @@ export default function PollVoteSection({
   initialVoteOptionId: string | null;
   related?: PollPersonLite[];
 }) {
+  const t = useT();
   const [options, setOptions] = useState(initialOptions);
   const [myChoice, setMyChoice] = useState<string | null>(initialVoteOptionId);
   const [busy, setBusy] = useState(false);
@@ -74,7 +76,7 @@ export default function PollVoteSection({
     if (myChoice || busy) return;
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("投票には利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("投票には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -91,12 +93,12 @@ export default function PollVoteSection({
       } else if (res.status === 429 && data.currentOptionId) {
         if (data.options) setOptions(data.options);
         setMyChoice(data.currentOptionId);
-        alert("既に投票済みです");
+        alert(t("既に投票済みです"));
       } else {
-        alert(data.error || "投票に失敗しました");
+        alert(data.error || t("投票に失敗しました"));
       }
     } catch {
-      alert("投票に失敗しました");
+      alert(t("投票に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -107,7 +109,7 @@ export default function PollVoteSection({
     if (!text) return;
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("選択肢の追加には利用規約への同意が必要です");
+      alert(t("選択肢の追加には利用規約への同意が必要です"));
       return;
     }
     setAddBusy(true);
@@ -128,10 +130,10 @@ export default function PollVoteSection({
         setAddText("");
         setAddImage("");
       } else {
-        alert(data.error || "追加に失敗しました");
+        alert(data.error || t("追加に失敗しました"));
       }
     } catch {
-      alert("追加に失敗しました");
+      alert(t("追加に失敗しました"));
     } finally {
       setAddBusy(false);
     }
@@ -139,7 +141,7 @@ export default function PollVoteSection({
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
-      <h2 className="font-bold mb-4">{myChoice ? "投票結果" : "あなたの一票を投じよう"}</h2>
+      <h2 className="font-bold mb-4">{myChoice ? t("投票結果") : t("あなたの一票を投じよう")}</h2>
 
       {!myChoice ? (
         <div className={duel ? "grid grid-cols-2 gap-3" : "space-y-2"}>
@@ -157,7 +159,7 @@ export default function PollVoteSection({
                   name={personOf(o)?.name ?? o.option_text}
                 />
                 <span className="font-bold text-sm text-center leading-snug">{o.option_text}</span>
-                <span className="text-[11px] text-mut">タップして投票</span>
+                <span className="text-[11px] text-mut">{t("タップして投票")}</span>
               </button>
             ) : (
               <button
@@ -215,10 +217,10 @@ export default function PollVoteSection({
                   <div className="w-full space-y-1.5">
                     <div className="text-sm font-bold text-center truncate">
                       {o.option_text}
-                      {isMine && <span className="text-x text-xs ml-1.5">← あなた</span>}
+                      {isMine && <span className="text-x text-xs ml-1.5">{t("← あなた")}</span>}
                     </div>
                     <div className="text-xs text-mut text-center">
-                      {count}票（{pct.toFixed(1)}%）
+                      {t("{n}票（{pct}%）", { n: count, pct: pct.toFixed(1) })}
                     </div>
                     <div className="w-full bg-panel rounded-full h-2 overflow-hidden">
                       <div className="bg-x h-full bar-anim" style={{ width: `${pct}%` }} />
@@ -246,12 +248,12 @@ export default function PollVoteSection({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium truncate mr-2">
-                        <span className="text-mut mr-1.5">{i + 1}位</span>
+                        <span className="text-mut mr-1.5">{t("{n}位", { n: i + 1 })}</span>
                         {o.option_text}
-                        {isMine && <span className="text-x text-xs ml-2">← あなたの投票</span>}
+                        {isMine && <span className="text-x text-xs ml-2">{t("← あなたの投票")}</span>}
                       </span>
                       <span className="text-mut shrink-0 ml-3">
-                        {count}票（{pct.toFixed(1)}%）
+                        {t("{n}票（{pct}%）", { n: count, pct: pct.toFixed(1) })}
                       </span>
                     </div>
                     <div className="w-full bg-panel rounded-full h-2 overflow-hidden mt-1.5">
@@ -272,13 +274,13 @@ export default function PollVoteSection({
 
       {pollType === "three_plus_open" && (
         <div className="mt-5 pt-4 border-t border-line">
-          <p className="text-sm font-bold mb-2">選択肢を追加する</p>
+          <p className="text-sm font-bold mb-2">{t("選択肢を追加する")}</p>
           <div className="flex gap-2">
             <input
               type="text"
               value={addText}
               onChange={(e) => setAddText(e.target.value.slice(0, 100))}
-              placeholder="新しい選択肢"
+              placeholder={t("新しい選択肢")}
               className="flex-1 px-3 py-2 rounded-xl border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
             />
             <button
@@ -291,12 +293,12 @@ export default function PollVoteSection({
               }`}
             >
               <Plus className="w-4 h-4" />
-              追加
+              {t("追加")}
             </button>
           </div>
           <ImageUploadField value={addImage} onChange={setAddImage} className="mt-2" />
           <p className="text-xs text-mut mt-1.5">
-            ※ 追加できるのは投稿者以外・1人3個まで・全体で20個まで
+            {t("※ 追加できるのは投稿者以外・1人3個まで・全体で20個まで")}
           </p>
         </div>
       )}

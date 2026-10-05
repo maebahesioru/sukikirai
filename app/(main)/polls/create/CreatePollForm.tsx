@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { Plus, X, Search } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
+import { useT } from "@/lib/i18n-client";
 import type { PollType } from "@/lib/types";
 
 type RelatedPerson = { id: string; name: string; handle: string | null; avatar_url: string | null };
@@ -17,6 +18,7 @@ const POLL_TYPES: { key: PollType; label: string; desc: string }[] = [
 ];
 
 export default function CreatePollForm() {
+  const t = useT();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -78,20 +80,20 @@ export default function CreatePollForm() {
       .map((o) => ({ text: o.text.trim(), imageUrl: o.imageUrl.trim() }))
       .filter((o) => o.text);
     if (!title.trim()) {
-      alert("タイトルを入力してください");
+      alert(t("タイトルを入力してください"));
       return;
     }
     if (cleaned.length < minOptions) {
-      alert(`選択肢を${minOptions}つ以上入力してください`);
+      alert(t("選択肢を{min}つ以上入力してください", { min: minOptions }));
       return;
     }
     if (related.length === 0) {
-      alert("関連する人物を1人以上選んでください");
+      alert(t("関連する人物を1人以上選んでください"));
       return;
     }
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("作成には利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("作成には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -110,12 +112,12 @@ export default function CreatePollForm() {
       });
       const data = await res.json();
       if (!data.success) {
-        alert(data.error || "作成に失敗しました");
+        alert(data.error || t("作成に失敗しました"));
         return;
       }
       router.push(`/polls/${data.pollId}`);
     } catch {
-      alert("作成に失敗しました");
+      alert(t("作成に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -123,56 +125,56 @@ export default function CreatePollForm() {
 
   return (
     <form onSubmit={submit} className="bg-panel border border-line rounded-2xl p-6 space-y-5">
-      <h1 className="text-xl font-black">投票トークを作成</h1>
+      <h1 className="text-xl font-black">{t("投票トークを作成")}</h1>
 
       <div>
         <label className="block text-sm font-bold mb-1.5">
-          タイトル <span className="text-bad">*</span>
+          {t("タイトル")} <span className="text-bad">*</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value.slice(0, 200))}
-          placeholder="例: 一番好きなツイッタラーは？"
+          placeholder={t("例: 一番好きなツイッタラーは？")}
           className="w-full px-3 py-2.5 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-bold mb-1.5">説明（任意）</label>
+        <label className="block text-sm font-bold mb-1.5">{t("説明（任意）")}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value.slice(0, 500))}
           rows={2}
-          placeholder="補足説明があれば"
+          placeholder={t("補足説明があれば")}
           className="w-full px-3 py-2.5 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm resize-y"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-bold mb-2">投票形式</label>
+        <label className="block text-sm font-bold mb-2">{t("投票形式")}</label>
         <div className="space-y-2">
-          {POLL_TYPES.map((t) => (
+          {POLL_TYPES.map((pt) => (
             <label
-              key={t.key}
+              key={pt.key}
               className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                pollType === t.key ? "border-x bg-xsoft" : "border-line bg-panel2 hover:border-line2"
+                pollType === pt.key ? "border-x bg-xsoft" : "border-line bg-panel2 hover:border-line2"
               }`}
             >
               <input
                 type="radio"
-                checked={pollType === t.key}
+                checked={pollType === pt.key}
                 onChange={() => {
-                  setPollType(t.key);
-                  if (t.key !== "two_choice" && options.length < 3) {
+                  setPollType(pt.key);
+                  if (pt.key !== "two_choice" && options.length < 3) {
                     setOptions([...options, { text: "", imageUrl: "" }].slice(0, 3));
                   }
                 }}
                 className="mt-0.5 accent-sky-500"
               />
               <div>
-                <p className="text-sm font-bold">{t.label}</p>
-                <p className="text-xs text-mut">{t.desc}</p>
+                <p className="text-sm font-bold">{t(pt.label)}</p>
+                <p className="text-xs text-mut">{t(pt.desc)}</p>
               </div>
             </label>
           ))}
@@ -181,10 +183,10 @@ export default function CreatePollForm() {
 
       <div>
         <label className="block text-sm font-bold mb-2">
-          選択肢 <span className="text-bad">*</span>
+          {t("選択肢")} <span className="text-bad">*</span>
         </label>
         <p className="text-xs text-mut mb-2">
-          画像URLまたはアップロード（任意）で画像付きに。2択で両方に入れると横並びの「どっち？」形式になります
+          {t("画像URLまたはアップロード（任意）で画像付きに。2択で両方に入れると横並びの「どっち？」形式になります")}
         </p>
         <div className="space-y-2">
           {options.map((o, i) => (
@@ -194,7 +196,7 @@ export default function CreatePollForm() {
                   type="text"
                   value={o.text}
                   onChange={(e) => setOptionText(i, e.target.value.slice(0, 100))}
-                  placeholder={`選択肢 ${i + 1}`}
+                  placeholder={t("選択肢 {n}", { n: i + 1 })}
                   className="flex-1 px-3 py-2 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
                 />
                 {options.length > minOptions && (
@@ -202,7 +204,7 @@ export default function CreatePollForm() {
                     type="button"
                     onClick={() => removeOption(i)}
                     className="px-2.5 rounded-xl border border-line text-mut hover:text-bad transition"
-                    aria-label="削除"
+                    aria-label={t("削除")}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -219,14 +221,15 @@ export default function CreatePollForm() {
             className="mt-2 text-sm text-x hover:underline flex items-center gap-1"
           >
             <Plus className="w-4 h-4" />
-            選択肢を追加
+            {t("選択肢を追加")}
           </button>
         )}
       </div>
 
       <div>
         <label className="block text-sm font-bold mb-1.5">
-          関連する人物 <span className="text-bad">*</span>（最大5人）
+          {t("関連する人物")} <span className="text-bad">*</span>
+          {t("（最大5人）")}
         </label>
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -241,7 +244,7 @@ export default function CreatePollForm() {
                   search();
                 }
               }}
-              placeholder="名前・IDで検索"
+              placeholder={t("名前・IDで検索")}
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-line focus:outline-none focus:ring-2 focus:ring-x/60 text-sm"
             />
           </div>
@@ -250,7 +253,7 @@ export default function CreatePollForm() {
             onClick={search}
             className="px-4 rounded-xl bg-panel2 border border-line text-sm hover:border-line2 transition"
           >
-            検索
+            {t("検索")}
           </button>
         </div>
         {searchResults.length > 0 && (
@@ -280,7 +283,7 @@ export default function CreatePollForm() {
                   type="button"
                   onClick={() => setRelated(related.filter((r) => r.id !== p.id))}
                   className="text-mut hover:text-bad"
-                  aria-label="削除"
+                  aria-label={t("削除")}
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -297,7 +300,7 @@ export default function CreatePollForm() {
           busy ? "bg-panel2 text-mut cursor-not-allowed" : "bg-gradient-to-r from-x to-dislike hover:opacity-90"
         }`}
       >
-        {busy ? "作成中..." : "投票トークを作成"}
+        {busy ? t("作成中...") : t("投票トークを作成")}
       </button>
     </form>
   );

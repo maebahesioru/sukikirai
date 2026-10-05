@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllTags, getPeople } from "@/lib/queries";
 import PersonCard from "@/components/PersonCard";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,21 +15,29 @@ type Props = {
 const PER = 48;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const t = await getServerT();
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
   return {
-    title: `「${tag}」の人物一覧`,
-    description: `「${tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。`,
+    title: t("「{tag}」の人物一覧", { tag }),
+    description: t(
+      "「{tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。",
+      { tag }
+    ),
     alternates: { canonical: `/tag/${encodeURIComponent(tag)}` },
     openGraph: {
-      title: `「${tag}」の人物一覧`,
-      description: `「${tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。`,
+      title: t("「{tag}」の人物一覧", { tag }),
+      description: t(
+        "「{tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。",
+        { tag }
+      ),
       images: ["/og.png"],
     },
   };
 }
 
 export default async function TagPage({ params, searchParams }: Props) {
+  const t = await getServerT();
   const { tag: raw } = await params;
   const tag = decodeURIComponent(raw);
   const sp = await searchParams;
@@ -46,13 +55,13 @@ export default async function TagPage({ params, searchParams }: Props) {
   return (
     <div className="space-y-5">
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <p className="text-xs text-mut mb-1">タグ</p>
+        <p className="text-xs text-mut mb-1">{t("タグ")}</p>
         <h1 className="text-xl font-black">
-          「{tag}」の人物一覧
-          <span className="text-sm font-normal text-mut ml-2">{total}人</span>
+          {t("「{tag}」の人物一覧", { tag })}
+          <span className="text-sm font-normal text-mut ml-2">{t("{n}人", { n: total })}</span>
         </h1>
         <p className="text-sm text-mut mt-2">
-          このタグが付いたXユーザーの一覧です（好き率順）。タグはプロフィールから自動判定されます。
+          {t("このタグが付いたXユーザーの一覧です（好き率順）。タグはプロフィールから自動判定されます。")}
         </p>
       </section>
 
@@ -80,15 +89,16 @@ export default async function TagPage({ params, searchParams }: Props) {
 
       {otherTags.length > 0 && (
         <section className="bg-panel border border-line rounded-2xl p-5">
-          <h2 className="font-bold text-sm mb-3">他のタグ</h2>
+          <h2 className="font-bold text-sm mb-3">{t("他のタグ")}</h2>
           <div className="flex flex-wrap gap-1.5">
-            {otherTags.map((t) => (
+            {otherTags.map((ot) => (
               <Link
-                key={t.tag}
-                href={`/tag/${encodeURIComponent(t.tag)}`}
+                key={ot.tag}
+                href={`/tag/${encodeURIComponent(ot.tag)}`}
                 className="text-xs px-2.5 py-1 rounded-full border border-line bg-panel2 text-mut hover:text-txt hover:border-line2 transition"
               >
-                {t.tag}（{t.count}）
+                {ot.tag}
+                {t("（{n}）", { n: ot.count })}
               </Link>
             ))}
           </div>

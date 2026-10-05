@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Link2, Check } from "lucide-react";
+import { useT } from "@/lib/i18n-client";
 
 export default function ShareButtons({
   personName,
@@ -14,13 +15,19 @@ export default function ShareButtons({
   likeCount: number;
   dislikeCount: number;
 }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const total = likeCount + dislikeCount;
   const likePct = total > 0 ? Math.round((likeCount / total) * 100) : 0;
   const dislikePct = 100 - likePct;
   const url = () => (typeof window !== "undefined" ? window.location.href : "");
 
-  const text = `【${voteType === "like" ? "好き派" : "嫌い派"}】${personName} のこと好き？嫌い？\n【好き派】${likePct}% vs【嫌い派】${dislikePct}%\n#ツイッタラー世論調査`;
+  const text = t("【{side}】{name} のこと好き？嫌い？\n【好き派】{like}% vs【嫌い派】{dislike}%\n#ツイッタラー世論調査", {
+    side: t(voteType === "like" ? "好き派" : "嫌い派"),
+    name: personName,
+    like: likePct,
+    dislike: dislikePct,
+  });
 
   const open = (u: string) => window.open(u, "_blank");
 
@@ -30,7 +37,7 @@ export default function ShareButtons({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      alert("コピーに失敗しました");
+      alert(t("コピーに失敗しました"));
     }
   };
 
@@ -44,7 +51,7 @@ export default function ShareButtons({
         }
         className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition flex items-center justify-center gap-2"
       >
-        <Share2 className="w-4 h-4" />Xでシェア
+        <Share2 className="w-4 h-4" />{t("Xでシェア")}
       </button>
       <button
         onClick={() =>
@@ -67,7 +74,7 @@ export default function ShareButtons({
         className="flex-1 min-w-32 py-2.5 rounded-xl bg-panel border border-line hover:border-line2 font-bold text-sm transition flex items-center justify-center gap-2"
       >
         {copied ? <Check className="w-4 h-4 text-good" /> : <Link2 className="w-4 h-4" />}
-        {copied ? "コピー完了" : "リンクをコピー"}
+        {copied ? t("コピー完了") : t("リンクをコピー")}
       </button>
     </div>
   );

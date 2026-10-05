@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import CreatePollForm from "./CreatePollForm";
+import { getServerT } from "@/lib/i18n-server";
 
-export const metadata: Metadata = {
-  title: "投票トークを作成",
-  alternates: { canonical: "/polls/create" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t("投票トークを作成"),
+    alternates: { canonical: "/polls/create" },
+  };
+}
 
 export default function CreatePollPage() {
   return (

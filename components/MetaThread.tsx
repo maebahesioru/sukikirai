@@ -6,6 +6,7 @@ import { MessageSquare } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
+import { useT } from "@/lib/i18n-client";
 
 type MetaPost = {
   id: string;
@@ -16,6 +17,7 @@ type MetaPost = {
 };
 
 export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] }) {
+  const t = useT();
   const [posts, setPosts] = useState<MetaPost[]>(initialPosts);
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
@@ -28,16 +30,16 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      alert("本文を入力してください");
+      alert(t("本文を入力してください"));
       return;
     }
     if (over) {
-      alert(`本文は全角${Math.floor(MAX_COMMENT_CHARS / 2)}文字（半角${MAX_COMMENT_CHARS}文字）以内です`);
+      alert(t("本文は全角{n}文字（半角{m}文字）以内です", { n: Math.floor(MAX_COMMENT_CHARS / 2), m: MAX_COMMENT_CHARS }));
       return;
     }
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("書き込みには利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("書き込みには利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -57,10 +59,10 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
         setMail("");
         setContent("");
       } else {
-        alert(data.error || "書き込みに失敗しました");
+        alert(data.error || t("書き込みに失敗しました"));
       }
     } catch {
-      alert("書き込みに失敗しました");
+      alert(t("書き込みに失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -70,22 +72,22 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
     <section className="bg-panel border border-line rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-2">
         <MessageSquare className="w-6 h-6 text-good" />
-        <h1 className="text-2xl font-black">管理スレ</h1>
+        <h1 className="text-2xl font-black">{t("管理スレ")}</h1>
       </div>
       <p className="text-sm text-mut leading-relaxed mb-5">
-        機能要望・バグ報告・その他、運営への連絡はここにどうぞ。2ch専ブラ（Siki等）からも書き込めます。
+        {t("機能要望・バグ報告・その他、運営への連絡はここにどうぞ。2ch専ブラ（Siki等）からも書き込めます。")}
       </p>
 
       <div className="space-y-3">
         {posts.length === 0 ? (
           <p className="text-sm text-mut text-center py-8">
-            まだ書き込みがありません。最初の1件をどうぞ。
+            {t("まだ書き込みがありません。最初の1件をどうぞ。")}
           </p>
         ) : (
           posts.map((p) => (
             <div key={p.id} className="bg-panel2 border border-line rounded-xl p-4">
               <div className="flex items-center gap-2 text-xs text-mut mb-1.5 flex-wrap">
-                <span className="font-bold text-txt text-sm">{p.name || "名無しさん"}</span>
+                <span className="font-bold text-txt text-sm">{p.name || t("名無しさん")}</span>
                 <span>{fmtTime2ch(p.created_at)}</span>
                 <span className="font-mono text-[11px]">ID:{p.anon_id}</span>
               </div>
@@ -101,22 +103,22 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="名前（任意・#でトリップ）"
-            title="「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます"
+            placeholder={t("名前（任意・#でトリップ）")}
+            title={t("「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます")}
             className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
           <input
             type="text"
             value={mail}
             onChange={(e) => setMail(e.target.value)}
-            placeholder="メール（sageでageない）"
+            placeholder={t("メール（sageでageない）")}
             className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
         </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="要望・バグ報告・その他を入力...（全角140文字まで）"
+          placeholder={t("要望・バグ報告・その他を入力...（全角140文字まで）")}
           rows={4}
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />
@@ -129,7 +131,7 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
             disabled={busy || over || !content.trim()}
             className="px-6 py-2.5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
           >
-            {busy ? "送信中..." : "書き込む"}
+            {busy ? t("送信中...") : t("書き込む")}
           </button>
         </div>
       </form>

@@ -6,6 +6,7 @@ import { Star } from "lucide-react";
 import { EVAL_ITEMS } from "@/lib/constants";
 import type { EvalStats } from "@/lib/types";
 import { getFingerprint } from "@/lib/fingerprint";
+import { useT } from "@/lib/i18n-client";
 
 export default function EvalPanel({
   personId,
@@ -22,6 +23,7 @@ export default function EvalPanel({
   initialMine: Record<string, number | null> | null;
   archived?: boolean;
 }) {
+  const t = useT();
   const [stats, setStats] = useState<EvalStats>(initialStats);
   const [mine, setMine] = useState<Record<string, number | null> | null>(initialMine);
   const [draft, setDraft] = useState<Record<string, number>>(
@@ -40,12 +42,12 @@ export default function EvalPanel({
 
   const submit = async () => {
     if (answered === 0) {
-      alert("1項目以上選んでください");
+      alert(t("1項目以上選んでください"));
       return;
     }
     const token = Cookies.get("user_token");
     if (!token) {
-      alert("評価には利用規約への同意が必要です。ページを再読み込みしてください。");
+      alert(t("評価には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
     }
     setBusy(true);
@@ -61,17 +63,20 @@ export default function EvalPanel({
         setMine(data.mine ?? draft);
         if (tweet) {
           const ov = data.stats?.overall;
-          const text = `「${personName}」の8項目評価を書き込みました！\n総合 ${ov != null ? Number(ov).toFixed(1) : "—"}/5.0\n#ツイッタラー世論調査`;
+          const text = t("「{name}」の8項目評価を書き込みました！\n総合 {ov}/5.0\n#ツイッタラー世論調査", {
+            name: personName,
+            ov: ov != null ? Number(ov).toFixed(1) : "—",
+          });
           window.open(
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`,
             "_blank"
           );
         }
       } else {
-        alert(data.error || "評価の送信に失敗しました");
+        alert(data.error || t("評価の送信に失敗しました"));
       }
     } catch {
-      alert("評価の送信に失敗しました");
+      alert(t("評価の送信に失敗しました"));
     } finally {
       setBusy(false);
     }
@@ -79,14 +84,14 @@ export default function EvalPanel({
 
   const header = (
     <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-      <h2 className="text-xl font-bold">8項目の評価</h2>
+      <h2 className="text-xl font-bold">{t("8項目の評価")}</h2>
       <div className="flex items-center gap-3">
-        <span className="text-sm text-mut">総合</span>
+        <span className="text-sm text-mut">{t("総合")}</span>
         <span className="text-2xl font-black text-gold">
           {overall != null ? overall.toFixed(1) : "—"}
         </span>
         <span className="text-sm text-mut">/ 5.0</span>
-        <span className="text-xs text-mut">（{stats.total}人が回答）</span>
+        <span className="text-xs text-mut">{t("（{n}人が回答）", { n: stats.total })}</span>
       </div>
     </div>
   );
@@ -102,17 +107,17 @@ export default function EvalPanel({
             const count = stats.counts[item.key] ?? 0;
             return (
               <div key={item.key} className="flex items-center gap-3">
-                <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
+                <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{t(item.label)}</span>
                 <span className="text-sm font-bold w-10 text-right">
                   {avg != null ? avg.toFixed(1) : "—"}
                 </span>
-                <span className="text-xs text-mut">（{count}）</span>
+                <span className="text-xs text-mut">{t("（{n}）", { n: count })}</span>
               </div>
             );
           })}
         </div>
         <p className="text-center text-xs text-mut mt-4">
-          ※ このページはアーカイブされたため、評価の書き込みは終了しています
+          {t("※ このページはアーカイブされたため、評価の書き込みは終了しています")}
         </p>
       </section>
     );
@@ -124,12 +129,12 @@ export default function EvalPanel({
 
       {!hasVoted && (
         <div className="bg-panel2 border border-line rounded-xl p-4 mb-4 text-center text-sm text-mut">
-          投票すると評価を書き込めるようになります
+          {t("投票すると評価を書き込めるようになります")}
         </div>
       )}
       {hasVoted && saved && (
         <div className="bg-panel2 border border-line rounded-xl p-3 mb-4 text-center text-sm text-mut">
-          今日の評価は送信済みです（あなたの評価は●で表示）
+          {t("今日の評価は送信済みです（あなたの評価は●で表示）")}
         </div>
       )}
 
@@ -140,7 +145,7 @@ export default function EvalPanel({
           const myVal = saved ? mine?.[item.key] ?? null : draft[item.key] ?? null;
           return (
             <div key={item.key} className="flex items-center gap-1.5 flex-wrap">
-              <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{item.label}</span>
+              <span className="w-20 sm:w-24 text-sm text-mut shrink-0">{t(item.label)}</span>
               <div className="flex gap-0">
                 {[1, 2, 3, 4, 5].map((v) => (
                   <button
@@ -151,7 +156,7 @@ export default function EvalPanel({
                     className={`p-0.5 transition ${
                       !hasVoted || saved ? "cursor-default" : "hover:scale-110"
                     }`}
-                    aria-label={`${item.label} ${v}`}
+                    aria-label={`${t(item.label)} ${v}`}
                   >
                     <Star
                       className={`w-6 h-6 ${
@@ -166,7 +171,7 @@ export default function EvalPanel({
               <span className="text-sm font-bold w-8 sm:w-10 text-right">
                 {avg != null ? avg.toFixed(1) : "—"}
               </span>
-              <span className="text-xs text-mut">（{count}）</span>
+              <span className="text-xs text-mut">{t("（{n}）", { n: count })}</span>
             </div>
           );
         })}
@@ -180,7 +185,7 @@ export default function EvalPanel({
             onChange={(e) => setTweet(e.target.checked)}
             className="w-4 h-4 accent-sky-500"
           />
-          Xでツイートする
+          {t("Xでツイートする")}
         </label>
       )}
       {hasVoted && !saved && (
@@ -193,7 +198,7 @@ export default function EvalPanel({
               : "bg-x text-white hover:opacity-90"
           }`}
         >
-          {busy ? "送信中..." : `この評価を送信する（${answered}/8項目）`}
+          {busy ? t("送信中...") : t("この評価を送信する（{answered}/8項目）", { answered })}
         </button>
       )}
     </section>

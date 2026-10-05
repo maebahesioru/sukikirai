@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { Search } from "lucide-react";
+import { useT } from "@/lib/i18n-client";
 
 type Item = { id: string; name: string; handle: string | null; avatar_url: string | null };
 
@@ -27,6 +28,7 @@ export default function SearchSuggest({
   onSubmit: (q: string) => void;
   submitButton?: React.ReactNode;
 }) {
+  const t = useT();
   const [q, setQ] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
@@ -163,7 +165,7 @@ export default function SearchSuggest({
                 }}
                 className="w-full text-left px-3 py-2 text-xs text-x border-t border-line hover:bg-panel2 transition"
               >
-                「{q.trim()}」の検索結果をすべて見る
+                {t("「{q}」の検索結果をすべて見る", { q: q.trim() })}
               </button>
             </div>
           )}

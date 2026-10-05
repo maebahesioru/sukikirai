@@ -343,7 +343,7 @@ const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
  * legacyHikamer=true（既にヒカマーカテゴリの人）は、明示タイプ（企業等）に該当しない限りヒカマーを維持
  * ＝既存の界隈名簿を尊重しつつ、新規追加は完全自動で分類する。
  */
-export function classifyCategory(name: string, bio: string, legacyHikamer = false, handle = ""): string {
+export function classifyCategory(name: string, bio: string, legacyHikamer = false, handle = "", wikiHikamer = false): string {
   const n = (name || "").normalize("NFKC").trim();
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase();
   const h = (handle || "").normalize("NFKC").toLowerCase();
@@ -361,6 +361,7 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   if (/bot$/i.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
   if (
     legacyHikamer ||
+    wikiHikamer ||
     HIKAMER_RE.test(text) ||
     HIKAMER_NAME_RE.test(n) ||
     (h.length > 0 && HIKAMER_HANDLE_RE.test(h))

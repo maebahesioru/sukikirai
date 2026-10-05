@@ -2,6 +2,14 @@
 import { sql } from "./db";
 import { classifyCategory, classifyWithAuto, computePromotedTags } from "./tag-rules";
 import { listTagTargets, setPeopleTags } from "./queries";
+import wikiHandles from "@/data/hikamer-wiki-handles.json";
+
+/** ヒカマーwiki「ヒカマー一覧」に載っているハンドル集合（界隈所属の確定ソース） */
+const HIKAMER_WIKI = new Set<string>((wikiHandles as string[]).map((h) => h.toLowerCase()));
+
+function inHikamerWiki(handle: string | null | undefined): boolean {
+  return !!handle && HIKAMER_WIKI.has(handle.toLowerCase());
+}
 
 /** 名前とプロフィール文からタグを判定 */
 export function classifyTags(name: string, bio: string): string[] {
@@ -32,7 +40,8 @@ export async function autoTagPerson(personId: string): Promise<void> {
     p.name,
     [p.bio, p.x_website].filter(Boolean).join("\n"),
     false,
-    p.handle ?? ""
+    p.handle ?? "",
+    inHikamerWiki(p.handle)
   );
   await sql(`UPDATE people SET tags = $2, category = $3 WHERE id = $1`, [
     personId,
@@ -55,7 +64,8 @@ export async function retagEveryone(
       r.name,
       [r.bio, r.x_website].filter(Boolean).join("\n"),
       r.category === "ヒカマー",
-      r.handle ?? ""
+      r.handle ?? "",
+      inHikamerWiki(r.handle)
     );
     const cur = r.tags ?? [];
     const sameTags = tags.length === cur.length && tags.every((t, i) => t === cur[i]);

@@ -11,18 +11,27 @@ export const dynamic = "force-dynamic";
 
 const TEXT_HEADERS = { "Content-Type": "text/plain; charset=utf-8" } as const;
 
-export async function GET(_req: Request, { params }: { params: Promise<{ key: string }> }) {
-  const { key } = await params;
+export async function GET(_req: Request, { params }: { params: Promise<{ key: string; opt?: string[] }> }) {
+  const { key, opt } = await params;
   const raw = key.replace(/\.dat$/i, "").replace(/\/+$/, "");
   const thread = resolveMetaThread(raw);
   if (!thread || thread.kind !== "meta") {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
-  return to2chResponse(await buildMetaDat());
+  let dat = await buildMetaDat();
+  const lim = (opt ?? []).reduce<number | null>((acc, o) => {
+    const mm = /^l(\d+)$/i.exec(o);
+    return mm ? parseInt(mm[1], 10) : acc;
+  }, null);
+  if (lim && lim > 0) {
+    const lines = dat.split("\n").filter(Boolean);
+    if (lines.length > lim) dat = lines.slice(-lim).join("\n") + "\n";
+  }
+  return to2chResponse(dat);
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ key: string }> }) {
-  const { key } = await params;
+export async function POST(request: Request, { params }: { params: Promise<{ key: string; opt?: string[] }> }) {
+  const { key, opt } = await params;
   const raw = key.replace(/\.dat$/i, "").replace(/\/+$/, "");
   const thread = resolveMetaThread(raw);
   if (!thread || thread.kind !== "meta") {

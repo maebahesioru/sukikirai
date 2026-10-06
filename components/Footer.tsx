@@ -62,6 +62,16 @@ export default async function Footer() {
           </a>
           <span className="ml-2">{t("ヒカマー界隈の百科事典")}</span>
         </p>
+        <p>
+          {t("Tor版:")}{" "}
+          <a
+            href="http://ywaiur4lrnbeye7uxq3vl6h256glfvzv26ggppvmqinrq3bm6dqartad.onion/"
+            className="text-txt underline-offset-2 hover:underline transition break-all"
+          >
+            ywaiur4lrnbeye7uxq3vl6h256glfvzv26ggppvmqinrq3bm6dqartad.onion
+          </a>
+          <span className="ml-2">{t("（Tor Browser用・検閲なし・完全匿名）")}</span>
+        </p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>
     </footer>

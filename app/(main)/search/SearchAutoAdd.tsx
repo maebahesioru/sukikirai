@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { useT } from "@/lib/i18n-client";
 
 type Result =
@@ -81,7 +82,7 @@ export default function SearchAutoAdd({ query }: { query: string }) {
               <Avatar name={state.name} avatarUrl={state.avatar_url} size={44} />
               <div className="min-w-0 flex-1">
                 <div className="font-bold truncate flex items-center gap-1.5">
-                  <span className="truncate">{state.name}</span>
+                  <span className="truncate"><EmojiText text={state.name} /></span>
                   <CheckCircle2 className="w-4 h-4 text-good shrink-0" />
                 </div>
                 {state.handle && <div className="text-xs text-mut truncate">@{state.handle}</div>}

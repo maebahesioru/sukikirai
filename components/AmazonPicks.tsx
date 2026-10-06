@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import EmojiText from "@/components/EmojiText";
 import { useT } from "@/lib/i18n-client";
 
 type Item = { name: string; url: string; category: string };
@@ -124,7 +125,7 @@ export function AmazonPicks({ variant = "inline" }: Props) {
               className="min-w-0 flex-1 truncate text-x underline-offset-2 hover:underline"
               title={it.name}
             >
-              {it.name}
+              <EmojiText text={it.name} />
             </a>
             <span className="shrink-0 text-[10px] text-mut">{t(it.category)}</span>
           </li>

@@ -8,6 +8,7 @@ import HeroSearch from "@/components/HeroSearch";
 import PersonCard from "@/components/PersonCard";
 import Sidebar from "@/components/Sidebar";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
 import { getServerT } from "@/lib/i18n-server";
@@ -127,7 +128,7 @@ export default async function HomePage() {
                   {i + 1}
                 </span>
                 <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
-                <span className="text-sm font-medium truncate flex-1">{p.name}</span>
+                <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
                 <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
               </Link>
             ))}
@@ -173,7 +174,7 @@ export default async function HomePage() {
                     {i + 1}
                   </span>
                   <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
-                  <span className="text-sm font-medium truncate flex-1">{p.name}</span>
+                  <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
                   <span className="text-sm font-bold text-gold shrink-0">
                     {p.overall != null ? p.overall.toFixed(2) : "—"}
                   </span>

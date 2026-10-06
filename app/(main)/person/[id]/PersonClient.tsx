@@ -206,7 +206,7 @@ export default function PersonClient({
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-panel2 border border-line hover:border-line2 transition text-sm"
               >
                 <Avatar name={p.name} avatarUrl={p.avatar_url} size={22} />
-                {p.name}
+                <EmojiText text={p.name} />
               </Link>
             ))}
           </div>
@@ -227,7 +227,7 @@ export default function PersonClient({
                 href={`/polls/${poll.id}`}
                 className="block bg-panel2 border border-line rounded-xl p-3 hover:border-line2 transition"
               >
-                <p className="font-bold text-sm truncate">{poll.title}</p>
+                <p className="font-bold text-sm truncate"><EmojiText text={poll.title} /></p>
                 {poll.description && <p className="text-xs text-mut truncate mt-0.5">{poll.description}</p>}
                 <p className="text-xs text-mut mt-1">{t("{n}票", { n: poll.total_votes })}</p>
               </Link>

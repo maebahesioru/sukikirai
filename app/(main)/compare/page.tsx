@@ -5,6 +5,7 @@ import type { EvalStats, Person, VoteStats } from "@/lib/types";
 import { EVAL_ITEMS } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import ComparePicker from "@/components/ComparePicker";
+import EmojiText from "@/components/EmojiText";
 import { num } from "@/lib/format";
 import { getServerT } from "@/lib/i18n-server";
 
@@ -87,7 +88,7 @@ export default async function ComparePage({ searchParams }: Props) {
                   <Avatar name={p.name} avatarUrl={p.avatar_url} size={56} />
                 </div>
                 <Link href={`/person/${p.id}`} className="font-bold hover:text-x transition block truncate">
-                  {p.name}
+                  <EmojiText text={p.name} />
                 </Link>
                 {p.handle && <div className="text-xs text-mut truncate">@{p.handle}</div>}
                 <div className="text-xs text-mut mt-1">
@@ -114,7 +115,7 @@ export default async function ComparePage({ searchParams }: Props) {
               ].map(({ p, v }) => (
                 <div key={p.id}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium truncate mr-2">{p.name}</span>
+                    <span className="font-medium truncate mr-2"><EmojiText text={p.name} /></span>
                     <span className="text-mut shrink-0">{t("{n}票", { n: v.total })}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -148,7 +149,7 @@ export default async function ComparePage({ searchParams }: Props) {
                     <div className="text-3xl font-black text-gold">
                       {o != null ? o.toFixed(1) : "—"}
                     </div>
-                    <div className="text-xs text-mut truncate mt-1">{p.name}</div>
+                    <div className="text-xs text-mut truncate mt-1"><EmojiText text={p.name} /></div>
                   </div>
                 );
               })}

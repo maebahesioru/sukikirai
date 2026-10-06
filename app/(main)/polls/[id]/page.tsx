@@ -9,6 +9,7 @@ import { formatJST } from "@/lib/format";
 import { getServerT } from "@/lib/i18n-server";
 import PollVoteSection from "./PollVoteSection";
 import PollComments from "./PollComments";
+import EmojiText from "@/components/EmojiText";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function PollPage({ params }: Params) {
             {t("投票トーク")}
           </span>
         </div>
-        <h1 className="text-2xl font-black leading-snug">{poll.title}</h1>
+        <h1 className="text-2xl font-black leading-snug"><EmojiText text={poll.title} /></h1>
         {poll.description && (
           <p className="text-sm text-mut mt-2 leading-relaxed whitespace-pre-wrap">{poll.description}</p>
         )}
@@ -72,7 +73,7 @@ export default async function PollPage({ params }: Params) {
                 href={`/person/${p.id}`}
                 className="text-xs px-2.5 py-1 rounded-full bg-panel2 border border-line hover:border-line2 transition whitespace-nowrap"
               >
-                {p.name}
+                <EmojiText text={p.name} />
               </Link>
             ))}
           </div>

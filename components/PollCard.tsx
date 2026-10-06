@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import type { Poll, PollOption } from "@/lib/types";
 import { formatJST } from "@/lib/format";
@@ -20,9 +21,9 @@ export default async function PollCard({
       href={`/polls/${poll.id}`}
       className="block bg-panel border border-line rounded-2xl p-5 hover:border-line2 transition"
     >
-      <h2 className="font-bold leading-snug">{poll.title}</h2>
+      <h2 className="font-bold leading-snug"><EmojiText text={poll.title} /></h2>
       {poll.description && (
-        <p className="text-sm text-mut mt-1 line-clamp-2">{poll.description}</p>
+        <p className="text-sm text-mut mt-1 line-clamp-2"><EmojiText text={poll.description} /></p>
       )}
 
       <div className="mt-3 space-y-1.5">
@@ -38,7 +39,7 @@ export default async function PollCard({
                 {!o.image_url && avatar && (
                   <Avatar name={person?.name ?? o.option_text} avatarUrl={avatar} size={18} />
                 )}
-                <span className="truncate mr-2">{o.option_text}</span>
+                <span className="truncate mr-2"><EmojiText text={o.option_text} /></span>
                 <span className="text-mut shrink-0 ml-auto">
                   {t("{n}票（{pct}%）", { n: count, pct: pct.toFixed(0) })}
                 </span>

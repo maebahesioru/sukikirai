@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { Plus, X, Search } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
+import EmojiText from "@/components/EmojiText";
 import { useT } from "@/lib/i18n-client";
 import type { PollType } from "@/lib/types";
 
@@ -265,7 +266,7 @@ export default function CreatePollForm() {
                 onClick={() => addRelated(p)}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-panel transition"
               >
-                {p.name}
+                <EmojiText text={p.name} />
                 {p.handle && <span className="text-mut text-xs ml-2">@{p.handle}</span>}
               </button>
             ))}
@@ -278,7 +279,7 @@ export default function CreatePollForm() {
                 key={p.id}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-panel2 border border-line text-sm"
               >
-                {p.name}
+                <EmojiText text={p.name} />
                 <button
                   type="button"
                   onClick={() => setRelated(related.filter((r) => r.id !== p.id))}

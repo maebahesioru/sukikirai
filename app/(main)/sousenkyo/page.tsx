@@ -9,6 +9,7 @@ import { num } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
 import type { Metadata } from "next";
 import { getServerT } from "@/lib/i18n-server";
+import EmojiText from "@/components/EmojiText";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +109,7 @@ export default async function SousenkyoPage() {
                   {i + 1}
                 </span>
                 <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
-                <span className="text-sm font-medium truncate flex-1">{p.name}</span>
+                <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
                 <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: num(p.recentVotes) })}</span>
               </Link>
             ))}

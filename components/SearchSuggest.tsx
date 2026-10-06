@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { Search } from "lucide-react";
 import { useT } from "@/lib/i18n-client";
 
@@ -149,7 +150,7 @@ export default function SearchSuggest({
                   }`}
                 >
                   <Avatar name={it.name} avatarUrl={it.avatar_url} size={28} />
-                  <span className="text-sm font-medium truncate">{it.name}</span>
+                  <span className="text-sm font-medium truncate"><EmojiText text={it.name} /></span>
                   {it.handle && (
                     <span className="text-xs text-mut truncate ml-auto shrink-0">@{it.handle}</span>
                   )}

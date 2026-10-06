@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Crown, Plus } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { getFingerprint } from "@/lib/fingerprint";
 import { bigAvatarUrl, findOptionPerson, type PollPersonLite } from "@/lib/pollui";
 import { useT } from "@/lib/i18n-client";
@@ -161,7 +162,7 @@ export default function PollVoteSection({
                   avatarUrl={avatarOf(o)}
                   name={personOf(o)?.name ?? o.option_text}
                 />
-                <span className="font-bold text-sm text-center leading-snug">{o.option_text}</span>
+                <span className="font-bold text-sm text-center leading-snug"><EmojiText text={o.option_text} /></span>
                 <span className="text-[11px] text-mut">{t("タップして投票")}</span>
               </button>
             ) : (
@@ -179,7 +180,7 @@ export default function PollVoteSection({
                       size={40}
                     />
                   )}
-                  <span className="flex-1">{o.option_text}</span>
+                  <span className="flex-1"><EmojiText text={o.option_text} /></span>
                 </span>
                 {o.image_url && (
                   <span className="block mt-2">

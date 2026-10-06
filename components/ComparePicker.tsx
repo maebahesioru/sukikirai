@@ -70,7 +70,7 @@ function Slot({
       <div className="bg-panel border border-line rounded-2xl p-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs text-mut">{label}</div>
-          <div className="font-bold truncate">{current.name}</div>
+          <div className="font-bold truncate"><EmojiText text={current.name} /></div>
           {current.handle && <div className="text-xs text-mut truncate">@{current.handle}</div>}
         </div>
         <button

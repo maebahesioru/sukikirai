@@ -10,6 +10,7 @@ import { num } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
 import type { Metadata } from "next";
 import { getServerT } from "@/lib/i18n-server";
+import EmojiText from "@/components/EmojiText";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +116,7 @@ export default async function TodayPage() {
               <Avatar name={c.person_name} avatarUrl={c.person_avatar} size={32} />
               <div className="min-w-0 flex-1">
                 <div className="text-xs text-mut truncate">
-                  <span className="font-bold text-txt">{c.person_name}</span>{" "}
+                  <span className="font-bold text-txt"><EmojiText text={c.person_name} /></span>{" "}
                   {t("への{type}コメント", { type: t(c.vote_type === "like" ? "好き派" : "嫌い派") })}
                 </div>
                 <p className="text-sm line-clamp-2 mt-0.5">{c.content}</p>

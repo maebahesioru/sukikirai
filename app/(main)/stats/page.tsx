@@ -15,6 +15,7 @@ import {
 import { EVAL_ITEMS } from "@/lib/constants";
 import { num } from "@/lib/format";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -152,7 +153,7 @@ export default async function StatsPage() {
             >
               <span className="w-5 text-center font-black text-gold shrink-0">{i + 1}</span>
               <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
-              <span className="text-sm truncate flex-1">{p.name}</span>
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
               <span className="text-sm font-bold text-gold shrink-0">
                 {p.overall != null ? p.overall.toFixed(2) : "—"}
                 <span className="text-[10px] text-mut ml-1">{t("（{n}人）", { n: p.evalCount ?? 0 })}</span>
@@ -178,7 +179,7 @@ export default async function StatsPage() {
             >
               <span className="w-5 text-center font-black text-bad shrink-0">{i + 1}</span>
               <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
-              <span className="text-sm truncate flex-1">{p.name}</span>
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
               <span className="text-sm font-bold text-bad shrink-0">
                 {p.overall != null ? p.overall.toFixed(2) : "—"}
                 <span className="text-[10px] text-mut ml-1">{t("（{n}人）", { n: p.evalCount ?? 0 })}</span>

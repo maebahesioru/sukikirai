@@ -6,6 +6,7 @@ import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import ReportModal from "@/components/ReportModal";
 import CommentText from "@/components/CommentText";
+import EmojiText from "@/components/EmojiText";
 import TranslateBox from "@/components/TranslateBox";
 import { useT, useLocale } from "@/lib/i18n-client";
 import type { ReportReason } from "@/lib/constants";
@@ -323,7 +324,7 @@ function PollCommentItem({
     <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-center gap-2 flex-wrap mb-2 text-sm">
         <span className="text-mut text-xs">#{comment.comment_number}</span>
-        <span className="font-medium">{comment.name || t("匿名")}</span>
+        <span className="font-medium"><EmojiText text={comment.name || t("匿名")} /></span>
         {isSageMail(comment.mail) && (
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"
@@ -393,7 +394,7 @@ function PollCommentItem({
             <div key={r.id} id={`c${r.comment_number}`} className="text-sm">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <span className="text-mut text-xs">&gt;&gt;{comment.comment_number}</span>
-                <span className="font-medium">{r.name || t("匿名")}</span>
+                <span className="font-medium"><EmojiText text={r.name || t("匿名")} /></span>
                 {isSageMail(r.mail) && (
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full bg-panel2 border border-line text-mut"

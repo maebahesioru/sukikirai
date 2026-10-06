@@ -61,8 +61,10 @@ export function assignThreadKeys<T extends { id: string; created_at: string }>(
 
 // 書き込みID: cookie_id のハッシュから決定的に9文字（匿名・追跡不能）
 export function anonId(cookieId: string | null, fallbackId: string): string {
+  // 2ch文化: IDは日替わり（JST基準）。日をまたぐと同一人物を追跡できなくなる。
+  const jstDate = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
   const h = createHash("sha256")
-    .update(cookieId || "anon:" + fallbackId)
+    .update((cookieId || "anon:" + fallbackId) + "|" + jstDate)
     .digest("base64");
   return h.replace(/[^A-Za-z0-9]/g, "").slice(0, 9);
 }

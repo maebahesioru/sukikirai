@@ -15,6 +15,11 @@ BBS_NAME_COUNT=64
 BBS_MAIL_COUNT=64
 BBS_UNICODE=pass
 BBS_FORCE_ID=checked
+BBS_DEFAULT_NAME=名無しさん
+BBS_NAMECOOKIE=checked
+BBS_MAILCOOKIE=checked
+BBS_AA=checked
+BBS_MARU=checked
 `;
 
 export async function GET() {

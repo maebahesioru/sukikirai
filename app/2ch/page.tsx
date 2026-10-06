@@ -50,6 +50,18 @@ export default function TwochPage() {
         書き込みは各スレの read.cgi へのPOST（専ブラの通常の書き込み）に対応しています。
         投稿はブラウザ版と同じく匿名で、ログは保存されません。
       </p>
+      <section className="space-y-2">
+        <h2 className="font-bold">実際の表示例（Siki）</h2>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/2ch-siki-example.png"
+          alt="2ch専ブラ（Siki）でツイッタラー世論調査の板を表示した例"
+          className="rounded-xl border border-line w-full"
+        />
+        <p className="text-xs text-mut">
+          2ch専ブラ「Siki」で「ツイッタラー世論調査（人物）」板を開いた例。スレ一覧・勢い・レス数が専ブラ上で表示されます。
+        </p>
+      </section>
       <Link href="/" className="text-x hover:underline">
         ← サイトに戻る
       </Link>

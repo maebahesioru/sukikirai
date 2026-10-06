@@ -61,6 +61,13 @@ export async function POST(request: Request) {
     if (!person || person.is_hidden) {
       return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
     }
+    // 対象ごとの速度キャップ（評価フラッド対策・2026-10-06）
+    if (!rateLimit(`eval:target:${person.id}`, 100, 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "評価が集中しています。少し時間をおいてお試しください" },
+        { status: 429 }
+      );
+    }
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "評価できません" }, { status: 403 });
     }

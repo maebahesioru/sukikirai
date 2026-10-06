@@ -19,6 +19,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
     }
 
+    // 対象ごとの速度キャップ（フラッド対策・2026-10-06）
+    if (!rateLimit(`pollvote:target:${pollId}`, 150, 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "投票が集中しています。少し時間をおいてお試しください" },
+        { status: 429 }
+      );
+    }
     const ip = clientIp(request);
     if (!rateLimit(`pollvote:ip:${ip}`, 600, 60 * 60 * 1000)) {
       return NextResponse.json({ success: false, error: "リクエストが多すぎます" }, { status: 429 });

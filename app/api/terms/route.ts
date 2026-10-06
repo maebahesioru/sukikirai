@@ -5,7 +5,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
-  if (!rateLimit(`terms:ip:${ip}`, 30, 60 * 60 * 1000) || !rateLimit(`terms:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
+  if (!rateLimit(`terms:ip:${ip}`, 15, 60 * 60 * 1000) || !rateLimit(`terms:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
     return NextResponse.json(
       { success: false, error: "リクエストが多すぎます。しばらくお待ちください" },
       { status: 429 }

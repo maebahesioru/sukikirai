@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPerson, getVoteStats, insertVote, isKnownToken } from "@/lib/queries";
+import { getPerson, getVoteStats, insertVote, tokenIssuedAt } from "@/lib/queries";
 import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 
@@ -18,8 +18,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
     }
     // 発行済みトークンのみ受け付け（偽造トークンでの投票防止）
-    if (!(await isKnownToken(userToken))) {
+    const issuedAt = await tokenIssuedAt(userToken);
+    if (!issuedAt) {
       return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
+    }
+    // 直近1時間に発行されたトークンでの対象フラッド制限（mint+use攻撃対策）
+    if (issuedAt.getTime() > Date.now() - 60 * 60 * 1000) {
+      if (!rateLimit(`freshvote:target:${personId}`, 30, 60 * 1000)) {
+        return NextResponse.json(
+          { success: false, error: "投票が集中しています。少し時間をおいてお試しください" },
+          { status: 429 }
+        );
+      }
     }
 
     const ip = clientIp(request);
@@ -51,7 +61,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "人物が見つかりません" }, { status: 404 });
     }
     // 対象ごとの速度キャップ（スクリプトによる一斉フラッド対策・2026-10-06）
-    if (!rateLimit(`vote:target:${person.id}`, 150, 60 * 1000)) {
+    if (!rateLimit(`vote:target:${person.id}`, 60, 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "投票が集中しています。少し時間をおいてお試しください" },
         { status: 429 }

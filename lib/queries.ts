@@ -1883,6 +1883,16 @@ export async function isKnownToken(token: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+/** 発行済みトークンの発行時刻（未登録/期限切れはnull）。mint+use攻撃対策用 */
+export async function tokenIssuedAt(token: string): Promise<Date | null> {
+  const hash = createHash("sha256").update(token).digest("hex");
+  const rows = await sql<{ issued_at: Date }>(
+    `SELECT issued_at FROM voter_tokens WHERE token_hash = $1 AND expires_at > now() LIMIT 1`,
+    [hash]
+  );
+  return rows[0]?.issued_at ?? null;
+}
+
 /** トークンを発行済みとして登録（/api/terms用） */
 export async function registerToken(token: string, expiresAt: Date): Promise<void> {
   const hash = createHash("sha256").update(token).digest("hex");

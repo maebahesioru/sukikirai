@@ -30,7 +30,12 @@ export default async function Footer() {
         </div>
         <p className="leading-relaxed">
           {t(
-            "本サイトは誰でも匿名でXユーザーの好き嫌い・評価を書き込める非公式のまとめサイトです。X Corp. および各対象者とは関係ありません。誹謗中傷・個人情報の投稿は禁止です。"
+            "当サイトは「ヒカマーの十時間_mania」が運営する匿名・無法地帯の本音投票所です。誹謗中傷も辛辣な意見もそのままどうぞ。投稿ログは一切保存していません。任意の開示請求には応じません。"
+          )}
+        </p>
+        <p className="leading-relaxed text-xs">
+          {t(
+            "運営: ヒカマーの十時間_mania（@maebahesioru2）｜※個人情報の晒し等、法令上明らかな問題がある投稿のみ非表示にすることがあります。"
           )}
         </p>
         <p>
@@ -44,6 +49,18 @@ export default async function Footer() {
             {t("Twitter馴れ合いサークル（馴れ合い表）")}
           </a>
           <span className="ml-2">{t("Xの交流相手をグリッドで一覧表示するツール")}</span>
+        </p>
+        <p>
+          {t("関連:")}{" "}
+          <a
+            href="https://hikamers.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-txt underline-offset-2 hover:underline transition"
+          >
+            {t("ヒカマーwiki")}
+          </a>
+          <span className="ml-2">{t("ヒカマー界隈の百科事典")}</span>
         </p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>

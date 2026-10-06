@@ -3,6 +3,7 @@ import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { SITE_URL, SITE_NAME, SITE_DESC } from "@/lib/site";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import EmojiCopyFix from "@/components/EmojiCopyFix";
 import { getLocale } from "@/lib/i18n-server";
 
 const notoSansJP = Noto_Sans_JP({
@@ -99,6 +100,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: WEBSITE_JSONLD }}
         />
         <ServiceWorkerRegister />
+        <EmojiCopyFix />
         {children}
       </body>
     </html>

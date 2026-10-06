@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     // 発行済みトークンのみ受け付け（偽造トークン対策）
     const issuedAt = await tokenIssuedAt(userToken);
     if (!issuedAt) {
-      return NextResponse.json({ success: false, error: "パラメータが不正です" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
     }
     // 直近1時間に発行されたトークンでの対象フラッド制限（mint+use攻撃対策）
     if (issuedAt.getTime() > Date.now() - 60 * 60 * 1000) {

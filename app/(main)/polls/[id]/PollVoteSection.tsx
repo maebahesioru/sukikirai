@@ -94,7 +94,7 @@ export default function PollVoteSection({
         if (data.options) setOptions(data.options);
         setMyChoice(data.currentOptionId);
         alert(t("既に投票済みです"));
-      } else if (data.error === "Invalid user token" || data.error === "パラメータが不正です") {
+      } else if (data.error === "Invalid user token") {
         Cookies.remove("user_token");
         location.reload();
       } else {

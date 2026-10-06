@@ -28,7 +28,7 @@ const ADULT_RE = /r18|r-18|18\+|18禁|成人向け|エロ|えっち|えちえち
 const ANTI_HIKAMER_RE = /ヒカマーアンチ|反ヒカマー|ヒカマニアンチ|ヒカマー嫌い|アンチヒカマー/;
 
 /** ヒカマー本体シグナル */
-const HIKAMER_RE = /ヒカマー|ヒカマニ|ヒカマズ|ヒカマー界隈|ヒカマる/;
+const HIKAMER_RE = /ヒカマー|ヒカマニ|ヒカマズ|ヒカマー界隈|ヒカマる|ヒカニチ/;
 
 /**
  * 専門タグ辞書（上から順に判定・最大3個まで）。
@@ -324,7 +324,7 @@ const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
 /** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
 const COMPANY_NAME_RE = /^(yahoo|youtube|google|openai|x|amazon|microsoft|apple|meta|nintendo|sony|rakuten|楽天|line|discord|tiktok|netflix|nhk)$/i;
 /** 政治家 */
-const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "内閣総理", "大臣", "知事", "市長", "市議会", "都議会", "立候補"];
+const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "内閣総理", "大臣", "知事", "市長", "市議会", "都議会", "立候補", "議員", "市議"];
 /** 芸能人 */
 const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌手", "お笑いコンビ", "お笑い芸人"];
 /** Vtuber */
@@ -332,11 +332,11 @@ const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinge
 /** BOT（bio側の言い回し） */
 const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる", "（bot）", "(bot)", "中の人はいません", "自動でツイート", "botが投稿"];
 /** YouTuber（リンク・定型文も信号にする） */
-const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube.com", "youtu.be", "チャンネル登録"];
+const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube.com", "youtu.be", "チャンネル登録", "youtubeチャンネル", "youtube垢", "youtube登録者", "youtubeやって", "uuum"];
 /** 配信者（配信プラットフォームのURLも信号にする） */
 const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer", "twitcasting.tv", "showroom", "openrec.tv", "mildom", "iriam", "ポコチャ"];
 /** クリエイター */
-const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com", "ゲーム制作", "ゲーム開発", "unityroom", "ファンアート"];
+const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com", "ゲーム制作", "ゲーム開発", "unityroom", "ファンアート", "note.com", "ブログ", "ライター", "執筆", "著書", "nico.ms"];
 /** 界隈の命名文化（ハンドル側の判定用）: _mania系・hikakin系 */
 const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
 

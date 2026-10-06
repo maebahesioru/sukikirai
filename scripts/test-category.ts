@@ -25,6 +25,12 @@ const cases: [string, string, string, string][] = [
   ["テスト", "このアカウントは非公式です！ハズビンホテル関係の情報", "HazbinHotel_88", "その他"],
   ["motomachimayuge", "横浜バニラ株式会社 代表取締役社長CEO", "motomachimayuge", "企業・サービス"],
   ["予兆", "予兆の公式Xです！AIや人間の心を読もう！", "YochoKoshiki", "企業・サービス"],
+  ["テスト", "note.com/xxx で執筆しています", "test9", "クリエイター"],
+  ["テスト", "ブログやってます", "test10", "クリエイター"],
+  ["テスト", "ヒカニチ見てます", "test11", "ヒカマー"],
+  ["テスト", "市議をしています", "test12", "政治家"],
+  ["テスト", "YouTubeチャンネルやってます", "test13", "YouTuber"],
+  ["テスト", "UUUM所属です", "test14", "YouTuber"],
 ];
 
 let ng = 0;

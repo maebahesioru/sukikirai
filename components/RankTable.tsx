@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
+import EmojiText from "./EmojiText";
 import type { RankingRow } from "@/lib/types";
 import { getServerT } from "@/lib/i18n-server";
 
@@ -62,7 +63,7 @@ export default async function RankTable({ rows, kind }: { rows: RankingRow[]; ki
             </span>
             <Avatar name={p.name} avatarUrl={p.avatar_url} size={40} />
             <div className="min-w-0 flex-1">
-              <p className="font-bold truncate">{p.name}</p>
+              <p className="font-bold truncate"><EmojiText text={p.name} /></p>
               {p.handle && <p className="text-xs text-mut truncate">@{p.handle}</p>}
             </div>
             <div className="shrink-0">{metric}</div>

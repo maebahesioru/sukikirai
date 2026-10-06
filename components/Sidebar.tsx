@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Flame, MessageCircle } from "lucide-react";
 import Avatar from "./Avatar";
+import EmojiText from "./EmojiText";
 import { timeAgo } from "@/lib/format";
 import type { RankingRow } from "@/lib/types";
 import { getServerT, getLocale } from "@/lib/i18n-server";
@@ -43,7 +44,7 @@ export default async function Sidebar({
                 {i + 1}
               </span>
               <Avatar name={p.name} avatarUrl={p.avatar_url} size={32} />
-              <span className="text-sm truncate flex-1">{p.name}</span>
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
               <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
             </Link>
           ))}

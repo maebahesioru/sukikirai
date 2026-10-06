@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Avatar from "./Avatar";
+import EmojiText from "./EmojiText";
 import type { Person } from "@/lib/types";
 import { getServerT } from "@/lib/i18n-server";
 
@@ -18,13 +19,13 @@ export default async function PersonCard({ p }: { p: PersonCardData }) {
       <div className="flex items-center gap-3">
         <Avatar name={p.name} avatarUrl={p.avatar_url} size={44} />
         <div className="min-w-0">
-          <h3 className="font-bold truncate group-hover:text-x transition">{p.name}</h3>
+          <h3 className="font-bold truncate group-hover:text-x transition"><EmojiText text={p.name} /></h3>
           {p.handle && <p className="text-xs text-mut truncate">@{p.handle}</p>}
         </div>
       </div>
 
       {(p.x_description || p.description) && (
-        <p className="text-sm text-mut line-clamp-2 leading-snug">{p.x_description || p.description}</p>
+        <p className="text-sm text-mut line-clamp-2 leading-snug"><EmojiText text={p.x_description || p.description || ""} /></p>
       )}
 
       <div className="flex flex-wrap gap-1 mt-auto">

@@ -1,6 +1,7 @@
 // コメント本文の表示: >>N アンカーとURLをリンク化し、AA（アスキーアート）は等幅で表示する
 import type { ReactNode } from "react";
 import { isAA } from "@/lib/format";
+import EmojiText from "./EmojiText";
 
 // https://… / www.… / 素のドメイン（note.com/xxx 等）をリンク化
 // URL本体はASCII URL文字のみ（日本語や「。」を巻き込まない）
@@ -54,7 +55,7 @@ function renderContent(content: string): ReactNode[] {
           </a>
         );
       } else {
-        out.push(<span key={`s${i}-${j}`}>{q}</span>);
+        out.push(<EmojiText key={`s${i}-${j}`} text={q} />);
       }
     });
   });

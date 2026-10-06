@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, ChevronRight, Loader2 } from "lucide-react";
 import Avatar from "./Avatar";
+import EmojiText from "./EmojiText";
 import type { XUserCandidate } from "@/lib/types";
 import { useT } from "@/lib/i18n-client";
 
@@ -65,7 +66,7 @@ export default function XUserCandidates({
             <Avatar name={c.name} avatarUrl={c.avatarUrl} size={40} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-bold text-sm truncate">{c.name}</span>
+                <span className="font-bold text-sm truncate"><EmojiText text={c.name} /></span>
                 {c.registered && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-xsoft text-x">
                     {t("登録済み")}

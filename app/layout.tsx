@@ -86,6 +86,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={notoSansJP.variable} suppressHydrationWarning>
       <body className="antialiased">
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         {/* 描画前にテーマを確定させる（ここを next/script にすると遅延実行で一瞬前のテーマが見える）。
             body先頭の同期スクリプト = パース時に即実行され、初回ペイント前に html へクラスが付く */}
         <script

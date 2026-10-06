@@ -14,6 +14,7 @@ import type { CommentRow, CommentWithReplies } from "@/lib/types";
 import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS } from "@/lib/constants";
 import ReportModal from "./ReportModal";
 import CommentText from "./CommentText";
+import EmojiText from "./EmojiText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
 import { useT, useLocale } from "@/lib/i18n-client";
@@ -469,7 +470,7 @@ function CommentItem({
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 flex-wrap text-sm">
           <span className="text-mut text-xs">#{comment.comment_number}</span>
-          <span className="font-medium">{comment.name || t("匿名")}</span>
+          <span className="font-medium"><EmojiText text={comment.name || t("匿名")} /></span>
           {(comment.gender || comment.age_group) && (
             <span className="text-xs text-mut">
               （{[comment.gender, comment.age_group].filter(Boolean).join("・")}）
@@ -621,7 +622,7 @@ function ReplyItem({
     <div id={`c${reply.comment_number}`} className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
         <span className="text-mut text-xs">&gt;&gt;{parentNumber}</span>
-        <span className="font-medium">{reply.name || t("匿名")}</span>
+        <span className="font-medium"><EmojiText text={reply.name || t("匿名")} /></span>
         {(reply.gender || reply.age_group) && (
           <span className="text-xs text-mut">
             （{[reply.gender, reply.age_group].filter(Boolean).join("・")}）

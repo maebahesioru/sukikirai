@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import EmojiText from "./EmojiText";
 
 type P = { id: string; name: string; handle: string | null };
 
@@ -119,7 +120,7 @@ function Slot({
               onClick={() => onSelect(p.id)}
               className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-panel transition"
             >
-              {p.name}
+              <EmojiText text={p.name} />
               {p.handle && <span className="text-mut text-xs ml-2">@{p.handle}</span>}
             </button>
           ))}

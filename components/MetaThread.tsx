@@ -4,6 +4,7 @@ import { useState } from "react";
 import Cookies from "js-cookie";
 import { MessageSquare } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
+import EmojiText from "./EmojiText";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
 import { useT } from "@/lib/i18n-client";
@@ -88,7 +89,7 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
           posts.map((p) => (
             <div key={p.id} className="bg-panel2 border border-line rounded-xl p-4">
               <div className="flex items-center gap-2 text-xs text-mut mb-1.5 flex-wrap">
-                <span className="font-bold text-txt text-sm">{p.name || t("名無しさん")}</span>
+                <span className="font-bold text-txt text-sm"><EmojiText text={p.name || t("名無しさん")} /></span>
                 <span>{fmtTime2ch(p.created_at)}</span>
                 <span className="font-mono text-[11px]">ID:{p.anon_id}</span>
               </div>

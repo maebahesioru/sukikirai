@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Trophy, Users, Vote } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import EmojiText from "@/components/EmojiText";
 import VotePanel, { type VoteInfo } from "@/components/VotePanel";
 import EvalPanel from "@/components/EvalPanel";
 import ShareButtons from "@/components/ShareButtons";
@@ -59,7 +60,7 @@ export default function PersonClient({
           <Avatar name={person.name} avatarUrl={person.avatar_url} size={80} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-black">{person.name}</h1>
+              <h1 className="text-2xl font-black"><EmojiText text={person.name} /></h1>
               {person.handle && !archived && (
                 <a
                   href={`https://x.com/${person.handle}`}

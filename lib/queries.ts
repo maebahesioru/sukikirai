@@ -252,6 +252,39 @@ export async function getTodayVote(
   return r?.vote_type ?? null;
 }
 
+/** 連続投票日数（JST日基準・今日または昨日までの連続日数） */
+export async function getVoteStreak(cookieId: string): Promise<number> {
+  if (!cookieId) return 0;
+  const rows = await sql<{ d: string }>(
+    `SELECT to_char((created_at AT TIME ZONE 'Asia/Tokyo')::date, 'YYYY-MM-DD') AS d
+     FROM votes WHERE cookie_id = $1
+     GROUP BY 1 ORDER BY 1 DESC LIMIT 400`,
+    [cookieId]
+  );
+  if (rows.length === 0) return 0;
+  const jstNow = new Date(Date.now() + 9 * 3600 * 1000);
+  const today = jstNow.toISOString().slice(0, 10);
+  const prevDay = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+  };
+  const latest = rows[0].d;
+  let cursor: string;
+  if (latest === today) cursor = today;
+  else if (latest === prevDay(today)) cursor = prevDay(today);
+  else return 0;
+  let streak = 0;
+  for (const r of rows) {
+    if (r.d === cursor) {
+      streak++;
+      cursor = prevDay(cursor);
+    } else if (r.d < cursor) {
+      break;
+    }
+  }
+  return streak;
+}
+
 export async function insertVote(
   personId: string,
   voteType: "like" | "dislike",

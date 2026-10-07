@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPerson, getVoteStats, insertVote, tokenIssuedAt } from "@/lib/queries";
+import { getPerson, getVoteStats, insertVote, tokenIssuedAt, getVoteStreak } from "@/lib/queries";
 import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 
@@ -79,6 +79,7 @@ export async function POST(request: Request) {
           error: "今日は既に投票済みです。明日また投票できます。",
           voteType: null,
           ...stats,
+          streak: await getVoteStreak(userToken),
         },
         { status: 429 }
       );
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
 
     const r = await insertVote(person.id, voteType, userToken);
     const stats = await getVoteStats(person.id);
+    const streak = await getVoteStreak(userToken);
     if (r.ok && fp) markFpTarget(fp, "vote", person.id);
 
     if (!r.ok) {
@@ -95,11 +97,12 @@ export async function POST(request: Request) {
           error: "今日は既に投票済みです。明日また投票できます。",
           voteType: r.existing ?? null,
           ...stats,
+          streak,
         },
         { status: 429 }
       );
     }
-    return NextResponse.json({ success: true, ...stats });
+    return NextResponse.json({ success: true, ...stats, streak });
   } catch (e) {
     console.error("vote API error:", e);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

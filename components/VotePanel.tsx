@@ -20,6 +20,7 @@ export default function VotePanel({
   initialDislikes,
   initialVoted,
   initialVoteType,
+  initialStreak = 0,
   onVotedChange,
   archived = false,
 }: {
@@ -29,6 +30,7 @@ export default function VotePanel({
   initialDislikes: number;
   initialVoted: boolean;
   initialVoteType: "like" | "dislike" | null;
+  initialStreak?: number;
   onVotedChange?: (info: VoteInfo) => void;
   archived?: boolean;
 }) {
@@ -37,6 +39,7 @@ export default function VotePanel({
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [voted, setVoted] = useState(initialVoted);
   const [voteType, setVoteType] = useState<"like" | "dislike" | null>(initialVoteType);
+  const [streak, setStreak] = useState(initialStreak);
   const [busy, setBusy] = useState(false);
   const [tweet, setTweet] = useState(true);
 
@@ -63,6 +66,7 @@ export default function VotePanel({
         setDislikes(data.dislikes);
         setVoted(true);
         setVoteType(kind);
+        if (typeof data.streak === "number") setStreak(data.streak);
         onVotedChange?.({ voted: true, voteType: kind, likes: data.likes, dislikes: data.dislikes });
         if (tweet) {
           const totalN = data.likes + data.dislikes;
@@ -83,6 +87,7 @@ export default function VotePanel({
         setDislikes(data.dislikes ?? dislikes);
         setVoted(true);
         setVoteType(data.voteType);
+        if (typeof data.streak === "number") setStreak(data.streak);
         onVotedChange?.({
           voted: true,
           voteType: data.voteType,
@@ -140,6 +145,12 @@ export default function VotePanel({
           <p className="text-center text-mut text-sm mb-5">
             {t("投票すると、みんなのコメントが読めるようになり、8項目評価を書き込めます")}
           </p>
+          {streak >= 2 && (
+            <p className="text-center text-sm mb-4">
+              🔥 <span className="font-bold text-like">{t("連続{n}日投票中！", { n: streak })}</span>{" "}
+              <span className="text-xs text-mut">{t("今日も投票して継続しよう")}</span>
+            </p>
+          )}
           <div className="flex gap-3 justify-center max-w-md mx-auto">
             <button
               onClick={() => vote("like")}
@@ -190,6 +201,12 @@ export default function VotePanel({
             {t("」に投票しました")}
           </p>
           <p className="text-center text-xs text-mut mt-1">{t("※投票は1日1回まで")}</p>
+          {streak >= 2 && (
+            <p className="text-center text-sm mt-2">
+              🔥 <span className="font-bold text-like">{t("連続{n}日投票中！", { n: streak })}</span>{" "}
+              <span className="text-xs text-mut">{t("明日も投票すると継続します")}</span>
+            </p>
+          )}
         </div>
       )}
     </section>

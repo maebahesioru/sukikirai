@@ -15,6 +15,7 @@ import {
   getTagRanking,
   getTodayVote,
   getVoteStats,
+  getVoteStreak,
 } from "@/lib/queries";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { maybeRefreshPersonProfile } from "@/lib/xsync";
@@ -58,7 +59,7 @@ export default async function PersonPage({ params }: Params) {
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value ?? "";
 
-  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent] =
+  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak] =
     await Promise.all([
       getVoteStats(id),
       getEvalStats(id),
@@ -70,6 +71,7 @@ export default async function PersonPage({ params }: Params) {
       getLikeRankingPosition(id),
       getRanking("trending", 8),
       getRecentComments(5),
+      getVoteStreak(token),
     ]);
 
   const jsonLd = {
@@ -106,6 +108,7 @@ export default async function PersonPage({ params }: Params) {
           evalStats={evalStats}
           initialVoted={myVote !== null}
           initialVoteType={myVote}
+          initialStreak={streak}
           myEval={myEval}
           tagRanking={tagRanking}
           relatedPeople={relatedPeople}

@@ -456,5 +456,8 @@
  "追加する": "Añadir",
  "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Los usuarios no registrados se añaden eligiéndolos de las sugerencias de X o introduciendo el ID directamente",
  "ヒカマズ通信": "Hikamazu Tsushin",
- "ヒカマー界隈のニュースサイト": "Sitio de noticias de la comunidad Hikamer"
+ "ヒカマー界隈のニュースサイト": "Sitio de noticias de la comunidad Hikamer",
+ "連続{n}日投票中！": "¡{n} días seguidos votando!",
+ "明日も投票すると継続します": "Vuelve mañana para mantenerla",
+ "今日も投票して継続しよう": "¡Vota hoy para continuar!"
 }

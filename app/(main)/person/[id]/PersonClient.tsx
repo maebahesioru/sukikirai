@@ -21,6 +21,7 @@ export default function PersonClient({
   evalStats,
   initialVoted,
   initialVoteType,
+  initialStreak,
   myEval,
   tagRanking,
   relatedPeople,
@@ -32,6 +33,7 @@ export default function PersonClient({
   evalStats: EvalStats;
   initialVoted: boolean;
   initialVoteType: "like" | "dislike" | null;
+  initialStreak: number;
   myEval: Record<string, number | null> | null;
   tagRanking: { id: string; name: string; likePct: number; total: number }[];
   relatedPeople: Person[];
@@ -136,6 +138,7 @@ export default function PersonClient({
         initialDislikes={voteStats.dislikes}
         initialVoted={initialVoted}
         initialVoteType={initialVoteType}
+        initialStreak={initialStreak}
         onVotedChange={setVoteInfo}
         archived={archived}
       />

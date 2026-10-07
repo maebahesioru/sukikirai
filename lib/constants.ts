@@ -10,6 +10,7 @@ export const CATEGORIES = [
   "企業・サービス",
   "芸能人",
   "政治家",
+  "政治・時事",
   "その他",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];

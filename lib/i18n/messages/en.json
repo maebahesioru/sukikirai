@@ -472,5 +472,7 @@
  "好き率が高い順。20票以上集めた人物が対象です。": "Sorted by like rate. People with 20+ votes qualify.",
  "嫌い率が高い順。20票以上集めた人物が対象です。": "Sorted by dislike rate. People with 20+ votes qualify.",
  "8項目評価の平均点が高い順。10人以上が評価した人物が対象です。": "Sorted by highest average of the 8-item ratings. People rated by 10+ users qualify.",
- "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Sorted by lowest average of the 8-item ratings. People rated by 10+ users qualify."
+ "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Sorted by lowest average of the 8-item ratings. People rated by 10+ users qualify.",
+ "青=正の相関（一緒に高い/低い）、赤=負の相関。1に近いほど連動しています（斜めは同じ項目なので除く）。": "Blue = positive correlation (high/low together), red = negative. Closer to 1 = more linked (diagonal = same item, omitted).",
+ "同じ項目": "Same item"
 }

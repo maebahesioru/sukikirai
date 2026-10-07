@@ -262,7 +262,7 @@ export default async function StatsPage() {
       <section className="bg-panel border border-line rounded-2xl p-5 overflow-x-auto">
         <h2 className="font-bold mb-1">{t("8項目評価の相関")}</h2>
         <p className="text-xs text-mut mb-4">
-          {t("青=正の相関（一緒に高い/低い）、赤=負の相関。1に近いほど連動しています。")}
+          {t("青=正の相関（一緒に高い/低い）、赤=負の相関。1に近いほど連動しています（斜めは同じ項目なので除く）。")}
         </p>
         <table className="text-xs border-separate border-spacing-0.5 min-w-[460px]">
           <thead>
@@ -280,15 +280,16 @@ export default async function StatsPage() {
               <tr key={row.key}>
                 <td className="text-mut pr-2 whitespace-nowrap text-right">{t(row.label)}</td>
                 {EVAL_ITEMS.map((col) => {
-                  const v = corrOf(row.key, col.key);
+                  const isDiag = row.key === col.key;
+                  const v = isDiag ? null : corrOf(row.key, col.key);
                   return (
                     <td
                       key={col.key}
-                      className="w-12 h-8 text-center text-[10px] font-bold"
+                      className={`w-12 h-8 text-center text-[10px] font-bold ${isDiag ? "text-mut/50" : ""}`}
                       style={{ backgroundColor: v != null ? corrColor(v) : "transparent" }}
-                      title={`${t(row.label)} × ${t(col.label)}: ${v != null ? v.toFixed(2) : "—"}`}
+                      title={isDiag ? t("同じ項目") : `${t(row.label)} × ${t(col.label)}: ${v != null ? v.toFixed(2) : "—"}`}
                     >
-                      {v != null ? v.toFixed(2) : "—"}
+                      {isDiag ? "—" : v != null ? v.toFixed(2) : "—"}
                     </td>
                   );
                 })}

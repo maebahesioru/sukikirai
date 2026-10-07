@@ -472,5 +472,7 @@
  "好き率が高い順。20票以上集めた人物が対象です。": "Trié par taux de like. Personnes avec 20 votes ou plus.",
  "嫌い率が高い順。20票以上集めた人物が対象です。": "Trié par taux de dislike. Personnes avec 20 votes ou plus.",
  "8項目評価の平均点が高い順。10人以上が評価した人物が対象です。": "Trié par moyenne des 8 notes. Personnes évaluées par 10 utilisateurs ou plus.",
- "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Trié par moyenne la plus basse des 8 notes. Personnes évaluées par 10 utilisateurs ou plus."
+ "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Trié par moyenne la plus basse des 8 notes. Personnes évaluées par 10 utilisateurs ou plus.",
+ "青=正の相関（一緒に高い/低い）、赤=負の相関。1に近いほど連動しています（斜めは同じ項目なので除く）。": "Bleu = corrélation positive (hauts/bas ensemble), rouge = négative. Plus proche de 1 = plus lié (la diagonale est le même élément, omise).",
+ "同じ項目": "Même élément"
 }

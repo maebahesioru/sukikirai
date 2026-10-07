@@ -335,6 +335,23 @@ export async function searchComments(
   return { hits, total };
 }
 
+/** 第1回総選挙の順位（期間内投票数ベース・票0はnull） */
+export async function getSousenkyoRank(personId: string): Promise<number | null> {
+  const r = await sql1<{ rank: number }>(
+    `WITH counts AS (
+       SELECT p.id, count(*) AS v
+       FROM votes v JOIN people p ON p.id = v.person_id
+       WHERE v.created_at >= $2 AND v.created_at <= $3
+         AND NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+       GROUP BY p.id
+     )
+     SELECT (SELECT count(*)::int FROM counts WHERE v > (SELECT v FROM counts WHERE id = $1)) + 1 AS rank
+     WHERE EXISTS (SELECT 1 FROM counts WHERE id = $1)`,
+    [personId, SOUSENKYO.startIso, SOUSENKYO.endIso]
+  );
+  return r?.rank ?? null;
+}
+
 export async function insertVote(
   personId: string,
   voteType: "like" | "dislike",

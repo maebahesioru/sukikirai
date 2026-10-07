@@ -27,6 +27,7 @@ export default function PersonClient({
   relatedPeople,
   relatedPolls,
   likeRank,
+  sousenkyoRank,
 }: {
   person: Person;
   voteStats: VoteStats;
@@ -39,6 +40,7 @@ export default function PersonClient({
   relatedPeople: Person[];
   relatedPolls: PollWithOptions[];
   likeRank: RankInfo;
+  sousenkyoRank: number | null;
 }) {
   const t = useT();
   const [voteInfo, setVoteInfo] = useState<VoteInfo>({
@@ -75,6 +77,14 @@ export default function PersonClient({
                 </a>
               )}
             </div>
+            {sousenkyoRank !== null && (
+              <Link
+                href="/sousenkyo"
+                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 mt-2 rounded-full bg-gold/15 text-gold border border-gold/40 hover:opacity-80 transition whitespace-nowrap"
+              >
+                🏆 {t("第1回ツイッタラー総選挙 {rank}位", { rank: sousenkyoRank })}
+              </Link>
+            )}
             {profileText && (
               <TranslateBox
                 text={profileText}

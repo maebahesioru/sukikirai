@@ -16,7 +16,9 @@ import {
   getTodayVote,
   getVoteStats,
   getVoteStreak,
+  getSousenkyoRank,
 } from "@/lib/queries";
+import { SOUSENKYO } from "@/lib/constants";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { maybeRefreshPersonProfile } from "@/lib/xsync";
 import PersonClient from "./PersonClient";
@@ -59,7 +61,7 @@ export default async function PersonPage({ params }: Params) {
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value ?? "";
 
-  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak] =
+  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak, sousenkyoRankRaw] =
     await Promise.all([
       getVoteStats(id),
       getEvalStats(id),
@@ -72,7 +74,14 @@ export default async function PersonPage({ params }: Params) {
       getRanking("trending", 8),
       getRecentComments(5),
       getVoteStreak(token),
+      Date.now() > new Date(SOUSENKYO.endIso).getTime()
+        ? getSousenkyoRank(person.id)
+        : Promise.resolve(null),
     ]);
+
+  // 総選挙終了後、TOP10のみバッジ表示（受賞者がシェアする動機づけ）
+  const sousenkyoRank =
+    sousenkyoRankRaw !== null && sousenkyoRankRaw <= 10 ? sousenkyoRankRaw : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -109,6 +118,7 @@ export default async function PersonPage({ params }: Params) {
           initialVoted={myVote !== null}
           initialVoteType={myVote}
           initialStreak={streak}
+          sousenkyoRank={sousenkyoRank}
           myEval={myEval}
           tagRanking={tagRanking}
           relatedPeople={relatedPeople}

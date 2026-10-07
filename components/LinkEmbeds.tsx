@@ -52,6 +52,37 @@ function TweetCard({ e }: { e: Extract<EmbedData, { kind: "tweet" }> }) {
           ))}
         </div>
       )}
+      {e.quote && (
+        <div className="mt-2 border border-line rounded-lg p-2.5 bg-panel">
+          <div className="flex items-center gap-1.5 mb-1">
+            {e.quote.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={e.quote.avatar}
+                alt=""
+                className="w-4 h-4 rounded-full object-cover bg-line shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-4 h-4 rounded-full bg-line shrink-0" />
+            )}
+            <span className="font-bold text-xs truncate">{e.quote.name}</span>
+            <span className="text-[11px] text-mut truncate">@{e.quote.handle}</span>
+          </div>
+          <p className="text-xs text-mut leading-relaxed whitespace-pre-wrap break-words line-clamp-4">
+            {e.quote.text}
+          </p>
+          {e.quote.media.length > 0 && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={e.quote.media[0].url}
+              alt=""
+              className="mt-1.5 rounded-md border border-line w-full max-h-40 object-cover"
+              loading="lazy"
+            />
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-3 mt-2 text-[11px] text-mut">
         <span>♥ {fmtNum(e.likes)}</span>
         <span>RT {fmtNum(e.retweets)}</span>

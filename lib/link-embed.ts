@@ -1,6 +1,6 @@
 // リンク埋め込みデータの取得（サーバー専用）: X/TwitterはFxTwitter API・その他はOGPメタ。
 // 1時間インメモリキャッシュ。SSRFガード付き。
-import type { EmbedData, EmbedMedia } from "./embed-url";
+import type { EmbedData, EmbedMedia, EmbedQuote } from "./embed-url";
 import { parseXUrl } from "./embed-url";
 
 const UA =
@@ -34,6 +34,28 @@ async function fetchTweetEmbed(id: string): Promise<EmbedData | null> {
       else if (m?.url) media.push({ type: "photo", url: String(m.url) });
       if (media.length >= 4) break;
     }
+    const quoteRaw = t.quote;
+    let quote: EmbedQuote | null = null;
+    if (quoteRaw && quoteRaw.author && quoteRaw.text) {
+      const qmedia: EmbedMedia[] = [];
+      for (const m of quoteRaw.media?.all ?? []) {
+        if (m?.type === "photo" && m.url) {
+          qmedia.push({ type: "photo", url: String(m.url) });
+          break;
+        }
+        if ((m?.type === "video" || m?.type === "gif") && m.thumbnail_url) {
+          qmedia.push({ type: "video", url: String(m.thumbnail_url) });
+          break;
+        }
+      }
+      quote = {
+        name: String(quoteRaw.author.name ?? "").slice(0, 80),
+        handle: String(quoteRaw.author.screen_name ?? ""),
+        avatar: quoteRaw.author.avatar_url || null,
+        text: String(quoteRaw.text ?? "").slice(0, 500),
+        media: qmedia,
+      };
+    }
     return {
       kind: "tweet",
       url: String(t.url || `https://x.com/i/status/${id}`),
@@ -42,6 +64,7 @@ async function fetchTweetEmbed(id: string): Promise<EmbedData | null> {
       avatar: t.author.avatar_url || null,
       text: String(t.text ?? "").slice(0, 1200),
       media,
+      quote,
       likes: num(t.likes),
       retweets: num(t.retweets),
       date: t.created_at ? String(t.created_at) : null,

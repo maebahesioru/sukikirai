@@ -3,6 +3,15 @@ import { SITE_URL } from "./site";
 
 export type EmbedMedia = { type: "photo" | "video"; url: string };
 
+/** 引用RTの引用元ツイート */
+export type EmbedQuote = {
+  name: string;
+  handle: string;
+  avatar: string | null;
+  text: string;
+  media: EmbedMedia[];
+};
+
 export type EmbedData =
   | {
       kind: "tweet";
@@ -12,6 +21,7 @@ export type EmbedData =
       avatar: string | null;
       text: string;
       media: EmbedMedia[];
+      quote: EmbedQuote | null;
       likes: number;
       retweets: number;
       date: string | null;

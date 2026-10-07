@@ -468,5 +468,9 @@
  "政治・時事": "Política y actualidad",
  "アニメ・ゲーム好き": "Anime y juegos",
  "スポーツ好き": "Deportes",
- "鉄道好き": "Ferrocarriles"
+ "鉄道好き": "Ferrocarriles",
+ "好き率が高い順。20票以上集めた人物が対象です。": "Ordenado por tasa de 'me gusta'. Solo personas con 20+ votos.",
+ "嫌い率が高い順。20票以上集めた人物が対象です。": "Ordenado por tasa de 'no me gusta'. Solo personas con 20+ votos.",
+ "8項目評価の平均点が高い順。10人以上が評価した人物が対象です。": "Ordenado por la media de las 8 valoraciones. Solo personas valoradas por 10+ usuarios.",
+ "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Ordenado por la media más baja de las 8 valoraciones. Solo personas valoradas por 10+ usuarios."
 }

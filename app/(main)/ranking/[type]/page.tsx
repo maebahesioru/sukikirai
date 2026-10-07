@@ -10,12 +10,12 @@ import { getServerT } from "@/lib/i18n-server";
 export const dynamic = "force-dynamic";
 
 const TYPES: Record<RankingType, { label: string; desc: string }> = {
-  popularity: { label: "好感度", desc: "好き率が高い順。1票以上集めた人物が対象です。" },
-  unpopular: { label: "不人気", desc: "嫌い率が高い順。1票以上集めた人物が対象です。" },
+  popularity: { label: "好感度", desc: "好き率が高い順。20票以上集めた人物が対象です。" },
+  unpopular: { label: "不人気", desc: "嫌い率が高い順。20票以上集めた人物が対象です。" },
   daily: { label: "24時間", desc: "過去24時間の投票数ランキング。今日動いてる人をチェック。" },
   trending: { label: "トレンド", desc: "過去7日間の投票数ランキング。今話題の人をチェック。" },
-  score: { label: "総合評価", desc: "8項目評価の平均点が高い順。5人以上が評価した人物が対象です。" },
-  lowscore: { label: "低評価", desc: "8項目評価の平均点が低い順。5人以上が評価した人物が対象です。" },
+  score: { label: "総合評価", desc: "8項目評価の平均点が高い順。10人以上が評価した人物が対象です。" },
+  lowscore: { label: "低評価", desc: "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。" },
 };
 const ORDER: RankingType[] = ["daily", "trending", "popularity", "unpopular", "score", "lowscore"];
 

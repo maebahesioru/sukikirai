@@ -380,7 +380,9 @@ export async function insertVote(
 export type RankingType = "popularity" | "unpopular" | "trending" | "daily" | "score" | "lowscore";
 
 // 総合評価ランキング（score / lowscore）に掲載するのに必要な最低評価数
-export const EVAL_RANK_MIN = 5;
+export const EVAL_RANK_MIN = 10;
+// 好き率/嫌い率ランキングに掲載するのに必要な最低投票数（少票での上位独占を防ぐ）
+export const VOTE_RANK_MIN = 20;
 
 export async function getRanking(type: RankingType, limit = 50): Promise<RankingRow[]> {
   if (type === "trending" || type === "daily") {
@@ -454,7 +456,7 @@ export async function getRanking(type: RankingType, limit = 50): Promise<Ranking
          COUNT(*) FILTER (WHERE vote_type='like') AS likes,
          COUNT(*) FILTER (WHERE vote_type='dislike') AS dislikes,
          COUNT(*) AS total
-       FROM votes GROUP BY person_id HAVING COUNT(*) >= 1
+       FROM votes GROUP BY person_id HAVING COUNT(*) >= ${VOTE_RANK_MIN}
      ) v ON v.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
      ORDER BY ${order}
@@ -1613,10 +1615,10 @@ export async function getLikeRankingPosition(
 ): Promise<{ rank: number; total: number } | null> {
   const r = await sql1<{ rank: number | null; total: number }>(
     `WITH agg AS (
-       SELECT person_id,
-              COUNT(*) FILTER (WHERE vote_type='like')::float / COUNT(*) AS pct
-       FROM votes GROUP BY person_id HAVING COUNT(*) >= 1
-     )
+      SELECT person_id,
+             COUNT(*) FILTER (WHERE vote_type='like')::float / COUNT(*) AS pct
+      FROM votes GROUP BY person_id HAVING COUNT(*) >= ${VOTE_RANK_MIN}
+    )
      SELECT
        CASE WHEN EXISTS (SELECT 1 FROM agg WHERE person_id = $1) THEN
          (SELECT COUNT(*)::int + 1 FROM agg a WHERE a.pct > (SELECT pct FROM agg WHERE person_id = $1))

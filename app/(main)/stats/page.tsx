@@ -302,7 +302,7 @@ export default async function StatsPage() {
       {/* スコア分布 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-1">{t("スコア分布")}</h2>
-        <p className="text-xs text-mut mb-4">{t("各項目の評価（1〜5）の割合。")}</p>
+        <p className="text-xs text-mut mb-4">{t("各項目の評価（1〜5）の割合。好き嫌い投票から書き込まれるため、1と5に偏る傾向があります。")}</p>
         <div className="space-y-3">
           {EVAL_ITEMS.map((item) => {
             const counts = dist[item.key] ?? [0, 0, 0, 0, 0];

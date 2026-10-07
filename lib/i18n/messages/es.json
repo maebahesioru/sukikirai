@@ -474,5 +474,6 @@
  "8項目評価の平均点が高い順。10人以上が評価した人物が対象です。": "Ordenado por la media de las 8 valoraciones. Solo personas valoradas por 10+ usuarios.",
  "8項目評価の平均点が低い順。10人以上が評価した人物が対象です。": "Ordenado por la media más baja de las 8 valoraciones. Solo personas valoradas por 10+ usuarios.",
  "青=正の相関（一緒に高い/低い）、赤=負の相関。1に近いほど連動しています（斜めは同じ項目なので除く）。": "Azul = correlación positiva (altos/bajos juntos), rojo = negativa. Más cerca de 1 = más ligados (la diagonal es el mismo ítem, omitida).",
- "同じ項目": "Mismo ítem"
+ "同じ項目": "Mismo ítem",
+ "各項目の評価（1〜5）の割合。好き嫌い投票から書き込まれるため、1と5に偏る傾向があります。": "Proporción de valoraciones (1-5) por ítem. Como provienen de votos de me gusta/no me gusta, tienden a sesgarse hacia 1 y 5."
 }

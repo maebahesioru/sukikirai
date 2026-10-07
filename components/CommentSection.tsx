@@ -347,7 +347,7 @@ function CommentForm({
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-mut">{t("URLの投稿はできません")}</p>
+          <p className="text-xs text-mut">{t("リンクは自動で埋め込み表示されます")}</p>
           <span className={`text-xs ${count > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
             {count} / {MAX_COMMENT_CHARS}
           </span>

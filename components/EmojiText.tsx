@@ -14,13 +14,28 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export default function EmojiText({ text, className }: { text: string; className?: string }) {
-  if (!HAS_EMOJI.test(text)) {
+export default function EmojiText({
+  text,
+  className,
+  highlight,
+}: {
+  text: string;
+  className?: string;
+  highlight?: string;
+}) {
+  // ハイライト無し＆絵文字無し → 通常のReact描画（最速・安全）
+  if (!highlight && !HAS_EMOJI.test(text)) {
     return <span className={className}>{text}</span>;
   }
-  // 安全: 先にHTMLエスケープした文字列へ twemoji.parse が <img> タグのみを挿入する
+  // 安全: 先にHTMLエスケープした文字列へ <mark> と twemoji の <img> のみを挿入する
   // （ユーザー入力がそのままHTMLに入ることはない）
-  const html = twemoji.parse(escapeHtml(text), {
+  let html = escapeHtml(text);
+  const h = highlight ? escapeHtml(highlight.trim()) : "";
+  if (h) {
+    const re = new RegExp(h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    html = html.replace(re, (m) => `<mark class="search-hl">${m}</mark>`);
+  }
+  html = twemoji.parse(html, {
     folder: "svg",
     ext: ".svg",
     base: BASE,

@@ -285,6 +285,56 @@ export async function getVoteStreak(cookieId: string): Promise<number> {
   return streak;
 }
 
+export type CommentSearchHit = {
+  kind: "person" | "poll";
+  id: string;
+  content: string;
+  name: string | null;
+  vote_type: "like" | "dislike" | null;
+  number: number;
+  time_str: string;
+  target_id: string;
+  target_name: string;
+  total: number;
+};
+
+/** コメント本文の検索（人物コメント＋投票トークコメント・新しい順） */
+export async function searchComments(
+  q: string,
+  limit = 20
+): Promise<{ hits: CommentSearchHit[]; total: number }> {
+  const s = q.trim();
+  if (!s) return { hits: [], total: 0 };
+  const esc = s.replace(/[\\%_]/g, (m) => "\\" + m);
+  const [personRows, pollRows] = await Promise.all([
+    sql<CommentSearchHit>(
+      `SELECT 'person' AS kind, c.id, c.content, c.name, c.vote_type, c.comment_number AS number,
+              to_char(c.created_at AT TIME ZONE 'Asia/Tokyo', 'MM/DD HH24:MI') AS time_str,
+              p.id AS target_id, p.name AS target_name, count(*) OVER()::int AS total
+       FROM comments c JOIN people p ON p.id = c.person_id
+       WHERE NOT c.is_hidden AND NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+         AND c.content ILIKE '%' || $1 || '%'
+       ORDER BY c.created_at DESC LIMIT ${limit}`,
+      [esc]
+    ),
+    sql<CommentSearchHit>(
+      `SELECT 'poll' AS kind, pc.id, pc.content, pc.name, NULL AS vote_type, pc.comment_number AS number,
+              to_char(pc.created_at AT TIME ZONE 'Asia/Tokyo', 'MM/DD HH24:MI') AS time_str,
+              pl.id::text AS target_id, pl.title AS target_name, count(*) OVER()::int AS total
+       FROM poll_comments pc JOIN polls pl ON pl.id = pc.poll_id
+       WHERE NOT pc.is_hidden AND NOT pl.is_hidden
+         AND pc.content ILIKE '%' || $1 || '%'
+       ORDER BY pc.created_at DESC LIMIT ${limit}`,
+      [esc]
+    ),
+  ]);
+  const total = (personRows[0]?.total ?? 0) + (pollRows[0]?.total ?? 0);
+  const hits = [...personRows, ...pollRows]
+    .sort((a, b) => (a.time_str < b.time_str ? 1 : -1))
+    .slice(0, limit);
+  return { hits, total };
+}
+
 export async function insertVote(
   personId: string,
   voteType: "like" | "dislike",

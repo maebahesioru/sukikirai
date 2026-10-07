@@ -122,3 +122,11 @@ img.emoji {
   vertical-align: -0.1em;
   display: inline;
 }
+
+/* 検索結果のハイライト */
+mark.search-hl {
+  background: rgba(249, 24, 128, 0.32);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}

@@ -3,10 +3,11 @@ import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import { Search, UserPlus } from "lucide-react";
-import { findPersonByHandleOrId, normalizeHandle, searchPeople } from "@/lib/queries";
+import { findPersonByHandleOrId, normalizeHandle, searchPeople, searchComments } from "@/lib/queries";
 import { findXUserCandidates } from "@/lib/xsearch";
 import PersonCard from "@/components/PersonCard";
 import XUserCandidates from "@/components/XUserCandidates";
+import EmojiText from "@/components/EmojiText";
 import SearchAutoAdd from "./SearchAutoAdd";
 import { getServerT } from "@/lib/i18n-server";
 
@@ -38,6 +39,10 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
     q ? searchPeople(q, 48) : Promise.resolve([]),
   ]);
 
+  const commentSearch = q ? await searchComments(q, 20) : { hits: [], total: 0 };
+  const commentHits = commentSearch.hits;
+  const commentTotal = commentSearch.total;
+
   const shouldAutoAdd = !!handle && !exact;
   const others = exact ? results.filter((r) => r.id !== exact.id) : results;
 
@@ -57,6 +62,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
           <span className="text-txt font-mono">@maebahesioru2</span>
           {t("）か名前を入力。名前でヒットしない場合も、X上の候補から選んで追加できます。")}
         </p>
+        <p className="text-xs text-mut mb-5 -mt-3">{t("コメントの本文も検索できます")}</p>
         <form method="get" action="/search" className="flex gap-2 max-w-lg">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut" />
@@ -115,6 +121,37 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
             {t("ID（@から始まる英数字）を直接入力すると確実に追加できます。")}
           </span>
         </div>
+      )}
+
+      {commentHits.length > 0 && (
+        <section>
+          <h2 className="font-bold mb-3">
+            {t("検索結果{extra}：{n}件", { extra: t("（コメント）"), n: commentTotal })}
+          </h2>
+          <div className="space-y-2">
+            {commentHits.map((c) => (
+              <Link
+                key={c.id}
+                href={c.kind === "person" ? `/person/${c.target_id}#c${c.number}` : `/polls/${c.target_id}`}
+                className="block bg-panel border border-line rounded-xl p-3 hover:border-x/60 transition"
+              >
+                <div className="flex items-center gap-2 text-xs text-mut mb-1 flex-wrap">
+                  <span className="font-bold text-txt">{c.name || t("名無しさん")}</span>
+                  {c.vote_type && (
+                    <span className={c.vote_type === "like" ? "text-like" : "text-dislike"}>
+                      {c.vote_type === "like" ? t("好き派") : t("嫌い派")}
+                    </span>
+                  )}
+                  <span className="truncate">→ {c.target_name}</span>
+                  <span className="ml-auto shrink-0">{c.time_str}</span>
+                </div>
+                <p className="text-sm leading-relaxed line-clamp-3">
+                  <EmojiText text={c.content} highlight={q} />
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {!q && (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Languages } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n-client";
 import CommentText from "./CommentText";
+import LinkEmbeds from "./LinkEmbeds";
 
 /**
  * ユーザー投稿（コメント・bio等）の翻訳ボタン付き表示。
@@ -25,7 +26,10 @@ export default function TranslateBox({
 
   const original =
     variant === "comment" ? (
-      <CommentText content={text} className={className} />
+      <>
+        <CommentText content={text} className={className} />
+        <LinkEmbeds text={text} />
+      </>
     ) : (
       <p className={className}>{text}</p>
     );

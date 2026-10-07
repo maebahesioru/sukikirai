@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { MessageSquare } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
 import EmojiText from "./EmojiText";
+import LinkEmbeds from "./LinkEmbeds";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
 import { useT } from "@/lib/i18n-client";
@@ -94,6 +95,7 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
                 <span className="font-mono text-[11px]">ID:{p.anon_id}</span>
               </div>
               <TranslateBox text={p.content} variant="plain" className="text-sm whitespace-pre-wrap break-words leading-relaxed" />
+              <LinkEmbeds text={p.content} />
             </div>
           ))
         )}

@@ -83,6 +83,14 @@ export default async function Footer() {
             ywaiur4lrnbeye7uxq3vl6h256glfvzv26ggppvmqinrq3bm6dqartad.onion
           </a>
           <span className="ml-2">{t("（Tor Browser用・検閲なし・完全匿名）")}</span>
+          <a
+            href="https://onion.live/site/tsuittara-yoron-chosa"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 text-txt underline-offset-2 hover:underline transition"
+          >
+            onion.live
+          </a>
         </p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>
       </div>

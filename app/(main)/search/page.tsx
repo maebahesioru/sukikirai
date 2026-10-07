@@ -131,7 +131,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
               <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">
                 2
               </span>
-              {t("未登録のユーザーは「X上の候補」から選んで追加（IDを直接入れれば即追加）")}
+              {t("未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます")}
             </li>
             <li className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-xsoft text-x font-bold flex items-center justify-center shrink-0 text-xs">

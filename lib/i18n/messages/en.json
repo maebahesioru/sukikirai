@@ -311,7 +311,6 @@
  "期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。": "A limited-time event — total votes during the period crown the champion. One vote a day to support your favorite.",
  "期間限定イベント": "Limited-time event",
  "未登録だったので追加しました": "Wasn't registered, so we added them",
- "未登録のユーザーは「X上の候補」から選んで追加（IDを直接入れれば即追加）": "Unregistered users can be added from X suggestions (or enter the ID directly for instant add)",
  "未登録のユーザーはその場でページを作成します": "Unregistered users get a page created on the spot",
  "本": "Books",
  "本サイトの運営を妨害する行為": "Interfering with the operation of this site",
@@ -454,5 +453,6 @@
  "追加して開く": "Add & open",
  "やめる": "Not now",
  "「{q}」は未登録です": "\"{q}\" isn't registered",
- "追加する": "Add"
+ "追加する": "Add",
+ "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Unregistered users can be added from X suggestions, or by entering an ID directly"
 }

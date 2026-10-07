@@ -311,7 +311,6 @@
  "期間中の投票数で王者を決める期間限定イベント。毎日1票、推しに投票しよう。": "Un evento por tiempo limitado en el que los votos del periodo deciden al campeón. Un voto al día para apoyar a tu favorito.",
  "期間限定イベント": "Evento por tiempo limitado",
  "未登録だったので追加しました": "No estaba registrado, así que se ha añadido",
- "未登録のユーザーは「X上の候補」から選んで追加（IDを直接入れれば即追加）": "Los usuarios no registrados se añaden eligiéndolos de las sugerencias de X (o introduce el ID directamente para añadirlos al instante)",
  "未登録のユーザーはその場でページを作成します": "A los usuarios no registrados se les crea la página al momento",
  "本": "Libros",
  "本サイトの運営を妨害する行為": "Obstaculizar el funcionamiento de este sitio",
@@ -454,5 +453,6 @@
  "追加して開く": "Añadir y abrir",
  "やめる": "Ahora no",
  "「{q}」は未登録です": "「{q}」 no está registrado",
- "追加する": "Añadir"
+ "追加する": "Añadir",
+ "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Los usuarios no registrados se añaden eligiéndolos de las sugerencias de X o introduciendo el ID directamente"
 }

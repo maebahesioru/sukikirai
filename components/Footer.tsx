@@ -89,7 +89,7 @@ export default async function Footer() {
             rel="noopener noreferrer"
             className="ml-2 text-txt underline-offset-2 hover:underline transition"
           >
-            onion.live
+            Verified on onion.live
           </a>
         </p>
         <p>© {new Date().getFullYear()} {SITE_NAME}</p>

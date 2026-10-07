@@ -133,7 +133,7 @@ function OgCard({ e }: { e: Extract<EmbedData, { kind: "og" }> }) {
 /** 本文中のURLを埋め込みカードで表示（X=ツイート/プロフィール・他=OGP） */
 export default function LinkEmbeds({
   text,
-  max = 2,
+  max = 5,
   className,
 }: {
   text: string;

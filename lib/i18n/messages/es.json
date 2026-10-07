@@ -447,5 +447,12 @@
  "（クリックでページを開きます）": "(haz clic para abrir la página)",
  "（最大5人）": "(máx. 5 personas)",
  "（最終確認: {date}）": "(Última comprobación: {date})",
- "）か名前を入力。名前でヒットしない場合も、X上の候補から選んで追加できます。": ") o un nombre. Si el nombre no coincide, también puedes elegir entre las sugerencias de X para añadirlo."
+ "）か名前を入力。名前でヒットしない場合も、X上の候補から選んで追加できます。": ") o un nombre. Si el nombre no coincide, también puedes elegir entre las sugerencias de X para añadirlo.",
+ "「{q}」はまだ登録されていません": "「{q}」 aún no está registrado",
+ "追加してページを開きますか？": "¿Añadirlo y abrir la página?",
+ "誰でも匿名で追加できます": "Cualquiera puede añadirlo de forma anónima",
+ "追加して開く": "Añadir y abrir",
+ "やめる": "Ahora no",
+ "「{q}」は未登録です": "「{q}」 no está registrado",
+ "追加する": "Añadir"
 }

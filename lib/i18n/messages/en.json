@@ -447,5 +447,12 @@
  "（クリックでページを開きます）": "(click to open the page)",
  "（最大5人）": "(max 5 people)",
  "（最終確認: {date}）": "(Last checked: {date})",
- "）か名前を入力。名前でヒットしない場合も、X上の候補から選んで追加できます。": ") or a name. If the name doesn't match, you can also pick from X suggestions."
+ "）か名前を入力。名前でヒットしない場合も、X上の候補から選んで追加できます。": ") or a name. If the name doesn't match, you can also pick from X suggestions.",
+ "「{q}」はまだ登録されていません": "\"{q}\" isn't registered yet",
+ "追加してページを開きますか？": "Add this user and open their page?",
+ "誰でも匿名で追加できます": "Anyone can add — anonymously, no sign-up",
+ "追加して開く": "Add & open",
+ "やめる": "Not now",
+ "「{q}」は未登録です": "\"{q}\" isn't registered",
+ "追加する": "Add"
 }

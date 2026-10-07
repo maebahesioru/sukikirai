@@ -1,99 +1,125 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
-import Avatar from "@/components/Avatar";
-import EmojiText from "@/components/EmojiText";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, AlertTriangle, UserPlus } from "lucide-react";
 import { useT } from "@/lib/i18n-client";
 
-type Result =
+type State =
+  | { status: "confirm" }
   | { status: "adding" }
-  | {
-      status: "done";
-      id: string;
-      name: string;
-      handle: string | null;
-      avatar_url: string | null;
-      created: boolean;
-    }
+  | { status: "cancelled" }
   | { status: "error"; message: string };
 
-/** 未登録の@IDをその場で追加する。追加後は結果カードを表示（自動遷移はしない） */
+/**
+ * 未登録の@IDをその場で追加する。
+ * 勝手には追加せず、確認ポップを挟んでから追加し、完了後にページを開く。
+ */
 export default function SearchAutoAdd({ query }: { query: string }) {
   const t = useT();
-  const [state, setState] = useState<Result>({ status: "adding" });
-  const fired = useRef(false);
-  const [attempt, setAttempt] = useState(0);
+  const router = useRouter();
+  const [state, setState] = useState<State>({ status: "confirm" });
 
-  useEffect(() => {
-    if (fired.current) return;
-    fired.current = true;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/people/resolve", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        });
-        const data = await res.json();
-        if (!data.success) {
-          setState({ status: "error", message: data.error || t("追加に失敗しました") });
-          return;
-        }
-        setState({
-          status: "done",
-          id: data.person.id,
-          name: data.person.name,
-          handle: data.person.handle ?? null,
-          avatar_url: data.person.avatar_url ?? null,
-          created: data.created,
-        });
-      } catch {
-        setState({ status: "error", message: t("通信エラーが発生しました") });
+  const add = async () => {
+    setState({ status: "adding" });
+    try {
+      const res = await fetch("/api/people/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setState({ status: "error", message: data.error || t("追加に失敗しました") });
+        return;
       }
-    })();
-  }, [query, attempt]);
+      router.push(`/person/${data.person.id}`);
+    } catch {
+      setState({ status: "error", message: t("通信エラーが発生しました") });
+    }
+  };
 
-  if (state.status === "adding") {
+  // 確認ポップ中はEscキーでもキャンセル
+  useEffect(() => {
+    if (state.status !== "confirm") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setState({ status: "cancelled" });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.status]);
+
+  if (state.status === "confirm" || state.status === "adding") {
     return (
-      <section>
-        <h2 className="font-bold mb-3">{t("検索結果")}</h2>
-        <div className="bg-panel border border-x/40 rounded-2xl p-8 text-center max-w-md">
-          <Loader2 className="w-8 h-8 text-x animate-spin mx-auto mb-3" />
-          <p className="font-bold">{t("「{q}」をXで検索して追加しています…", { q: query })}</p>
-          <p className="text-xs text-mut mt-1">{t("未登録のユーザーはその場でページを作成します")}</p>
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+        onClick={(e) => {
+          if (state.status === "confirm" && e.target === e.currentTarget) {
+            setState({ status: "cancelled" });
+          }
+        }}
+      >
+        <div className="bg-panel border border-line rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+          {state.status === "adding" ? (
+            <>
+              <Loader2 className="w-8 h-8 text-x animate-spin mx-auto mb-3" />
+              <p className="font-bold">
+                {t("「{q}」をXで検索して追加しています…", { q: query })}
+              </p>
+              <p className="text-xs text-mut mt-1">
+                {t("未登録のユーザーはその場でページを作成します")}
+              </p>
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-8 h-8 text-x mx-auto mb-3" />
+              <h2 className="font-bold mb-1">
+                {t("「{q}」はまだ登録されていません", { q: query })}
+              </h2>
+              <p className="text-sm text-mut mb-1">{t("追加してページを開きますか？")}</p>
+              <p className="text-xs text-mut mb-5">{t("誰でも匿名で追加できます")}</p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={add}
+                  className="px-5 py-2.5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
+                >
+                  {t("追加して開く")}
+                </button>
+                <button
+                  onClick={() => setState({ status: "cancelled" })}
+                  className="px-5 py-2.5 rounded-xl border border-line text-sm font-bold text-mut hover:text-txt transition"
+                >
+                  {t("やめる")}
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      </section>
+      </div>
     );
   }
 
-  if (state.status === "done") {
+  if (state.status === "cancelled") {
     return (
       <section>
         <h2 className="font-bold mb-3">{t("検索結果")}</h2>
-        <div className="max-w-md">
-          <Link
-            href={`/person/${state.id}`}
-            className="block bg-panel border border-good/40 rounded-2xl p-4 hover:border-good transition"
-          >
-            <div className="flex items-center gap-3">
-              <Avatar name={state.name} avatarUrl={state.avatar_url} size={44} />
-              <div className="min-w-0 flex-1">
-                <div className="font-bold truncate flex items-center gap-1.5">
-                  <span className="truncate"><EmojiText text={state.name} /></span>
-                  <CheckCircle2 className="w-4 h-4 text-good shrink-0" />
-                </div>
-                {state.handle && <div className="text-xs text-mut truncate">@{state.handle}</div>}
-              </div>
-              <span className="text-xs text-x shrink-0">{t("ページを見る →")}</span>
+        <div className="bg-panel border border-line rounded-2xl p-5 max-w-md">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-sm truncate">
+                {t("「{q}」は未登録です", { q: query })}
+              </p>
+              <p className="text-xs text-mut mt-0.5">{t("誰でも匿名で追加できます")}</p>
             </div>
-            <p className="text-xs text-good mt-2">
-              {state.created ? t("未登録だったので追加しました") : t("登録済みでした")}
-              {t("（クリックでページを開きます）")}
-            </p>
-          </Link>
+            <button
+              onClick={add}
+              className="px-4 py-2 rounded-xl bg-x text-white text-xs font-bold hover:opacity-90 transition shrink-0"
+            >
+              {t("追加する")}
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -106,16 +132,20 @@ export default function SearchAutoAdd({ query }: { query: string }) {
         <AlertTriangle className="w-8 h-8 text-bad mx-auto mb-3" />
         <p className="font-bold mb-1">{t("追加できませんでした")}</p>
         <p className="text-sm text-mut mb-4">{state.message}</p>
-        <button
-          onClick={() => {
-            fired.current = false;
-            setState({ status: "adding" });
-            setAttempt((a) => a + 1);
-          }}
-          className="px-5 py-2 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
-        >
-          {t("もう一度試す")}
-        </button>
+        <div className="flex gap-2 justify-center">
+          <button
+            onClick={add}
+            className="px-5 py-2 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
+          >
+            {t("もう一度試す")}
+          </button>
+          <button
+            onClick={() => setState({ status: "cancelled" })}
+            className="px-5 py-2 rounded-xl border border-line text-sm font-bold text-mut hover:text-txt transition"
+          >
+            {t("やめる")}
+          </button>
+        </div>
       </div>
     </section>
   );

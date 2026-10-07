@@ -11,6 +11,10 @@ export const CATEGORIES = [
   "芸能人",
   "政治家",
   "政治・時事",
+  "学生",
+  "アニメ・ゲーム好き",
+  "スポーツ好き",
+  "鉄道好き",
   "その他",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];

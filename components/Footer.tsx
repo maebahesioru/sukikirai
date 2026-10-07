@@ -63,6 +63,18 @@ export default async function Footer() {
           <span className="ml-2">{t("ヒカマー界隈の百科事典")}</span>
         </p>
         <p>
+          {t("関連:")}{" "}
+          <a
+            href="https://hikamersnews.hikamers.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-txt underline-offset-2 hover:underline transition"
+          >
+            {t("ヒカマズ通信")}
+          </a>
+          <span className="ml-2">{t("ヒカマー界隈のニュースサイト")}</span>
+        </p>
+        <p>
           {t("Tor版:")}{" "}
           <a
             href="http://ywaiur4lrnbeye7uxq3vl6h256glfvzv26ggppvmqinrq3bm6dqartad.onion/"

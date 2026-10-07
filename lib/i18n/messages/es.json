@@ -454,5 +454,7 @@
  "やめる": "Ahora no",
  "「{q}」は未登録です": "「{q}」 no está registrado",
  "追加する": "Añadir",
- "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Los usuarios no registrados se añaden eligiéndolos de las sugerencias de X o introduciendo el ID directamente"
+ "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Los usuarios no registrados se añaden eligiéndolos de las sugerencias de X o introduciendo el ID directamente",
+ "ヒカマズ通信": "Hikamazu Tsushin",
+ "ヒカマー界隈のニュースサイト": "Sitio de noticias de la comunidad Hikamer"
 }

@@ -317,7 +317,11 @@ export function classifyWithAuto(
 /** 企業・サービス（bio側は法人自認の言い回しのみ） */
 const COMPANY_ANY = ["運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp.", "代表取締役"];
 /** 企業（「公式」系）— 「非公式」を除外したうえで判定する（非公式アカウントの誤判定防止） */
-const COMPANY_ANY_OFFICIAL = ["公式アカウント", "公式xアカウント", "公式xです", "公式twitter", "公式ツイッター", "officialaccount", "officialtwitter", "officialyoutube"];
+const COMPANY_ANY_OFFICIAL = ["公式アカウント", "公式xアカウント", "公式xです", "公式twitter", "公式ツイッター", "公式です", "オフィシャルアカウント", "officialaccount", "officialtwitter", "officialyoutube"];
+/** 「公式◯◯アカウント」の揺れ（公式広報アカウント・公式ニュースアカウント等） */
+const COMPANY_OFFICIAL_ACCOUNT_RE = /公式.{0,8}アカウント/;
+/** 名前側の公式シグナル（ブランドの自称。「非公式」は呼び出し側で除外） */
+const COMPANY_NAME_OFFICIAL_RE = /公式|オフィシャル|official/i;
 const UNOFFICIAL_RE = /非公式|unofficial|パロディ|parody/;
 /** 企業名らしさ（アカウント名に法人格がある場合のみ。bioの勤務先言及では誤判定するため） */
 const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
@@ -330,19 +334,25 @@ const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌�
 /** Vtuber */
 const VTUBER_ANY = ["vtuber", "ぶいちゅ", "バーチャルyoutuber", "vsinger", "vライバー", "live2d", "バ美肉", "にじさんじ", "nijisanji", "ホロライブ", "hololive", "ぶいすぽ", "vspo", "りぶはあと"];
 /** BOT（bio側の言い回し） */
-const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる", "（bot）", "(bot)", "中の人はいません", "自動でツイート", "botが投稿"];
+const BOT_ANY = ["botです", "bot垢", "botアカウント", "自動ツイート", "自動投稿", "定期投稿", "botによる", "（bot）", "(bot)", "中の人はいません", "自動でツイート", "botが投稿", "自動で教え", "自動的に教え", "botだよ", "(自動)"];
+/** BOT名（末尾だけでなく「名言botⅡ」「名前募集bot🐢」等の中間も拾う。英字に挟まれたbotは除外） */
+const BOT_NAME_RE = /(^|[^a-z])bot([^a-z]|$)/i;
 /** YouTuber（リンク・定型文も信号にする） */
-const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube.com", "youtu.be", "チャンネル登録", "youtubeチャンネル", "youtube垢", "youtube登録者", "youtubeやって", "uuum"];
+const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube", "youtu.be", "チャンネル登録", "youtubeチャンネル", "youtube垢", "youtube登録者", "youtubeやって", "uuum", "登録者", "動画投稿", "動画を投稿", "vlog", "ショート動画"];
 /** 配信者（配信プラットフォームのURLも信号にする） */
 const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer", "twitcasting.tv", "showroom", "openrec.tv", "mildom", "iriam", "ポコチャ"];
 /** クリエイター */
-const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com", "ゲーム制作", "ゲーム開発", "unityroom", "ファンアート", "note.com", "ブログ", "ライター", "執筆", "著書", "nico.ms"];
+const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com", "ゲーム制作", "ゲーム開発", "unityroom", "ファンアート", "note.com", "ブログ", "ライター", "執筆", "著書", "nico.ms", "描い", "描きます", "illustrator", "designer", "デザイン", "小説を書", "新刊", "kakuyomu", "カクヨム", "小説家になろう", "同人", "サークル「", "創作サークル", "サークルで活動", "即売会", "コミケ", "コミティア", "写真垢", "写真を撮", "撮影して", "フォトグラファ", "photograph", "弾き語り", "ミュージシャン", "トラックメイカー", "作曲", "エンジニア", "プログラミング", "開発者", "アプリ開発", "個人開発", "動画制作", "グッズ製作", "製作しています", "制作しています", "手芸", "編み物", "お菓子作り", "パン作り", "ギター弾き", "ギターを弾", "ギターやって", "ベースを弾", "ベースやって", "ドラムを叩"];
 /** 界隈の命名文化（ハンドル側の判定用）: _mania系・hikakin系 */
 const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
+/** 学生（この界隈の主要属性） */
+const STUDENT_RE = /学生|受験生|浪人|予備校|通信制|大学院/;
+/** 学年表記（「最高1位」等の誤爆を避けて「最」直後は除外） */
+const STUDENT_GRADE_RE = /(?<!最)高[1-3１２３一二三]|高校[1-3１２３一二三]年|中学[1-3１２３一二三]年/;
 
 /**
  * 名前とプロフィール文からカテゴリを決める（純ローカル・自動）。
- * 順序: 企業 → 政治家 → 芸能人 → Vtuber → BOT → ヒカマー → YouTuber → 配信者 → クリエイター → その他
+ * 順序: 企業(強) → 政治家 → 芸能人 → 企業(公式系) → Vtuber → BOT → ヒカマー → 配信者 → クリエイター → YouTuber → 学生 → その他
  * legacyHikamer=true（既にヒカマーカテゴリの人）は、明示タイプ（企業等）に該当しない限りヒカマーを維持
  * ＝既存の界隈名簿を尊重しつつ、新規追加は完全自動で分類する。
  */
@@ -352,29 +362,43 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
   const h = (handle || "").normalize("NFKC").toLowerCase();
 
+  const unofficial = UNOFFICIAL_RE.test(text);
+  const knownHikamer = legacyHikamer || wikiHikamer;
+  // 1) 強い企業シグナル（法人格・企業名・法人自認）
   if (
     COMPANY_NAME_RE.test(n) ||
     COMPANY_NAME_ORG_RE.test(n) ||
-    COMPANY_ANY.some((k) => text.includes(k)) ||
-    (!UNOFFICIAL_RE.test(text) && COMPANY_ANY_OFFICIAL.some((k) => text.includes(k)))
+    COMPANY_ANY.some((k) => text.includes(k))
   ) {
     return "企業・サービス";
   }
+  // 2) 個人の属性（政治家・芸能人）を企業より先に保護
   if (POLITICIAN_ANY.some((k) => text.includes(k))) return "政治家";
   if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
-  if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";
-  if (/bot$/i.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
+  // 3) 公式系の企業シグナル（既知ヒカマーは対象外＝界隈の冗談【公式】・自称を企業扱いしない）
   if (
-    legacyHikamer ||
-    wikiHikamer ||
+    !knownHikamer &&
+    !unofficial &&
+    (COMPANY_NAME_OFFICIAL_RE.test(n) ||
+      COMPANY_ANY_OFFICIAL.some((k) => text.includes(k)) ||
+      COMPANY_OFFICIAL_ACCOUNT_RE.test(text))
+  ) {
+    return "企業・サービス";
+  }
+  if (VTUBER_ANY.some((k) => text.includes(k))) return "Vtuber";
+  if (BOT_NAME_RE.test(n) || BOT_ANY.some((k) => text.includes(k))) return "BOT";
+  if (
+    knownHikamer ||
     HIKAMER_RE.test(text) ||
     HIKAMER_NAME_RE.test(n) ||
     (h.length > 0 && HIKAMER_HANDLE_RE.test(h))
   ) {
     return "ヒカマー";
   }
-  if (YOUTUBER_ANY.some((k) => text.includes(k))) return "YouTuber";
+  // 4) タイプ系（配信 → 創作 → 動画投稿の順。弱い「youtube」言及が配信・創作を奪わないよう後段に置く）
   if (STREAMER_ANY.some((k) => text.includes(k))) return "配信者";
   if (CREATOR_ANY.some((k) => text.includes(k))) return "クリエイター";
+  if (YOUTUBER_ANY.some((k) => text.includes(k))) return "YouTuber";
+  if (STUDENT_RE.test(text) || STUDENT_GRADE_RE.test(text)) return "学生";
   return "その他";
 }

@@ -52,6 +52,8 @@ export default function Avatar({
         width={size}
         height={size}
         referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
         onError={() => setBroken(true)}
         className={`rounded-full object-cover border border-line bg-panel2 shrink-0 ${className}`}
         style={{ width: size, height: size }}

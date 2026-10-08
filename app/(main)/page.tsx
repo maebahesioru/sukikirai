@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp, Trophy } from "lucide-react";
@@ -22,16 +23,202 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const dynamic = "force-dynamic";
 
+/* ---------- データ取得セクション（Suspenseでストリーミング表示） ---------- */
+
+async function HomeStats() {
+  const t = await getServerT();
+  const stats = await getHomeStats();
+  return (
+    <div className="flex flex-wrap gap-x-6 gap-y-3 mt-7 text-sm">
+      <Stat label={t("登録人物")} value={num(stats.people)} />
+      <Stat label={t("総投票数")} value={num(stats.votes)} />
+      <Stat label={t("コメント")} value={num(stats.comments)} />
+      <Stat label={t("今日の投票")} value={num(stats.today_votes)} accent />
+    </div>
+  );
+}
+
+async function DailyTrending() {
+  const t = await getServerT();
+  const daily = await getRanking("daily", 10);
+  return (
+    <section className="bg-panel border border-line rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-x" />
+          {t("24時間の急上昇")}
+        </h2>
+        <Link href="/ranking/daily" className="text-xs text-x hover:underline flex items-center gap-0.5">
+          {t("もっと見る")} <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {daily.map((p, i) => (
+          <Link
+            key={p.id}
+            href={`/person/${p.id}`}
+            className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
+          >
+            <span
+              className={`w-6 text-center text-sm font-black shrink-0 ${
+                i === 0 ? "text-gold" : i === 1 ? "text-mut" : i === 2 ? "text-amber-600" : "text-mut/60"
+              }`}
+            >
+              {i + 1}
+            </span>
+            <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
+            <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
+            <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
+          </Link>
+        ))}
+        {daily.length === 0 && <p className="text-sm text-mut text-center py-4">{t("まだデータがありません")}</p>}
+      </div>
+    </section>
+  );
+}
+
+async function NewPeople() {
+  const t = await getServerT();
+  const newPeople = await getPeople({ sort: "new", perPage: 6 });
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h2 className="font-bold">{t("最近追加されたXユーザー")}</h2>
+        <Link href="/people?sort=new" className="text-xs text-x hover:underline flex items-center gap-0.5">
+          {t("一覧へ")} <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {newPeople.rows.map((p) => (
+          <PersonCard key={p.id} p={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+async function ScoreTop() {
+  const t = await getServerT();
+  const scoreTop = await getRanking("score", 5);
+  if (scoreTop.length === 0) return null;
+  return (
+    <section className="bg-panel border border-line rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold flex items-center gap-2">
+          <Star className="w-4 h-4 text-gold" />
+          {t("総合評価ランキング")}
+        </h2>
+        <Link href="/ranking/score" className="text-xs text-x hover:underline flex items-center gap-0.5">
+          {t("もっと見る")} <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {scoreTop.map((p, i) => (
+          <Link
+            key={p.id}
+            href={`/person/${p.id}`}
+            className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
+          >
+            <span className={`w-6 text-center text-sm font-black shrink-0 ${i === 0 ? "text-gold" : "text-mut/70"}`}>
+              {i + 1}
+            </span>
+            <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
+            <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
+            <span className="text-sm font-bold text-gold shrink-0">
+              {p.overall != null ? p.overall.toFixed(2) : "—"}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+async function SidebarSection() {
+  const [trending, recent] = await Promise.all([getRanking("trending", 10), getRecentComments(6)]);
+  return <Sidebar trending={trending} recentComments={recent} />;
+}
+
+/* ---------- スケルトン（ストリーミング中のプレースホルダ） ---------- */
+
+function Pulse({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-lg bg-panel2 ${className}`} />;
+}
+
+function StatsSkeleton() {
+  return (
+    <div className="flex flex-wrap gap-x-6 gap-y-3 mt-7 text-sm">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="space-y-1.5">
+          <Pulse className="h-5 w-12" />
+          <Pulse className="h-3 w-14" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ListSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-1.5 py-1">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-2">
+          <Pulse className="h-4 w-6" />
+          <Pulse className="h-[34px] w-[34px] rounded-full" />
+          <Pulse className="h-4 flex-1" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SectionSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <section className="bg-panel border border-line rounded-2xl p-5">
+      <Pulse className="h-5 w-32 mb-4" />
+      <ListSkeleton rows={rows} />
+    </section>
+  );
+}
+
+function CardsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="bg-panel border border-line rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <Pulse className="h-11 w-11 rounded-full" />
+            <div className="space-y-1.5 flex-1">
+              <Pulse className="h-4 w-24" />
+              <Pulse className="h-3 w-16" />
+            </div>
+          </div>
+          <Pulse className="h-3 w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SidebarSkeleton() {
+  return (
+    <aside className="space-y-4">
+      <div className="bg-panel border border-line rounded-2xl p-5">
+        <Pulse className="h-5 w-28 mb-4" />
+        <ListSkeleton rows={5} />
+      </div>
+      <div className="bg-panel border border-line rounded-2xl p-5">
+        <Pulse className="h-5 w-28 mb-4" />
+        <ListSkeleton rows={3} />
+      </div>
+    </aside>
+  );
+}
+
+/* ---------- ページ本体（シェルは即時返し、セクションはストリーミング） ---------- */
+
 export default async function HomePage() {
   const t = await getServerT();
-  const [stats, trending, daily, recent, newPeople, scoreTop] = await Promise.all([
-    getHomeStats(),
-    getRanking("trending", 10),
-    getRanking("daily", 10),
-    getRecentComments(6),
-    getPeople({ sort: "new", perPage: 6 }),
-    getRanking("score", 5),
-  ]);
   const now = Date.now();
   const skStart = Date.parse(SOUSENKYO.startIso);
   const skEnd = Date.parse(SOUSENKYO.endIso);
@@ -80,12 +267,9 @@ export default async function HomePage() {
             <div className="mt-6">
               <HeroSearch />
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-3 mt-7 text-sm">
-              <Stat label={t("登録人物")} value={num(stats.people)} />
-              <Stat label={t("総投票数")} value={num(stats.votes)} />
-              <Stat label={t("コメント")} value={num(stats.comments)} />
-              <Stat label={t("今日の投票")} value={num(stats.today_votes)} accent />
-            </div>
+            <Suspense fallback={<StatsSkeleton />}>
+              <HomeStats />
+            </Suspense>
             <div className="mt-5">
               <Link href="/today" className="inline-flex items-center gap-1.5 text-sm text-x hover:underline font-medium">
                 {t("今日のまとめ（{date}）を見る", { date: todayLabel })} <ArrowRight className="w-3.5 h-3.5" />
@@ -103,90 +287,25 @@ export default async function HomePage() {
         </section>
 
         {/* Trending (24h) */}
-        <section className="bg-panel border border-line rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-x" />
-              {t("24時間の急上昇")}
-            </h2>
-            <Link href="/ranking/daily" className="text-xs text-x hover:underline flex items-center gap-0.5">
-              {t("もっと見る")} <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="space-y-1.5">
-            {daily.map((p, i) => (
-              <Link
-                key={p.id}
-                href={`/person/${p.id}`}
-                className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
-              >
-                <span
-                  className={`w-6 text-center text-sm font-black shrink-0 ${
-                    i === 0 ? "text-gold" : i === 1 ? "text-mut" : i === 2 ? "text-amber-600" : "text-mut/60"
-                  }`}
-                >
-                  {i + 1}
-                </span>
-                <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
-                <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
-                <span className="text-xs font-bold text-x shrink-0">{t("{n}票", { n: p.recentVotes ?? 0 })}</span>
-              </Link>
-            ))}
-            {daily.length === 0 && <p className="text-sm text-mut text-center py-4">{t("まだデータがありません")}</p>}
-          </div>
-        </section>
+        <Suspense fallback={<SectionSkeleton rows={10} />}>
+          <DailyTrending />
+        </Suspense>
 
         {/* New people */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="font-bold">{t("最近追加されたXユーザー")}</h2>
-            <Link href="/people?sort=new" className="text-xs text-x hover:underline flex items-center gap-0.5">
-              {t("一覧へ")} <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {newPeople.rows.map((p) => (
-              <PersonCard key={p.id} p={p} />
-            ))}
-          </div>
-        </section>
+        <Suspense fallback={<CardsSkeleton />}>
+          <NewPeople />
+        </Suspense>
 
         {/* Score top */}
-        {scoreTop.length > 0 && (
-          <section className="bg-panel border border-line rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold flex items-center gap-2">
-                <Star className="w-4 h-4 text-gold" />
-                {t("総合評価ランキング")}
-              </h2>
-              <Link href="/ranking/score" className="text-xs text-x hover:underline flex items-center gap-0.5">
-                {t("もっと見る")} <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <div className="space-y-1.5">
-              {scoreTop.map((p, i) => (
-                <Link
-                  key={p.id}
-                  href={`/person/${p.id}`}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-panel2 transition"
-                >
-                  <span className={`w-6 text-center text-sm font-black shrink-0 ${i === 0 ? "text-gold" : "text-mut/70"}`}>
-                    {i + 1}
-                  </span>
-                  <Avatar name={p.name} avatarUrl={p.avatar_url} size={34} />
-                  <span className="text-sm font-medium truncate flex-1"><EmojiText text={p.name} /></span>
-                  <span className="text-sm font-bold text-gold shrink-0">
-                    {p.overall != null ? p.overall.toFixed(2) : "—"}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        <Suspense fallback={<SectionSkeleton rows={5} />}>
+          <ScoreTop />
+        </Suspense>
       </div>
 
       <div className="lg:col-span-1">
-        <Sidebar trending={trending} recentComments={recent} />
+        <Suspense fallback={<SidebarSkeleton />}>
+          <SidebarSection />
+        </Suspense>
       </div>
     </div>
   );

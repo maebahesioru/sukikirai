@@ -1688,6 +1688,63 @@ export async function setPeopleTags(
 /* ================= 統計ページ用 ================= */
 
 /** 評価の総数 */
+/** 投票の時間帯ヒストグラム（JST・0-23時） */
+export async function getVoteHourHistogram(): Promise<number[]> {
+  const rows = await sql<{ h: number; n: number }>(
+    `SELECT EXTRACT(HOUR FROM created_at AT TIME ZONE 'Asia/Tokyo')::int AS h, COUNT(*)::int AS n
+     FROM votes GROUP BY 1`
+  );
+  const out = new Array(24).fill(0) as number[];
+  for (const r of rows) out[r.h] = r.n;
+  return out;
+}
+
+/** 投票の曜日ヒストグラム（JST・0=日〜6=土） */
+export async function getVoteWeekdayHistogram(): Promise<number[]> {
+  const rows = await sql<{ d: number; n: number }>(
+    `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'Asia/Tokyo')::int AS d, COUNT(*)::int AS n
+     FROM votes GROUP BY 1`
+  );
+  const out = new Array(7).fill(0) as number[];
+  for (const r of rows) out[r.d] = r.n;
+  return out;
+}
+
+/** 8項目の全体平均（1〜5） */
+export async function getItemAverages(): Promise<Record<string, number | null>> {
+  const r = await sql1<Record<string, number | null>>(
+    `SELECT AVG(fun)::float AS fun, AVG(accuracy)::float AS accuracy, AVG(influence)::float AS influence,
+            AVG(knowledge)::float AS knowledge, AVG(humanity)::float AS humanity, AVG(charisma)::float AS charisma,
+            AVG(favor)::float AS favor, AVG(reply)::float AS reply
+     FROM evaluations`
+  );
+  return r ?? {};
+}
+
+/** 評価数が多い人物 TOP n */
+export async function getTopEvaluated(
+  limit = 5
+): Promise<{ id: string; name: string; avatar_url: string | null; cnt: number }[]> {
+  return sql<{ id: string; name: string; avatar_url: string | null; cnt: number }>(
+    `SELECT p.id, p.name, p.avatar_url, COUNT(*)::int AS cnt
+     FROM evaluations e JOIN people p ON p.id = e.person_id
+     WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     GROUP BY p.id ORDER BY cnt DESC, p.name ASC LIMIT ${limit}`
+  );
+}
+
+/** コメント数が多い人物 TOP n */
+export async function getTopCommented(
+  limit = 5
+): Promise<{ id: string; name: string; avatar_url: string | null; cnt: number }[]> {
+  return sql<{ id: string; name: string; avatar_url: string | null; cnt: number }>(
+    `SELECT p.id, p.name, p.avatar_url, COUNT(*)::int AS cnt
+     FROM comments c JOIN people p ON p.id = c.person_id
+     WHERE NOT c.is_hidden AND NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
+     GROUP BY p.id ORDER BY cnt DESC, p.name ASC LIMIT ${limit}`
+  );
+}
+
 export async function getEvalTotalCount(): Promise<number> {
   const r = await sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM evaluations");
   return r?.c ?? 0;

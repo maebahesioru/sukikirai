@@ -8,9 +8,14 @@ import {
   getEvalCorrelation,
   getEvalTotalCount,
   getHomeStats,
+  getItemAverages,
   getRanking,
   getScoreDistribution,
   getTagStats,
+  getTopCommented,
+  getTopEvaluated,
+  getVoteHourHistogram,
+  getVoteWeekdayHistogram,
 } from "@/lib/queries";
 import { EVAL_ITEMS } from "@/lib/constants";
 import { num } from "@/lib/format";
@@ -41,23 +46,37 @@ function corrColor(v: number): string {
   return `rgba(244, 33, 46, ${(0.08 + a * 0.75).toFixed(2)})`;
 }
 
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
 export default async function StatsPage() {
   const t = await getServerT();
-  const [stats, evalTotal, categories, tags, corr, dist, trend, topScore, lowScore] = await Promise.all([
+  const [stats, evalTotal, categories, tags, corr, dist, trend30, topScore, lowScore, hourHist, weekdayHist, itemAvgs, topEval, topComment, trending5] = await Promise.all([
     getHomeStats(),
     getEvalTotalCount(),
     getCategoryStats(),
     getTagStats(2, 20),
     getEvalCorrelation(),
     getScoreDistribution(),
-    getDailyTrend(7),
+    getDailyTrend(30),
     getRanking("score", 5),
     getRanking("lowscore", 5),
+    getVoteHourHistogram(),
+    getVoteWeekdayHistogram(),
+    getItemAverages(),
+    getTopEvaluated(5),
+    getTopCommented(5),
+    getRanking("trending", 5),
   ]);
+  const trend = trend30.slice(-7);
   const today = trend[trend.length - 1];
   const maxV = Math.max(1, ...trend.map((d) => d.votes));
   const maxC = Math.max(1, ...trend.map((d) => d.comments));
   const maxE = Math.max(1, ...trend.map((d) => d.evals));
+  const max30 = Math.max(1, ...trend30.map((d) => d.votes));
+  const peak30 = trend30.reduce((a, b) => (b.votes > a.votes ? b : a), trend30[0]);
+  const total30 = trend30.reduce((a, b) => a + b.votes, 0);
+  const maxH = Math.max(1, ...hourHist);
+  const maxW = Math.max(1, ...weekdayHist);
 
   const corrMap = new Map(corr.map((c) => [`${c.a}__${c.b}`, c.value]));
   const corrOf = (a: string, b: string): number | null => {
@@ -136,6 +155,77 @@ export default async function StatsPage() {
         </div>
       </section>
 
+      {/* 30日推移 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("全期間の推移（30日）")}</h2>
+        <p className="text-xs text-mut mb-4">{t("日別の投票数（JST）。棒にカーソルで詳細。")}</p>
+        <div className="flex items-end gap-[2px] h-24">
+          {trend30.map((d) => (
+            <div
+              key={d.day}
+              className="flex-1 flex flex-col justify-end h-full group"
+              title={`${d.day.slice(5).replace("-", "/")}: ${num(d.votes)}票`}
+            >
+              <div
+                className="bg-like rounded-t group-hover:bg-x transition-colors"
+                style={{ height: `${Math.max(2, (d.votes / max30) * 100)}%` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between text-[10px] text-mut mt-1">
+          <span>{trend30[0]?.day.slice(5).replace("-", "/")}</span>
+          <span>{trend30[trend30.length - 1]?.day.slice(5).replace("-", "/")}</span>
+        </div>
+        <p className="text-xs text-mut mt-2">
+          {t("30日合計 {n}票・ピーク {day}（{v}票）", {
+            n: num(total30),
+            day: peak30?.day.slice(5).replace("-", "/") ?? "—",
+            v: num(peak30?.votes ?? 0),
+          })}
+        </p>
+      </section>
+
+      {/* 時間帯・曜日 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("いつ投票されてる？")}</h2>
+        <p className="text-xs text-mut mb-4">{t("全期間の投票を時間帯・曜日で集計（JST）。")}</p>
+        <div className="text-xs text-mut mb-1">{t("時間帯（JST・全期間）")}</div>
+        <div className="flex items-end gap-[3px] h-16">
+          {hourHist.map((n, h) => (
+            <div key={h} className="flex-1 flex flex-col justify-end h-full group" title={`${h}時: ${num(n)}票`}>
+              <div
+                className="bg-x/70 rounded-t group-hover:bg-x transition-colors"
+                style={{ height: `${Math.max(2, (n / maxH) * 100)}%` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between text-[10px] text-mut mt-1">
+          <span>0</span>
+          <span>6</span>
+          <span>12</span>
+          <span>18</span>
+          <span>23</span>
+        </div>
+        <div className="text-xs text-mut mb-1 mt-5">{t("曜日（JST・全期間）")}</div>
+        <div className="flex items-end gap-2 h-16">
+          {weekdayHist.map((n, d) => (
+            <div key={d} className="flex-1 flex flex-col justify-end h-full group" title={`${t(WEEKDAYS[d])}: ${num(n)}票`}>
+              <div
+                className="bg-like/70 rounded-t group-hover:bg-like transition-colors"
+                style={{ height: `${Math.max(2, (n / maxW) * 100)}%` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 text-[10px] text-mut mt-1">
+          {WEEKDAYS.map((w) => (
+            <span key={w} className="flex-1 text-center">{t(w)}</span>
+          ))}
+        </div>
+      </section>
+
       {/* 総合評価トップ / 低評価ワースト */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-panel border border-line rounded-2xl p-5">
@@ -189,6 +279,49 @@ export default async function StatsPage() {
           {lowScore.length === 0 && (
             <p className="text-sm text-mut py-3">{t("まだデータがありません（5人以上の評価が必要）")}</p>
           )}
+        </div>
+      </section>
+
+      {/* 急上昇・評価数・コメント数 TOP5 */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-panel border border-line rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold">{t("急上昇 TOP5（7日）")}</h2>
+            <Link href="/ranking/trending" className="text-xs text-x hover:underline">{t("もっと見る")}</Link>
+          </div>
+          {trending5.map((p, i) => (
+            <Link key={p.id} href={`/person/${p.id}`} className="flex items-center gap-3 py-2 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1">
+              <span className="w-5 text-center font-black text-x shrink-0">{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
+              <span className="text-sm font-bold text-x shrink-0">{t("{n}票", { n: num(p.recentVotes ?? 0) })}</span>
+            </Link>
+          ))}
+          {trending5.length === 0 && <p className="text-sm text-mut py-3">{t("まだデータがありません")}</p>}
+        </div>
+        <div className="bg-panel border border-line rounded-2xl p-5">
+          <h2 className="font-bold mb-2">{t("評価が多い人 TOP5")}</h2>
+          {topEval.map((p, i) => (
+            <Link key={p.id} href={`/person/${p.id}`} className="flex items-center gap-3 py-2 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1">
+              <span className="w-5 text-center font-black text-gold shrink-0">{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
+              <span className="text-sm font-bold text-gold shrink-0">{t("{n}件", { n: num(p.cnt) })}</span>
+            </Link>
+          ))}
+          {topEval.length === 0 && <p className="text-sm text-mut py-3">{t("まだデータがありません")}</p>}
+        </div>
+        <div className="bg-panel border border-line rounded-2xl p-5">
+          <h2 className="font-bold mb-2">{t("コメントが多い人 TOP5")}</h2>
+          {topComment.map((p, i) => (
+            <Link key={p.id} href={`/person/${p.id}`} className="flex items-center gap-3 py-2 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1">
+              <span className="w-5 text-center font-black text-x shrink-0">{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={28} />
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
+              <span className="text-sm font-bold shrink-0">{t("{n}件", { n: num(p.cnt) })}</span>
+            </Link>
+          ))}
+          {topComment.length === 0 && <p className="text-sm text-mut py-3">{t("まだデータがありません")}</p>}
         </div>
       </section>
 
@@ -334,6 +467,26 @@ export default async function StatsPage() {
               {t("{n}点", { n })}
             </span>
           ))}
+        </div>
+      </section>
+
+      {/* 項目別平均 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("評価項目の全体平均")}</h2>
+        <p className="text-xs text-mut mb-4">{t("全評価の項目別平均（1〜5）。")}</p>
+        <div className="space-y-2.5">
+          {EVAL_ITEMS.map((item) => {
+            const avg = itemAvgs[item.key];
+            return (
+              <div key={item.key} className="flex items-center gap-3">
+                <span className="text-xs text-mut w-20 shrink-0 text-right">{t(item.label)}</span>
+                <div className="flex-1 h-3 rounded bg-panel2 overflow-hidden">
+                  <div className="h-full bg-x/70" style={{ width: `${avg != null ? (avg / 5) * 100 : 0}%` }} />
+                </div>
+                <span className="text-xs font-bold w-10 text-right">{avg != null ? avg.toFixed(2) : "—"}</span>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>

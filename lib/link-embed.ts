@@ -14,6 +14,8 @@ function num(v: unknown): number {
 }
 
 async function fetchTweetEmbed(id: string): Promise<EmbedData | null> {
+  // IDは数字のみ（呼び出し元のparseXUrlでも検証済みだが多層防御）
+  if (!/^\d{5,25}$/.test(id)) return null;
   try {
     const res = await fetch(`https://api.fxtwitter.com/status/${id}`, {
       headers: { "User-Agent": UA, Accept: "application/json" },
@@ -165,16 +167,38 @@ function decodeEntities(s: string): string {
     .replace(/&amp;/g, "&");
 }
 
+/** SSRFガード付きfetch: リダイレクトも1ホップずつ再検証（最大4ホップ） */
+async function fetchWithSafeRedirects(
+  url: string,
+  init: RequestInit
+): Promise<Response | null> {
+  let current = url;
+  for (let hop = 0; hop < 4; hop++) {
+    if (!(await isSafeUrl(current))) return null;
+    const res = await fetch(current, { ...init, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) return null;
+      try {
+        current = new URL(loc, current).toString();
+      } catch {
+        return null;
+      }
+      continue;
+    }
+    return res;
+  }
+  return null;
+}
+
 async function fetchOgEmbed(url: string): Promise<EmbedData | null> {
-  if (!(await isSafeUrl(url))) return null;
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithSafeRedirects(url, {
       headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" },
-      redirect: "follow",
       signal: AbortSignal.timeout(8000),
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    if (!res || !res.ok) return null;
     const ct = res.headers.get("content-type") ?? "";
     if (!/text\/html|application\/xhtml/i.test(ct)) return null;
     const reader = res.body?.getReader();

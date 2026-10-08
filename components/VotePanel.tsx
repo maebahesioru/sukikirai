@@ -20,6 +20,7 @@ export default function VotePanel({
   initialDislikes,
   initialVoted,
   initialVoteType,
+  lastVote = null,
   initialStreak = 0,
   onVotedChange,
   archived = false,
@@ -30,6 +31,8 @@ export default function VotePanel({
   initialDislikes: number;
   initialVoted: boolean;
   initialVoteType: "like" | "dislike" | null;
+  /** 過去に一度でも投票した場合の最後の投票（前回投票の表示用） */
+  lastVote?: "like" | "dislike" | null;
   initialStreak?: number;
   onVotedChange?: (info: VoteInfo) => void;
   archived?: boolean;
@@ -145,6 +148,11 @@ export default function VotePanel({
           <p className="text-center text-mut text-sm mb-5">
             {t("投票すると、みんなのコメントが読めるようになり、8項目評価を書き込めます")}
           </p>
+          {lastVote && (
+            <p className="text-center text-xs text-mut mb-4">
+              {t("前回のあなたの投票: {vote}", { vote: t(lastVote === "like" ? "好き" : "嫌い") })}
+            </p>
+          )}
           {streak >= 2 && (
             <p className="text-center text-sm mb-4">
               🔥 <span className="font-bold text-like">{t("連続{n}日投票中！", { n: streak })}</span>{" "}

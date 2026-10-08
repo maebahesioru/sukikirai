@@ -24,6 +24,12 @@ export default function TermsModal({ onAgree }: { onAgree: () => void }) {
         expires: new Date(data.expiresAt),
         sameSite: "strict",
       });
+      // Cookieが消えても復元できるようlocalStorageにも保存
+      try {
+        localStorage.setItem("sk_token", data.userToken);
+      } catch {
+        /* noop */
+      }
       onAgree();
     } catch {
       alert(t("エラーが発生しました。"));

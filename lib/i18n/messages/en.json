@@ -523,5 +523,6 @@
  "削除できませんでした": "Could not delete",
  "返信しました。削除キー: {key}": "Replied. Deletion key: {key}",
  "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "For posts that clearly infringe rights, we may review and delete/hide them based on reports via the admin thread.",
- "ソースコード（GitHub）": "Source code (GitHub)"
+ "ソースコード（GitHub）": "Source code (GitHub)",
+ "前回のあなたの投票: {vote}": "Your previous vote: {vote}"
 }

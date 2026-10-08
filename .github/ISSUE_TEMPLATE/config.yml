@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: サイトの管理スレ（バグ・要望・連絡）
+    url: https://tsuittara-yoron.hikamers.app/meta
+    about: サイトに関する連絡はこちらでも受け付けています
+  - name: セキュリティポリシー
+    url: https://github.com/maebahesioru/sukikirai/security/policy
+    about: 脆弱性の報告方法はこちら

@@ -1,0 +1,39 @@
+name: バグ報告
+description: 不具合を報告する
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告ありがとうございます。個人運営のため対応にお時間をいただく場合があります。
+        **セキュリティ問題は公開Issueに書かず**、[SECURITY.md](../../blob/main/SECURITY.md) の手順でお願いします。
+  - type: textarea
+    id: what
+    attributes:
+      label: 何が起きましたか？
+      description: 起きたことを具体的に書いてください
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. 〜を開く
+        2. 〜をクリックする
+        3. 〜が表示される（期待: 〜）
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 環境
+      placeholder: "例: Windows 11 / Chrome 124 / ログイン状態・未ログイン"
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: 補足（スクリーンショット等）
+    validations:
+      required: false

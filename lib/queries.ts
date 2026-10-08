@@ -1745,6 +1745,76 @@ export async function getTopCommented(
   );
 }
 
+/** 日別の好き/嫌い内訳（直近days日・JST） */
+export async function getLikeRatioTrend(
+  days = 30
+): Promise<{ day: string; total: number; likes: number }[]> {
+  const since = new Date(Date.now() - (days + 1) * 86400_000 - 9 * 3600_000);
+  const rows = await sql<{ day: string; total: number; likes: number }>(
+    `SELECT (created_at AT TIME ZONE 'Asia/Tokyo')::date::text AS day,
+            COUNT(*)::int AS total,
+            COUNT(*) FILTER (WHERE vote_type = 'like')::int AS likes
+     FROM votes WHERE created_at >= $1 GROUP BY 1`,
+    [since]
+  );
+  const m = new Map(rows.map((r) => [r.day, r]));
+  const out: { day: string; total: number; likes: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = new Date(Date.now() + 9 * 3600_000 - i * 86400_000).toISOString().slice(0, 10);
+    const r = m.get(day);
+    out.push({ day, total: r?.total ?? 0, likes: r?.likes ?? 0 });
+  }
+  return out;
+}
+
+/** 全票の好き/嫌い合計 */
+export async function getVoteTypeTotals(): Promise<{ likes: number; dislikes: number }> {
+  const r = await sql1<{ likes: number; dislikes: number }>(
+    `SELECT COUNT(*) FILTER (WHERE vote_type='like')::int AS likes,
+            COUNT(*) FILTER (WHERE vote_type='dislike')::int AS dislikes FROM votes`
+  );
+  return r ?? { likes: 0, dislikes: 0 };
+}
+
+/** 時間帯×曜日の投票ヒートマップ（JST・[7][24]・0=日曜） */
+export async function getVoteHeatmap(): Promise<number[][]> {
+  const rows = await sql<{ d: number; h: number; n: number }>(
+    `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'Asia/Tokyo')::int AS d,
+            EXTRACT(HOUR FROM created_at AT TIME ZONE 'Asia/Tokyo')::int AS h,
+            COUNT(*)::int AS n
+     FROM votes GROUP BY 1, 2`
+  );
+  const grid = Array.from({ length: 7 }, () => new Array(24).fill(0)) as number[][];
+  for (const r of rows) grid[r.d][r.h] = r.n;
+  return grid;
+}
+
+/** フォロワー数分布（6バケット・末尾=不明） */
+export async function getFollowerBuckets(): Promise<number[]> {
+  const rows = await sql<{ b: number; n: number }>(
+    `SELECT CASE
+       WHEN followers IS NULL THEN 5
+       WHEN followers < 100 THEN 0
+       WHEN followers < 1000 THEN 1
+       WHEN followers < 10000 THEN 2
+       WHEN followers < 100000 THEN 3
+       ELSE 4 END AS b, COUNT(*)::int AS n
+     FROM people WHERE NOT is_hidden GROUP BY 1`
+  );
+  const out = new Array(6).fill(0) as number[];
+  for (const r of rows) out[r.b] = r.n;
+  return out;
+}
+
+/** 総選挙期間の累計票数 */
+export async function getSousenkyoTotalVotes(): Promise<number> {
+  const r = await sql1<{ c: number }>(
+    `SELECT COUNT(*)::int AS c FROM votes WHERE created_at >= $1`,
+    [SOUSENKYO.startIso]
+  );
+  return r?.c ?? 0;
+}
+
 export async function getEvalTotalCount(): Promise<number> {
   const r = await sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM evaluations");
   return r?.c ?? 0;

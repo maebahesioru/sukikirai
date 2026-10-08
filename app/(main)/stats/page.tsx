@@ -7,17 +7,23 @@ import {
   getDailyTrend,
   getEvalCorrelation,
   getEvalTotalCount,
+  getFollowerBuckets,
   getHomeStats,
   getItemAverages,
+  getLikeRatioTrend,
   getRanking,
   getScoreDistribution,
+  getSousenkyoRanking,
+  getSousenkyoTotalVotes,
   getTagStats,
   getTopCommented,
   getTopEvaluated,
+  getVoteHeatmap,
   getVoteHourHistogram,
+  getVoteTypeTotals,
   getVoteWeekdayHistogram,
 } from "@/lib/queries";
-import { EVAL_ITEMS } from "@/lib/constants";
+import { EVAL_ITEMS, SOUSENKYO } from "@/lib/constants";
 import { num } from "@/lib/format";
 import Avatar from "@/components/Avatar";
 import EmojiText from "@/components/EmojiText";
@@ -50,7 +56,7 @@ const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
 export default async function StatsPage() {
   const t = await getServerT();
-  const [stats, evalTotal, categories, tags, corr, dist, trend30, topScore, lowScore, hourHist, weekdayHist, itemAvgs, topEval, topComment, trending5] = await Promise.all([
+  const [stats, evalTotal, categories, tags, corr, dist, trend30, topScore, lowScore, hourHist, weekdayHist, itemAvgs, topEval, topComment, trending5, likeTrend, voteTotals, heatmap, followerBuckets, sousenkyo10, sousenkyoTotal] = await Promise.all([
     getHomeStats(),
     getEvalTotalCount(),
     getCategoryStats(),
@@ -66,6 +72,12 @@ export default async function StatsPage() {
     getTopEvaluated(5),
     getTopCommented(5),
     getRanking("trending", 5),
+    getLikeRatioTrend(30),
+    getVoteTypeTotals(),
+    getVoteHeatmap(),
+    getFollowerBuckets(),
+    getSousenkyoRanking(10),
+    getSousenkyoTotalVotes(),
   ]);
   const trend = trend30.slice(-7);
   const today = trend[trend.length - 1];
@@ -73,10 +85,20 @@ export default async function StatsPage() {
   const maxC = Math.max(1, ...trend.map((d) => d.comments));
   const maxE = Math.max(1, ...trend.map((d) => d.evals));
   const max30 = Math.max(1, ...trend30.map((d) => d.votes));
+  const maxNew = Math.max(1, ...trend30.map((d) => d.newPeople));
   const peak30 = trend30.reduce((a, b) => (b.votes > a.votes ? b : a), trend30[0]);
   const total30 = trend30.reduce((a, b) => a + b.votes, 0);
+  const totalNew = trend30.reduce((a, b) => a + b.newPeople, 0);
+  const weekVotes = trend30.slice(-7).reduce((a, b) => a + b.votes, 0);
+  const prevWeekVotes = trend30.slice(-14, -7).reduce((a, b) => a + b.votes, 0);
+  const weekDelta = prevWeekVotes > 0 ? Math.round(((weekVotes - prevWeekVotes) / prevWeekVotes) * 100) : null;
+  const totalVotesAll = voteTotals.likes + voteTotals.dislikes;
+  const likePct = totalVotesAll > 0 ? (voteTotals.likes / totalVotesAll) * 100 : 0;
   const maxH = Math.max(1, ...hourHist);
   const maxW = Math.max(1, ...weekdayHist);
+  const maxCell = Math.max(1, ...heatmap.flat());
+  const maxFollower = Math.max(1, ...followerBuckets);
+  const sousenkyoNow = Date.now() < Date.parse(SOUSENKYO.endIso);
 
   const corrMap = new Map(corr.map((c) => [`${c.a}__${c.b}`, c.value]));
   const corrOf = (a: string, b: string): number | null => {
@@ -107,6 +129,38 @@ export default async function StatsPage() {
             })}
           </p>
         )}
+        {weekDelta != null && (
+          <p className="text-xs text-mut mt-1">
+            {t("今週 {n}票（先週比 {d}%）", {
+              n: num(weekVotes),
+              d: (weekDelta >= 0 ? "+" : "") + weekDelta,
+            })}
+          </p>
+        )}
+      </section>
+
+      {/* 総選挙 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-bold">
+            {SOUSENKYO.title}
+            <span className="ml-2 text-xs font-normal text-gold">{sousenkyoNow ? t("開催中") : t("最終結果")}</span>
+          </h2>
+          <Link href="/sousenkyo" className="text-xs text-x hover:underline">{t("特設ページ")}</Link>
+        </div>
+        <p className="text-xs text-mut mb-3">
+          {t("期間: {period}・累計 {n}票", { period: SOUSENKYO.periodLabel, n: num(sousenkyoTotal) })}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+          {sousenkyo10.map((p, i) => (
+            <Link key={p.id} href={`/person/${p.id}`} className="flex items-center gap-3 py-1.5 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1">
+              <span className={`w-6 text-center font-black shrink-0 ${i < 3 ? "text-gold" : "text-mut"}`}>{i + 1}</span>
+              <Avatar name={p.name} avatarUrl={p.avatar_url} size={26} />
+              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
+              <span className="text-sm font-bold shrink-0">{t("{n}票", { n: num(p.recentVotes) })}</span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* 直近7日の推移 */}
@@ -186,6 +240,65 @@ export default async function StatsPage() {
         </p>
       </section>
 
+      {/* 新規登録の推移 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("新規登録の推移（30日）")}</h2>
+        <p className="text-xs text-mut mb-4">{t("日別の新規追加人数（JST）。")}</p>
+        <div className="flex items-end gap-[2px] h-20">
+          {trend30.map((d) => (
+            <div key={d.day} className="flex-1 flex flex-col justify-end h-full group" title={`${d.day.slice(5).replace("-", "/")}: ${num(d.newPeople)}人`}>
+              <div
+                className="bg-good/70 rounded-t group-hover:bg-good transition-colors"
+                style={{ height: `${Math.max(2, (d.newPeople / maxNew) * 100)}%` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between text-[10px] text-mut mt-1">
+          <span>{trend30[0]?.day.slice(5).replace("-", "/")}</span>
+          <span>{trend30[trend30.length - 1]?.day.slice(5).replace("-", "/")}</span>
+        </div>
+        <p className="text-xs text-mut mt-2">{t("30日合計 {n}人", { n: num(totalNew) })}</p>
+      </section>
+
+      {/* 好き/嫌い比率 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("好き/嫌いの比率")}</h2>
+        <p className="text-xs text-mut mb-4">{t("全投票の内訳と、直近30日の好き率の推移。")}</p>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-5 rounded-lg overflow-hidden flex bg-panel2">
+            <div className="bg-like" style={{ width: `${likePct}%` }} />
+            <div className="bg-dislike" style={{ width: `${100 - likePct}%` }} />
+          </div>
+          <span className="text-sm font-bold text-like shrink-0">{likePct.toFixed(1)}%</span>
+        </div>
+        <div className="flex gap-4 mt-2 text-[10px] text-mut">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-like" />
+            {t("好き {l}票", { l: num(voteTotals.likes) })}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-dislike" />
+            {t("嫌い {d}票", { d: num(voteTotals.dislikes) })}
+          </span>
+        </div>
+        <div className="text-xs text-mut mb-1 mt-4">{t("直近30日の好き率")}</div>
+        <div className="flex items-end gap-[2px] h-16">
+          {likeTrend.map((d) => {
+            const pct = d.total > 0 ? (d.likes / d.total) * 100 : 0;
+            return (
+              <div key={d.day} className="flex-1 flex flex-col justify-end h-full" title={`${d.day.slice(5).replace("-", "/")}: ${pct.toFixed(0)}%（${num(d.total)}票）`}>
+                <div className="bg-like/70 rounded-t" style={{ height: `${Math.max(2, pct)}%` }} />
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-[10px] text-mut mt-1">
+          <span>{likeTrend[0]?.day.slice(5).replace("-", "/")}</span>
+          <span>{likeTrend[likeTrend.length - 1]?.day.slice(5).replace("-", "/")}</span>
+        </div>
+      </section>
+
       {/* 時間帯・曜日 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-1">{t("いつ投票されてる？")}</h2>
@@ -223,6 +336,30 @@ export default async function StatsPage() {
           {WEEKDAYS.map((w) => (
             <span key={w} className="flex-1 text-center">{t(w)}</span>
           ))}
+        </div>
+        <div className="text-xs text-mut mb-1 mt-5">{t("時間帯×曜日ヒートマップ")}</div>
+        <div className="space-y-[2px]">
+          {heatmap.map((row, d) => (
+            <div key={d} className="flex items-center gap-[2px]">
+              <span className="w-5 text-[10px] text-mut shrink-0 text-right">{t(WEEKDAYS[d])}</span>
+              {row.map((n, h) => (
+                <div
+                  key={h}
+                  className="flex-1 h-3 rounded-[2px]"
+                  style={{ backgroundColor: `rgba(29, 155, 240, ${(0.06 + (n / maxCell) * 0.9).toFixed(2)})` }}
+                  title={`${t(WEEKDAYS[d])} ${h}時: ${num(n)}票`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="flex text-[10px] text-mut mt-1">
+          <span className="w-5 shrink-0" />
+          <span className="flex-1">0</span>
+          <span className="flex-1 text-center">6</span>
+          <span className="flex-1 text-center">12</span>
+          <span className="flex-1 text-center">18</span>
+          <span className="flex-1 text-right">23</span>
         </div>
       </section>
 
@@ -389,6 +526,26 @@ export default async function StatsPage() {
             ))}
           </tbody>
         </table>
+      </section>
+
+      {/* フォロワー数分布 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-1">{t("フォロワー数分布")}</h2>
+        <p className="text-xs text-mut mb-4">{t("登録人物のフォロワー数（X取得済み）の分布。")}</p>
+        <div className="space-y-2.5">
+          {followerBuckets.map((n, i) => {
+            const label = i === 5 ? t("不明") : ["〜100", "100〜1,000", "1,000〜10,000", "10,000〜100,000", "100,000〜"][i];
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-xs text-mut w-28 shrink-0 text-right">{label}</span>
+                <div className="flex-1 h-3 rounded bg-panel2 overflow-hidden">
+                  <div className="h-full bg-x/60" style={{ width: `${(n / maxFollower) * 100}%` }} />
+                </div>
+                <span className="text-xs font-bold w-16 text-right">{t("{n}人", { n: num(n) })}</span>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* 相関ヒートマップ */}

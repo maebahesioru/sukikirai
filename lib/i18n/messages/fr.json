@@ -494,5 +494,21 @@
  "水": "Mer",
  "木": "Jeu",
  "金": "Ven",
- "土": "Sam"
+ "土": "Sam",
+ "今週 {n}票（先週比 {d}%）": "Cette semaine : {n} votes ({d}% vs semaine dernière)",
+ "開催中": "En cours",
+ "特設ページ": "Page spéciale",
+ "期間: {period}・累計 {n}票": "Période : {period} · {n} votes au total",
+ "新規登録の推移（30日）": "Nouveaux inscrits (30 jours)",
+ "日別の新規追加人数（JST）。": "Nouvelles personnes par jour (JST).",
+ "30日合計 {n}人": "Total 30 jours : {n} personnes",
+ "好き/嫌いの比率": "Ratio like / dislike",
+ "全投票の内訳と、直近30日の好き率の推移。": "Répartition globale et tendance sur 30 jours.",
+ "好き {l}票": "{l} likes",
+ "嫌い {d}票": "{d} dislikes",
+ "直近30日の好き率": "Taux de like (30 jours)",
+ "時間帯×曜日ヒートマップ": "Heatmap heure × jour",
+ "フォロワー数分布": "Répartition des abonnés",
+ "登録人物のフォロワー数（X取得済み）の分布。": "Répartition des abonnés (données X).",
+ "不明": "Inconnu"
 }

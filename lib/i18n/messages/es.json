@@ -494,5 +494,21 @@
  "水": "Mié",
  "木": "Jue",
  "金": "Vie",
- "土": "Sáb"
+ "土": "Sáb",
+ "今週 {n}票（先週比 {d}%）": "Esta semana: {n} votos ({d}% vs semana pasada)",
+ "開催中": "En curso",
+ "特設ページ": "Página especial",
+ "期間: {period}・累計 {n}票": "Periodo: {period} · {n} votos en total",
+ "新規登録の推移（30日）": "Nuevos registros (30 días)",
+ "日別の新規追加人数（JST）。": "Personas nuevas por día (JST).",
+ "30日合計 {n}人": "Total 30 días: {n} personas",
+ "好き/嫌いの比率": "Proporción me gusta / no me gusta",
+ "全投票の内訳と、直近30日の好き率の推移。": "Desglose total y tendencia de 30 días.",
+ "好き {l}票": "{l} me gusta",
+ "嫌い {d}票": "{d} no me gusta",
+ "直近30日の好き率": "Tasa de me gusta (30 días)",
+ "時間帯×曜日ヒートマップ": "Mapa de calor hora × día",
+ "フォロワー数分布": "Distribución de seguidores",
+ "登録人物のフォロワー数（X取得済み）の分布。": "Distribución de seguidores (datos de X).",
+ "不明": "Desconocido"
 }

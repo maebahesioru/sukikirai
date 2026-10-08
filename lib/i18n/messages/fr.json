@@ -511,5 +511,16 @@
  "フォロワー数分布": "Répartition des abonnés",
  "登録人物のフォロワー数（X取得済み）の分布。": "Répartition des abonnés (données X).",
  "不明": "Inconnu",
- "今週 {n}票（先週 {p}票）": "Cette semaine : {n} votes (semaine dernière : {p})"
+ "今週 {n}票（先週 {p}票）": "Cette semaine : {n} votes (semaine dernière : {p})",
+ "投稿しました。削除キーはこちら:": "Publié. Voici votre clé de suppression :",
+ "このキーで後からコメントを削除できます（このブラウザなら削除ボタンからそのまま消せます）。メモ推奨。": "Utilisez cette clé pour supprimer votre commentaire plus tard (sur ce navigateur, le bouton supprimer suffit). Notez-la.",
+ "コピー": "Copier",
+ "コピーしました": "Copié",
+ "コメントを削除": "Supprimer le commentaire",
+ "このコメントを削除しますか？": "Supprimer ce commentaire ?",
+ "削除キーを入力してください": "Saisissez la clé de suppression",
+ "コメントを削除しました": "Commentaire supprimé",
+ "削除できませんでした": "Suppression impossible",
+ "返信しました。削除キー: {key}": "Réponse publiée. Clé de suppression : {key}",
+ "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Pour les publications portant manifestement atteinte à des droits, nous pouvons les examiner et les supprimer/masquer suite à un signalement via le fil d'administration."
 }

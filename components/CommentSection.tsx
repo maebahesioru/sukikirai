@@ -3,16 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import {
-  Flag,
   EyeOff,
   ThumbsUp,
   ThumbsDown,
   MessageCircle,
   Send,
+  Trash2,
 } from "lucide-react";
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
-import { REPORT_REASONS, type ReportReason, MAX_COMMENT_CHARS } from "@/lib/constants";
-import ReportModal from "./ReportModal";
+import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import CommentText from "./CommentText";
 import EmojiText from "./EmojiText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
@@ -217,6 +216,7 @@ function CommentForm({
   const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
   const [tweet, setTweet] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
   const t = useT();
 
   // 自分の投票（好き/嫌い）が判明しているときはデフォルトを合わせる（手動変更後は尊重）
@@ -261,6 +261,14 @@ function CommentForm({
         alert(data.error || t("投稿に失敗しました"));
         return;
       }
+      if (data.deleteKey && data.comment?.id) {
+        try {
+          localStorage.setItem(`sk-delkey-${data.comment.id}`, data.deleteKey);
+        } catch {
+          /* noop */
+        }
+        setIssuedKey({ id: data.comment.id, key: data.deleteKey });
+      }
       if (tweet && !parentCommentId) {
         const text = t("【{side}】{name}へのコメントを投稿しました！\n\n「{content}」\n\n#ツイッタラー世論調査", {
           side: t(voteType === "like" ? "好き派" : "嫌い派"),
@@ -274,7 +282,6 @@ function CommentForm({
       }
       setName("");
       setContent(parentNumber ? `>>${parentNumber}\n` : "");
-      if (!parentCommentId) alert(t("コメントを投稿しました"));
       onPosted();
     } catch {
       alert(t("投稿に失敗しました"));
@@ -285,6 +292,36 @@ function CommentForm({
 
   return (
     <form onSubmit={submit} className="bg-panel2 border border-line rounded-xl p-4 space-y-3">
+      {issuedKey && (
+        <div className="bg-good/10 border border-good/40 rounded-lg p-3">
+          <p className="text-sm font-bold">{t("投稿しました。削除キーはこちら:")}</p>
+          <p className="font-mono text-lg tracking-widest mt-1 select-all">{issuedKey.key}</p>
+          <p className="text-xs text-mut mt-1">
+            {t("このキーで後からコメントを削除できます（このブラウザなら削除ボタンからそのまま消せます）。メモ推奨。")}
+          </p>
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(issuedKey.key)
+                  .then(() => alert(t("コピーしました")))
+                  .catch(() => {});
+              }}
+              className="px-3 py-1 rounded-lg bg-panel2 border border-line text-xs hover:border-line2 transition"
+            >
+              {t("コピー")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIssuedKey(null)}
+              className="px-3 py-1 rounded-lg bg-panel2 border border-line text-xs hover:border-line2 transition"
+            >
+              {t("閉じる")}
+            </button>
+          </div>
+        </div>
+      )}
       {parentNumber && (
         <p className="text-sm font-bold text-mut">{t(">>{n} への返信", { n: parentNumber })}</p>
       )}
@@ -397,8 +434,6 @@ function CommentItem({
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
   const [showReply, setShowReply] = useState(false);
-  const [showReport, setShowReport] = useState(false);
-  const [reportBusy, setReportBusy] = useState(false);
   const t = useT();
   const locale = useLocale();
 
@@ -442,26 +477,39 @@ function CommentItem({
     alert(t("コメントを非表示にしました"));
   };
 
-  const report = async (reason: ReportReason, details: string) => {
-    setReportBusy(true);
+  const del = async () => {
+    let key = "";
     try {
-      const token = Cookies.get("user_token") ?? "";
-      const res = await fetch("/api/report", {
-        method: "POST",
+      key = localStorage.getItem(`sk-delkey-${comment.id}`) ?? "";
+    } catch {
+      /* noop */
+    }
+    if (key) {
+      if (!confirm(t("このコメントを削除しますか？"))) return;
+    } else {
+      key = window.prompt(t("削除キーを入力してください")) ?? "";
+      if (!key.trim()) return;
+    }
+    try {
+      const res = await fetch("/api/comments", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentId: comment.id, reason, details, userToken: token }),
+        body: JSON.stringify({ id: comment.id, key }),
       });
       const data = await res.json();
       if (data.success) {
-        alert(t("通報を受け付けました。\n\nご協力ありがとうございます。"));
-        setShowReport(false);
+        try {
+          localStorage.removeItem(`sk-delkey-${comment.id}`);
+        } catch {
+          /* noop */
+        }
+        alert(t("コメントを削除しました"));
+        onUpdate();
       } else {
-        alert(data.error || t("通報に失敗しました"));
+        alert(data.error || t("削除できませんでした"));
       }
     } catch {
-      alert(t("通報に失敗しました"));
-    } finally {
-      setReportBusy(false);
+      alert(t("削除できませんでした"));
     }
   };
 
@@ -498,8 +546,8 @@ function CommentItem({
         </div>
         {!locked && (
           <div className="flex gap-2 shrink-0">
-            <button onClick={() => setShowReport(true)} className="text-mut hover:text-bad transition" title={t("通報")}>
-              <Flag className="w-4 h-4" />
+            <button onClick={del} className="text-mut hover:text-bad transition" title={t("コメントを削除")}>
+              <Trash2 className="w-4 h-4" />
             </button>
             <button onClick={hide} className="text-mut hover:text-txt transition" title={t("非表示")}>
               <EyeOff className="w-4 h-4" />
@@ -562,13 +610,6 @@ function CommentItem({
           />
         </div>
       )}
-
-      <ReportModal
-        isOpen={showReport}
-        onClose={() => setShowReport(false)}
-        onSubmit={report}
-        isSubmitting={reportBusy}
-      />
     </div>
   );
 }
@@ -615,6 +656,42 @@ function ReplyItem({
       localStorage.setItem("votedComments", JSON.stringify(voted));
     } catch {
       /* noop */
+    }
+  };
+
+  const del = async () => {
+    let key = "";
+    try {
+      key = localStorage.getItem(`sk-delkey-${reply.id}`) ?? "";
+    } catch {
+      /* noop */
+    }
+    if (key) {
+      if (!confirm(t("このコメントを削除しますか？"))) return;
+    } else {
+      key = window.prompt(t("削除キーを入力してください")) ?? "";
+      if (!key.trim()) return;
+    }
+    try {
+      const res = await fetch("/api/comments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: reply.id, key }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        try {
+          localStorage.removeItem(`sk-delkey-${reply.id}`);
+        } catch {
+          /* noop */
+        }
+        alert(t("コメントを削除しました"));
+        onUpdate();
+      } else {
+        alert(data.error || t("削除できませんでした"));
+      }
+    } catch {
+      alert(t("削除できませんでした"));
     }
   };
 
@@ -668,6 +745,9 @@ function ReplyItem({
         >
           <ThumbsDown className="w-3.5 h-3.5" />
           {local.bad_count}
+        </button>
+        <button onClick={del} className="flex items-center gap-1 text-mut hover:text-bad transition" title={t("コメントを削除")}>
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

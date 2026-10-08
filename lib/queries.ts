@@ -631,6 +631,7 @@ export type CommentInput = {
   content: string;
   parentCommentId: string | null;
   cookieId: string;
+  deleteKeyHash?: string | null;
 };
 
 export async function postComment(
@@ -702,8 +703,8 @@ export async function postComment(
     );
 
     const inserted = await c.query<CommentRow>(
-      `INSERT INTO comments (person_id, comment_number, name, user_id, gender, age_group, vote_type, content, cookie_id, parent_comment_id, mail)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      `INSERT INTO comments (person_id, comment_number, name, user_id, gender, age_group, vote_type, content, cookie_id, parent_comment_id, mail, delete_key_hash)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING id, person_id, comment_number, name, user_id, gender, age_group,
                  vote_type, content, created_at, 0::int AS good_count, 0::int AS bad_count,
                  is_hidden, is_reported, parent_comment_id`,
@@ -719,10 +720,29 @@ export async function postComment(
         input.cookieId,
         input.parentCommentId,
         input.mail ?? null,
+        input.deleteKeyHash ?? null,
       ]
     );
     return { ok: true as const, comment: inserted.rows[0] };
   });
+}
+
+/** 削除キー（ハッシュ）が一致すればコメントを削除（2ch式）。true=削除成功 */
+export async function deleteCommentByKey(commentId: string, keyHash: string): Promise<boolean> {
+  const rows = await sql(`DELETE FROM comments WHERE id = $1 AND delete_key_hash = $2 RETURNING id`, [
+    commentId,
+    keyHash,
+  ]);
+  return rows.length > 0;
+}
+
+/** 投票トークのコメント版 */
+export async function deletePollCommentByKey(commentId: string, keyHash: string): Promise<boolean> {
+  const rows = await sql(
+    `DELETE FROM poll_comments WHERE id = $1 AND delete_key_hash = $2 RETURNING id`,
+    [commentId, keyHash]
+  );
+  return rows.length > 0;
 }
 
 export async function getCommentById(id: string): Promise<CommentRow | null> {
@@ -1186,6 +1206,7 @@ export async function insertPollComment(input: {
   parentCommentId: string | null;
   cookieId: string;
   mail?: string | null;
+  deleteKeyHash?: string | null;
 }): Promise<{ ok: true; comment: PollCommentRow } | { ok: false; error: string; status: number }> {
   const spam = isSpamContent(input.content, { allowUrls: true });
   if (spam.isSpam) return { ok: false, error: `スパム対策: ${spam.reason}`, status: 400 };
@@ -1219,8 +1240,8 @@ export async function insertPollComment(input: {
       [input.pollId]
     );
     const inserted = await c.query<PollCommentRow>(
-      `INSERT INTO poll_comments (poll_id, comment_number, name, user_id, content, cookie_id, parent_comment_id, mail)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `INSERT INTO poll_comments (poll_id, comment_number, name, user_id, content, cookie_id, parent_comment_id, mail, delete_key_hash)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING id, poll_id, comment_number, name, user_id, content, created_at,
                  0::int AS good_count, 0::int AS bad_count, is_hidden, is_reported, parent_comment_id`,
       [
@@ -1232,6 +1253,7 @@ export async function insertPollComment(input: {
         input.cookieId,
         input.parentCommentId,
         input.mail ?? null,
+        input.deleteKeyHash ?? null,
       ]
     );
     return { ok: true as const, comment: inserted.rows[0] };

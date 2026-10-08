@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { getComments, postComment } from "@/lib/queries";
+import { deleteCommentByKey, getComments, postComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { charCount, isValidToken, str } from "@/lib/validate";
+import { charCount, isUuid, isValidToken, str } from "@/lib/validate";
 import { AGE_GROUPS, GENDERS, MAX_COMMENT_CHARS } from "@/lib/constants";
 import { applyTrip } from "@/lib/trip";
+import { genDeleteKey, hashDeleteKey } from "@/lib/delete-key";
 
 export async function GET(request: Request) {
   try {
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const deleteKey = genDeleteKey();
     const result = await postComment({
       personId,
       name: name && name.trim() ? name : null,
@@ -79,14 +81,42 @@ export async function POST(request: Request) {
       content,
       parentCommentId,
       cookieId: userToken,
+      deleteKeyHash: hashDeleteKey(deleteKey),
     });
 
     if (!result.ok) {
       return NextResponse.json({ success: false, error: result.error }, { status: result.status });
     }
-    return NextResponse.json({ success: true, comment: result.comment });
+    return NextResponse.json({ success: true, comment: result.comment, deleteKey });
   } catch (e) {
     console.error("comments POST error:", e);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}
+
+/** 2ch式: 削除キーが一致すればコメントを削除 */
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const id = str(body.id, 40);
+    const key = str(body.key, 64);
+    if (!isUuid(id) || !key) {
+      return NextResponse.json({ success: false, error: "削除キーが正しくありません" }, { status: 400 });
+    }
+    const ip = clientIp(request);
+    if (!rateLimit(`commentdel:ip:${ip}`, 60, 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "試行回数が多すぎます。しばらくお待ちください" },
+        { status: 429 }
+      );
+    }
+    const ok = await deleteCommentByKey(id, hashDeleteKey(key));
+    if (!ok) {
+      return NextResponse.json({ success: false, error: "削除キーが一致しません" }, { status: 403 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("comments DELETE error:", e);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

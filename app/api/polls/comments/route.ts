@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getPollComments, insertPollComment } from "@/lib/queries";
+import { deletePollCommentByKey, getPollComments, insertPollComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isValidToken, isUuid, str } from "@/lib/validate";
 import { applyTrip } from "@/lib/trip";
+import { genDeleteKey, hashDeleteKey } from "@/lib/delete-key";
 
 export async function GET(request: Request) {
   try {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const deleteKey = genDeleteKey();
     const r = await insertPollComment({
       pollId,
       name: name && name.trim() ? name : null,
@@ -60,13 +62,41 @@ export async function POST(request: Request) {
       parentCommentId,
       cookieId: userToken,
       mail,
+      deleteKeyHash: hashDeleteKey(deleteKey),
     });
     if (!r.ok) {
       return NextResponse.json({ success: false, error: r.error }, { status: r.status });
     }
-    return NextResponse.json({ success: true, comment: r.comment });
+    return NextResponse.json({ success: true, comment: r.comment, deleteKey });
   } catch (e) {
     console.error("poll comments POST error:", e);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}
+
+/** 2ch式: 削除キーが一致すれば投票トークのコメントを削除 */
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const id = str(body.id, 40);
+    const key = str(body.key, 64);
+    if (!isUuid(id) || !key) {
+      return NextResponse.json({ success: false, error: "削除キーが正しくありません" }, { status: 400 });
+    }
+    const ip = clientIp(request);
+    if (!rateLimit(`polldel:ip:${ip}`, 60, 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "試行回数が多すぎます。しばらくお待ちください" },
+        { status: 429 }
+      );
+    }
+    const ok = await deletePollCommentByKey(id, hashDeleteKey(key));
+    if (!ok) {
+      return NextResponse.json({ success: false, error: "削除キーが一致しません" }, { status: 403 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("poll comments DELETE error:", e);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

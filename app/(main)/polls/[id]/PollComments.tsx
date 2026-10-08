@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { Send, ThumbsUp, ThumbsDown, MessageCircle, Flag, EyeOff } from "lucide-react";
+import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Trash2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
-import ReportModal from "@/components/ReportModal";
 import CommentText from "@/components/CommentText";
 import EmojiText from "@/components/EmojiText";
 import TranslateBox from "@/components/TranslateBox";
 import { useT, useLocale } from "@/lib/i18n-client";
-import type { ReportReason } from "@/lib/constants";
 
 type PollComment = {
   id: string;
@@ -51,6 +49,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<SortType>("number");
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
 
   useEffect(() => {
     try {
@@ -117,6 +116,14 @@ export default function PollComments({ pollId }: { pollId: string }) {
         alert(data.error || t("投稿に失敗しました"));
         return;
       }
+      if (data.deleteKey && data.comment?.id) {
+        try {
+          localStorage.setItem(`sk-delkey-${data.comment.id}`, data.deleteKey);
+        } catch {
+          /* noop */
+        }
+        setIssuedKey({ id: data.comment.id, key: data.deleteKey });
+      }
       setContent("");
       setName("");
       fetchComments();
@@ -154,6 +161,36 @@ export default function PollComments({ pollId }: { pollId: string }) {
       </div>
 
       <form onSubmit={submit} className="bg-panel2 border border-line rounded-xl p-4 space-y-3 mb-6">
+        {issuedKey && (
+          <div className="bg-good/10 border border-good/40 rounded-lg p-3">
+            <p className="text-sm font-bold">{t("投稿しました。削除キーはこちら:")}</p>
+            <p className="font-mono text-lg tracking-widest mt-1 select-all">{issuedKey.key}</p>
+            <p className="text-xs text-mut mt-1">
+              {t("このキーで後からコメントを削除できます（このブラウザなら削除ボタンからそのまま消せます）。メモ推奨。")}
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard
+                    .writeText(issuedKey.key)
+                    .then(() => alert(t("コピーしました")))
+                    .catch(() => {});
+                }}
+                className="px-3 py-1 rounded-lg bg-panel2 border border-line text-xs hover:border-line2 transition"
+              >
+                {t("コピー")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIssuedKey(null)}
+                className="px-3 py-1 rounded-lg bg-panel2 border border-line text-xs hover:border-line2 transition"
+              >
+                {t("閉じる")}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
@@ -237,8 +274,6 @@ function PollCommentItem({
   const [replyMail, setReplyMail] = useState("");
   const [replyText, setReplyText] = useState(`>>${comment.comment_number}\n`);
   const [busy, setBusy] = useState(false);
-  const [showReport, setShowReport] = useState(false);
-  const [reportBusy, setReportBusy] = useState(false);
 
   const react = async (type: "good" | "bad") => {
     const token = Cookies.get("user_token") ?? "";
@@ -258,26 +293,39 @@ function PollCommentItem({
     }
   };
 
-  const report = async (reason: ReportReason, details: string) => {
-    setReportBusy(true);
+  const del = async () => {
+    let key = "";
     try {
-      const token = Cookies.get("user_token") ?? "";
-      const res = await fetch("/api/polls/report", {
-        method: "POST",
+      key = localStorage.getItem(`sk-delkey-${comment.id}`) ?? "";
+    } catch {
+      /* noop */
+    }
+    if (key) {
+      if (!confirm(t("このコメントを削除しますか？"))) return;
+    } else {
+      key = window.prompt(t("削除キーを入力してください")) ?? "";
+      if (!key.trim()) return;
+    }
+    try {
+      const res = await fetch("/api/polls/comments", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pollCommentId: comment.id, reason, details, userToken: token }),
+        body: JSON.stringify({ id: comment.id, key }),
       });
       const data = await res.json();
       if (data.success) {
-        alert(t("通報を受け付けました。\n\nご協力ありがとうございます。"));
-        setShowReport(false);
+        try {
+          localStorage.removeItem(`sk-delkey-${comment.id}`);
+        } catch {
+          /* noop */
+        }
+        alert(t("コメントを削除しました"));
+        onUpdate();
       } else {
-        alert(data.error || t("通報に失敗しました"));
+        alert(data.error || t("削除できませんでした"));
       }
     } catch {
-      alert(t("通報に失敗しました"));
-    } finally {
-      setReportBusy(false);
+      alert(t("削除できませんでした"));
     }
   };
 
@@ -307,6 +355,14 @@ function PollCommentItem({
       if (!data.success) {
         alert(data.error || t("返信に失敗しました"));
         return;
+      }
+      if (data.deleteKey && data.comment?.id) {
+        try {
+          localStorage.setItem(`sk-delkey-${data.comment.id}`, data.deleteKey);
+        } catch {
+          /* noop */
+        }
+        alert(t("返信しました。削除キー: {key}", { key: data.deleteKey }));
       }
       setReplyText(`>>${comment.comment_number}\n`);
       setShowReply(false);
@@ -338,12 +394,8 @@ function PollCommentItem({
         </span>
         <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
         <span className="ml-auto flex gap-2">
-          <button
-            onClick={() => setShowReport(true)}
-            className="text-mut hover:text-bad transition"
-            title={t("通報")}
-          >
-            <Flag className="w-4 h-4" />
+          <button onClick={del} className="text-mut hover:text-bad transition" title={t("コメントを削除")}>
+            <Trash2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => onHide(comment.id)}
@@ -468,13 +520,6 @@ function PollCommentItem({
           </div>
         </form>
       )}
-
-      <ReportModal
-        isOpen={showReport}
-        onClose={() => setShowReport(false)}
-        onSubmit={report}
-        isSubmitting={reportBusy}
-      />
     </div>
   );
 }

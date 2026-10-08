@@ -511,5 +511,16 @@
  "フォロワー数分布": "Follower distribution",
  "登録人物のフォロワー数（X取得済み）の分布。": "Distribution of followers (from fetched X data).",
  "不明": "Unknown",
- "今週 {n}票（先週 {p}票）": "This week: {n} votes (last week: {p})"
+ "今週 {n}票（先週 {p}票）": "This week: {n} votes (last week: {p})",
+ "投稿しました。削除キーはこちら:": "Posted. Here is your deletion key:",
+ "このキーで後からコメントを削除できます（このブラウザなら削除ボタンからそのまま消せます）。メモ推奨。": "Use this key to delete your comment later (on this browser you can delete it directly from the delete button). Keep it noted.",
+ "コピー": "Copy",
+ "コピーしました": "Copied",
+ "コメントを削除": "Delete comment",
+ "このコメントを削除しますか？": "Delete this comment?",
+ "削除キーを入力してください": "Enter the deletion key",
+ "コメントを削除しました": "Comment deleted",
+ "削除できませんでした": "Could not delete",
+ "返信しました。削除キー: {key}": "Replied. Deletion key: {key}",
+ "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "For posts that clearly infringe rights, we may review and delete/hide them based on reports via the admin thread."
 }

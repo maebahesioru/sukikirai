@@ -522,5 +522,6 @@
  "コメントを削除しました": "Comentario eliminado",
  "削除できませんでした": "No se pudo eliminar",
  "返信しました。削除キー: {key}": "Respondido. Clave de eliminación: {key}",
- "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Para publicaciones que infrinjan claramente derechos, podremos revisarlas y eliminarlas/ocultarlas a partir de avisos en el hilo de administración."
+ "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Para publicaciones que infrinjan claramente derechos, podremos revisarlas y eliminarlas/ocultarlas a partir de avisos en el hilo de administración.",
+ "ソースコード（GitHub）": "Código fuente (GitHub)"
 }

@@ -522,5 +522,6 @@
  "コメントを削除しました": "Commentaire supprimé",
  "削除できませんでした": "Suppression impossible",
  "返信しました。削除キー: {key}": "Réponse publiée. Clé de suppression : {key}",
- "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Pour les publications portant manifestement atteinte à des droits, nous pouvons les examiner et les supprimer/masquer suite à un signalement via le fil d'administration."
+ "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Pour les publications portant manifestement atteinte à des droits, nous pouvons les examiner et les supprimer/masquer suite à un signalement via le fil d'administration.",
+ "ソースコード（GitHub）": "Code source (GitHub)"
 }

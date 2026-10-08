@@ -27,6 +27,14 @@ export default async function Footer() {
           <Link href="/meta" className="hover:text-txt transition">
             {t("管理スレ（要望・バグ報告）")}
           </Link>
+          <a
+            href="https://github.com/maebahesioru/sukikirai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-txt transition"
+          >
+            {t("ソースコード（GitHub）")}
+          </a>
         </div>
         <p className="leading-relaxed">
           {t(

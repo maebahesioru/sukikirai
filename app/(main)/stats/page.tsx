@@ -131,10 +131,12 @@ export default async function StatsPage() {
         )}
         {weekDelta != null && (
           <p className="text-xs text-mut mt-1">
-            {t("今週 {n}票（先週比 {d}%）", {
-              n: num(weekVotes),
-              d: (weekDelta >= 0 ? "+" : "") + weekDelta,
-            })}
+            {prevWeekVotes >= 100
+              ? t("今週 {n}票（先週比 {d}%）", {
+                  n: num(weekVotes),
+                  d: (weekDelta >= 0 ? "+" : "") + weekDelta,
+                })
+              : t("今週 {n}票（先週 {p}票）", { n: num(weekVotes), p: num(prevWeekVotes) })}
           </p>
         )}
       </section>

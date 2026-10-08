@@ -510,5 +510,6 @@
  "時間帯×曜日ヒートマップ": "Mapa de calor hora × día",
  "フォロワー数分布": "Distribución de seguidores",
  "登録人物のフォロワー数（X取得済み）の分布。": "Distribución de seguidores (datos de X).",
- "不明": "Desconocido"
+ "不明": "Desconocido",
+ "今週 {n}票（先週 {p}票）": "Esta semana: {n} votos (semana pasada: {p})"
 }

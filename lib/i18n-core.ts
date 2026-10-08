@@ -1,11 +1,7 @@
 // i18nコア（サーバー・クライアント共用・"use client"を付けないこと）
 // 方針: gettext式 — 日本語文字列そのものをキーにする。未訳はjaのままフォールバック。
-import en from "./i18n/messages/en.json";
-import zhHans from "./i18n/messages/zh-Hans.json";
-import zhHant from "./i18n/messages/zh-Hant.json";
-import ko from "./i18n/messages/ko.json";
-import es from "./i18n/messages/es.json";
-import fr from "./i18n/messages/fr.json";
+// 辞書は静的にimportしない（全言語がクライアントバンドルに入るのを防ぐ）。
+// サーバー: i18n-serverが起動時に登録 / クライアント: LocaleProviderがprops経由で登録。
 
 export type Locale = "ja" | "en" | "zh-Hans" | "zh-Hant" | "ko" | "es" | "fr";
 export const LOCALES: Locale[] = ["ja", "en", "zh-Hans", "zh-Hant", "ko", "es", "fr"];
@@ -23,7 +19,12 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   fr: "Français",
 };
 
-const DICTS: Record<string, Record<string, string>> = { en, "zh-Hans": zhHans, "zh-Hant": zhHant, ko, es, fr };
+const DICTS: Record<string, Record<string, string>> = {};
+
+/** 辞書を登録（同一ロケールへの再登録は上書き=冪等） */
+export function registerDict(locale: Locale, dict: Record<string, string>): void {
+  DICTS[locale] = dict;
+}
 
 export type TFunc = (key: string, params?: Record<string, string | number>) => string;
 

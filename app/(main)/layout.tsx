@@ -2,13 +2,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TermsGate from "@/components/TermsGate";
 import { AmazonPicks } from "@/components/AmazonPicks";
-import { getLocale } from "@/lib/i18n-server";
+import { getLocale, getMessages } from "@/lib/i18n-server";
 import { LocaleProvider } from "@/lib/i18n-client";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
+  const dict = getMessages(locale);
   return (
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} dict={dict}>
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 w-full">

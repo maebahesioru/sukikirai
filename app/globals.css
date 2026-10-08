@@ -63,8 +63,8 @@
   --color-good: var(--t-good);
   --color-bad: var(--t-bad);
   --color-gold: var(--t-gold);
-  --font-sans: var(--font-noto), "Hiragino Kaku Gothic ProN", "Hiragino Sans",
-    "BIZ UDPGothic", Meiryo, system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans", "BIZ UDPGothic", Meiryo, "Noto Sans JP", sans-serif;
 }
 
 body {

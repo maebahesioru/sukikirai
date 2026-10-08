@@ -1,18 +1,9 @@
 ﻿import type { Metadata, Viewport } from "next";
-import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { SITE_URL, SITE_NAME, SITE_DESC } from "@/lib/site";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import EmojiCopyFix from "@/components/EmojiCopyFix";
 import { getLocale } from "@/lib/i18n-server";
-
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
-  variable: "--font-noto",
-  display: "swap",
-  preload: true,
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -85,7 +76,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={notoSansJP.variable} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className="antialiased">
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         {/* 描画前にテーマを確定させる（ここを next/script にすると遅延実行で一瞬前のテーマが見える）。

@@ -100,6 +100,11 @@ export default function VotePanel({
         alert(t("今日は既に投票済みです。\n\n投票は1日1回可能です。明日また投票してください。"));
       } else if (data.error === "Invalid user token") {
         Cookies.remove("user_token");
+        try {
+          localStorage.removeItem("sk_token");
+        } catch {
+          /* noop */
+        }
         location.reload();
       } else {
         alert(data.error || t("投票に失敗しました。もう一度お試しください。"));

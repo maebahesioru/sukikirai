@@ -21,6 +21,7 @@ export default function PersonClient({
   evalStats,
   initialVoted,
   initialVoteType,
+  initialUnlocked,
   initialStreak,
   myEval,
   tagRanking,
@@ -34,6 +35,7 @@ export default function PersonClient({
   evalStats: EvalStats;
   initialVoted: boolean;
   initialVoteType: "like" | "dislike" | null;
+  initialUnlocked: boolean;
   initialStreak: number;
   myEval: Record<string, number | null> | null;
   tagRanking: { id: string; name: string; likePct: number; total: number }[];
@@ -50,6 +52,8 @@ export default function PersonClient({
     dislikes: voteStats.dislikes,
   });
   const voted = voteInfo.voted;
+  // コメント/評価のアンロック = 過去に一度でも投票していればOK（今日の投票でなくても読める）
+  const unlocked = voted || initialUnlocked;
   const overall = evalStats.overall;
   // スレ落ち（Xアカウントが確認できない/別人が使用中）→ アーカイブ表示
   const archived = !!person.x_status && person.x_status !== "ok";
@@ -167,7 +171,7 @@ export default function PersonClient({
         personId={person.id}
         personName={person.name}
         initialStats={evalStats}
-        hasVoted={voted}
+        hasVoted={unlocked}
         initialMine={myEval}
         archived={archived}
       />
@@ -250,7 +254,7 @@ export default function PersonClient({
       )}
 
       {/* コメント */}
-      <CommentSection personId={person.id} personName={person.name} hasVoted={voted} myVoteType={voteInfo.voteType} archived={archived} />
+      <CommentSection personId={person.id} personName={person.name} hasVoted={unlocked} myVoteType={voteInfo.voteType} archived={archived} />
     </div>
   );
 }

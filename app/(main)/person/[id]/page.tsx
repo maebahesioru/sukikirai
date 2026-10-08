@@ -7,6 +7,7 @@ import {
   getEvalStats,
   getLikeRankingPosition,
   getMyEvalToday,
+  getMyVoteEver,
   getPeopleByIds,
   getPerson,
   getRanking,
@@ -61,7 +62,7 @@ export default async function PersonPage({ params }: Params) {
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value ?? "";
 
-  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak, sousenkyoRankRaw] =
+  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak, sousenkyoRankRaw, myVoteEver] =
     await Promise.all([
       getVoteStats(id),
       getEvalStats(id),
@@ -77,6 +78,7 @@ export default async function PersonPage({ params }: Params) {
       Date.now() > new Date(SOUSENKYO.endIso).getTime()
         ? getSousenkyoRank(person.id)
         : Promise.resolve(null),
+      getMyVoteEver(id, token),
     ]);
 
   // 総選挙終了後、TOP10のみバッジ表示（受賞者がシェアする動機づけ）
@@ -117,6 +119,7 @@ export default async function PersonPage({ params }: Params) {
           evalStats={evalStats}
           initialVoted={myVote !== null}
           initialVoteType={myVote}
+          initialUnlocked={myVoteEver !== null}
           initialStreak={streak}
           sousenkyoRank={sousenkyoRank}
           myEval={myEval}

@@ -252,19 +252,6 @@ export async function getTodayVote(
   return r?.vote_type ?? null;
 }
 
-/** このトークンがこの人物に投票したことがあるか（コメント/評価のアンロック判定・日付無制限） */
-export async function getMyVoteEver(
-  personId: string,
-  cookieId: string
-): Promise<"like" | "dislike" | null> {
-  if (!cookieId) return null;
-  const r = await sql1<{ vote_type: "like" | "dislike" }>(
-    `SELECT vote_type FROM votes WHERE person_id = $1 AND cookie_id = $2 ORDER BY created_at DESC LIMIT 1`,
-    [personId, cookieId]
-  );
-  return r?.vote_type ?? null;
-}
-
 /** 連続投票日数（JST日基準・今日または昨日までの連続日数） */
 export async function getVoteStreak(cookieId: string): Promise<number> {
   if (!cookieId) return 0;

@@ -106,9 +106,9 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
   // 事前計算済みの正規化検索列（トリガー維持・GIN trgmインデックス・2026-10-09）
   const hay = "p.search_hay";
   const normCond = [
-    `($3 <> '' AND ${hay} LIKE '%' || $3 || '%')`,
+    `($2 <> '' AND ${hay} LIKE '%' || $2 || '%')`,
     tokens.length
-      ? `(${tokens.map((_, i) => `${hay} LIKE '%' || $${4 + i} || '%'`).join(" AND ")})`
+      ? `(${tokens.map((_, i) => `${hay} LIKE '%' || $${3 + i} || '%'`).join(" AND ")})`
       : "",
   ]
     .filter(Boolean)
@@ -124,14 +124,14 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
        FROM votes GROUP BY person_id
      ) v ON v.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND (
-       p.id = $2
+       p.id = $1
        OR ${normCond}
      )
-     ORDER BY (${sqlNorm("p.name")} = $3) DESC,
-              (p.id = $2 OR lower(COALESCE(p.handle,'')) = lower($2)) DESC,
+     ORDER BY (${sqlNorm("p.name")} = $2) DESC,
+              (p.id = $1 OR lower(COALESCE(p.handle,'')) = lower($1)) DESC,
               COALESCE(v.total,0) DESC, p.name ASC
      LIMIT ${limit}`,
-    [s, sNoAt, nq, ...tokens]
+    [sNoAt, nq, ...tokens]
   );
 }
 

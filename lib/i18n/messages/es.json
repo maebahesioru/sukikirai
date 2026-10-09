@@ -524,5 +524,7 @@
  "返信しました。削除キー: {key}": "Respondido. Clave de eliminación: {key}",
  "権利侵害が明らかな投稿については、管理スレ等からのご連絡を受け、内容を確認の上、削除・非表示にすることがあります。": "Para publicaciones que infrinjan claramente derechos, podremos revisarlas y eliminarlas/ocultarlas a partir de avisos en el hilo de administración.",
  "ソースコード（GitHub）": "Código fuente (GitHub)",
- "前回のあなたの投票: {vote}": "Tu voto anterior: {vote}"
+ "前回のあなたの投票: {vote}": "Tu voto anterior: {vote}",
+ "好き？": "¿Me gusta?",
+ "嫌い？": "¿No me gusta?"
 }

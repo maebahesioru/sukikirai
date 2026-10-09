@@ -219,6 +219,7 @@ function SidebarSkeleton() {
 
 export default async function HomePage() {
   const t = await getServerT();
+  const locale = await getLocale();
   const now = Date.now();
   const skStart = Date.parse(SOUSENKYO.startIso);
   const skEnd = Date.parse(SOUSENKYO.endIso);
@@ -255,9 +256,9 @@ export default async function HomePage() {
           <div className="relative">
             <h1 className="text-3xl md:text-5xl font-black leading-tight">
               {t("あのツイッタラーのこと、")}{" "}
-              <span className="bg-gradient-to-r from-like to-dislike bg-clip-text text-transparent">
-                {t("好き？嫌い？")}
-              </span>
+              <span className="text-like">{t("好き？")}</span>
+              {locale === "ja" ? null : " "}
+              <span className="text-dislike">{t("嫌い？")}</span>
             </h1>
             <p className="text-mut mt-4 max-w-xl leading-relaxed text-sm md:text-base">
               {t(

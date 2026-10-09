@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
@@ -34,21 +35,20 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
   const q = (Array.isArray(raw) ? raw[0] : raw ?? "").trim();
   const handle = q ? normalizeHandle(q) : null;
 
-  const [exact, results] = await Promise.all([
+  const [exact, results, commentSearch] = await Promise.all([
     handle ? findPersonByHandleOrId(handle) : Promise.resolve(null),
     q ? searchPeople(q, 48) : Promise.resolve([]),
+    q ? searchComments(q, 20) : Promise.resolve({ hits: [], total: 0 }),
   ]);
-
-  const commentSearch = q ? await searchComments(q, 20) : { hits: [], total: 0 };
   const commentHits = commentSearch.hits;
   const commentTotal = commentSearch.total;
 
   const shouldAutoAdd = !!handle && !exact;
   const others = exact ? results.filter((r) => r.id !== exact.id) : results;
 
-  // 名前でヒットしない → X上の候補を探す（SearXNG + fxTwitter）
+  // 名前でヒットしない → X上の候補を探す（SearXNG + fxTwitter）。
+  // 外部検索は遅い（数秒）ためSuspenseでストリーミングし、シェル（DB結果）は即返す（2026-10-09）
   const showCandidates = !!q && !handle && !exact && results.length === 0;
-  const xCandidates = showCandidates ? await findXUserCandidates(q) : [];
 
   return (
     <div className="space-y-6">
@@ -109,18 +109,18 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
         </section>
       )}
 
-      {showCandidates && xCandidates.length > 0 && (
-        <XUserCandidates query={q} candidates={xCandidates} />
-      )}
-
-      {showCandidates && xCandidates.length === 0 && (
-        <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
-          {t("Xでも「{q}」の候補が見つかりませんでした。", { q })}
-          <br />
-          <span className="text-sm">
-            {t("ID（@から始まる英数字）を直接入力すると確実に追加できます。")}
-          </span>
-        </div>
+      {showCandidates && (
+        <Suspense
+          fallback={
+            <div className="bg-panel border border-line rounded-2xl p-6 animate-pulse space-y-3">
+              <div className="h-4 w-40 rounded bg-panel2" />
+              <div className="h-14 rounded-xl bg-panel2" />
+              <div className="h-14 rounded-xl bg-panel2" />
+            </div>
+          }
+        >
+          <XCandidatesSection q={q} />
+        </Suspense>
       )}
 
       {commentHits.length > 0 && (
@@ -186,6 +186,24 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
           </p>
         </section>
       )}
+    </div>
+  );
+}
+
+/** X上の候補検索（外部・数秒かかる）はSuspenseでストリーミング表示する（2026-10-09） */
+async function XCandidatesSection({ q }: { q: string }) {
+  const t = await getServerT();
+  const xCandidates = await findXUserCandidates(q);
+  if (xCandidates.length > 0) {
+    return <XUserCandidates query={q} candidates={xCandidates} />;
+  }
+  return (
+    <div className="bg-panel border border-line rounded-2xl p-10 text-center text-mut">
+      {t("Xでも「{q}」の候補が見つかりませんでした。", { q })}
+      <br />
+      <span className="text-sm">
+        {t("ID（@から始まる英数字）を直接入力すると確実に追加できます。")}
+      </span>
     </div>
   );
 }

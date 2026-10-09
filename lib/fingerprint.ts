@@ -40,38 +40,21 @@ function compute(): string {
       String(navigator.maxTouchPoints ?? 0),
       (navigator as unknown as { platform?: string }).platform ?? "",
     ];
-    // canvas描画の微妙な差異（フォントラスタライザ・GPU差）
+    // ※canvas描画・WebGLレンダラは意図的に使わない（2026-10-09変更）:
+    //   Braveのfarblingやプライバシー保護・シークレットモードではセッションごとにcanvas値が変わり、
+    //   「cookieリセット検出」が無効化される（実測: シークレットで別fpになり同一人物へ連投できた）。
+    //   セッションで変わらない安定要素だけで構成する。
+    parts.push(String((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? 0));
+    parts.push(`${screen.availWidth}x${screen.availHeight}`);
     try {
-      const c = document.createElement("canvas");
-      c.width = 240;
-      c.height = 60;
-      const ctx = c.getContext("2d");
-      if (ctx) {
-        ctx.textBaseline = "top";
-        ctx.font = "14px 'Arial'";
-        ctx.fillStyle = "#f60";
-        ctx.fillRect(0, 0, 80, 20);
-        ctx.fillStyle = "#069";
-        ctx.fillText("ツイッタラー世論調査fp🎨", 2, 2);
-        ctx.fillStyle = "rgba(102,204,0,0.7)";
-        ctx.fillText("ツイッタラー世論調査fp🎨", 4, 8);
-        parts.push(c.toDataURL());
-      }
+      parts.push(window.matchMedia("(pointer: coarse)").matches ? "coarse" : "fine");
     } catch {
-      /* canvas不可でも続行 */
+      /* 続行 */
     }
-    // WebGLレンダラ名（端末・GPU差）
     try {
-      const gl = document.createElement("canvas").getContext("webgl");
-      if (gl) {
-        const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-        const renderer = dbg
-          ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
-          : gl.getParameter(gl.RENDERER);
-        parts.push(String(renderer ?? ""));
-      }
+      parts.push(window.matchMedia("(hover: hover)").matches ? "hover" : "nohover");
     } catch {
-      /* WebGL不可でも続行 */
+      /* 続行 */
     }
     const raw = parts.join("|");
     return `${cyrb53(raw).toString(16)}${cyrb53(raw, 7).toString(16)}${cyrb53(raw, 42).toString(16)}`;

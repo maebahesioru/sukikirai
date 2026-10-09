@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPerson, getVoteStats, insertVote, tokenIssuedAt, getVoteStreak } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 
 export async function POST(request: Request) {
@@ -85,10 +85,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // サーバー側アンカー: (IP, UA) 単位の対象別日次上限（fp偽装・シークレットモード対策・2026-10-09）
+    const ua = request.headers.get("user-agent") ?? "";
+    if (srvTargetBlocked(ip, ua, "vote", person.id)) {
+      return NextResponse.json(
+        { success: false, error: "同一ネットワークからの本日の投票上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
+
     const r = await insertVote(person.id, voteType, userToken);
     const stats = await getVoteStats(person.id);
     const streak = await getVoteStreak(userToken);
     if (r.ok && fp) markFpTarget(fp, "vote", person.id);
+    if (r.ok) markSrvTarget(ip, ua, "vote", person.id);
 
     if (!r.ok) {
       return NextResponse.json(

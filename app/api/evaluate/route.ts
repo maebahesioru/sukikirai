@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation, tokenIssuedAt } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
 
@@ -93,8 +93,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // サーバー側アンカー: (IP, UA) 単位の対象別日次上限（fp偽装・シークレットモード対策・2026-10-09）
+    const ua = request.headers.get("user-agent") ?? "";
+    if (srvTargetBlocked(ip, ua, "eval", person.id)) {
+      return NextResponse.json(
+        { success: false, error: "同一ネットワークからの本日の評価上限に達しました。明日またお試しください" },
+        { status: 429 }
+      );
+    }
+
     const r = await insertEvaluation(personId, userToken, scores);
     if (r.ok && fp) markFpTarget(fp, "eval", person.id);
+    if (r.ok) markSrvTarget(ip, ua, "eval", person.id);
     if (r.ok) {
       const stats = await getEvalStats(personId);
       return NextResponse.json({ success: true, stats, mine: scores });

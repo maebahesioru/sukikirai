@@ -75,6 +75,40 @@ export function markFpTarget(fp: string, kind: "vote" | "eval" | "pollvote", tar
   fpVotes.set(`${fp}:${kind}:${targetId}`, jstDayKey());
 }
 
+// ---- サーバー側アンカー: (IP, UA) × 対象 × 日の投票上限（2026-10-09追加）----
+// クライアント生成のfpは偽装可能で、farbling（Brave等）・シークレットモードで値が変わるため、
+// サーバーが直接見える値（IPとUA）での最終防衛線を持つ。メモリ内のみ・保存なし。
+export const SRV_TARGET_MAX = 20;
+const srvTargets = new Map<string, { day: string; n: number }>();
+
+function uaHash(ua: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < ua.length; i++) {
+    h ^= ua.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16);
+}
+
+/** 同一(IP,UA)が同一対象に今日 SRV_TARGET_MAX 回以上投票/評価済みなら true。 */
+export function srvTargetBlocked(ip: string, ua: string, kind: "vote" | "eval" | "pollvote", targetId: string): boolean {
+  const day = jstDayKey();
+  if (srvTargets.size > 50_000) {
+    for (const [k, v] of srvTargets) if (v.day !== day) srvTargets.delete(k);
+  }
+  const e = srvTargets.get(`${uaHash(ua)}:${ip}:${kind}:${targetId}`);
+  return !!e && e.day === day && e.n >= SRV_TARGET_MAX;
+}
+
+/** 投票/評価の成功時に呼ぶ。 */
+export function markSrvTarget(ip: string, ua: string, kind: "vote" | "eval" | "pollvote", targetId: string): void {
+  const day = jstDayKey();
+  const key = `${uaHash(ua)}:${ip}:${kind}:${targetId}`;
+  const e = srvTargets.get(key);
+  if (!e || e.day !== day) srvTargets.set(key, { day, n: 1 });
+  else e.n += 1;
+}
+
 /**
  * クライアントIP取得。
  * 経路: client → Cloudflare → cloudflared(VM100) → Traefik → app。

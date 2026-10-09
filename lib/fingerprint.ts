@@ -36,7 +36,7 @@ function compute(): string {
           return "";
         }
       })(),
-      String(navigator.hardwareConcurrency ?? 0),
+      // hardwareConcurrency は Brave の farbling でセッションごとに変わる（実測: 10 vs 8）ため除外
       String(navigator.maxTouchPoints ?? 0),
       (navigator as unknown as { platform?: string }).platform ?? "",
     ];
@@ -44,7 +44,6 @@ function compute(): string {
     //   Braveのfarblingやプライバシー保護・シークレットモードではセッションごとにcanvas値が変わり、
     //   「cookieリセット検出」が無効化される（実測: シークレットで別fpになり同一人物へ連投できた）。
     //   セッションで変わらない安定要素だけで構成する。
-    parts.push(String((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? 0));
     parts.push(`${screen.availWidth}x${screen.availHeight}`);
     try {
       parts.push(window.matchMedia("(pointer: coarse)").matches ? "coarse" : "fine");

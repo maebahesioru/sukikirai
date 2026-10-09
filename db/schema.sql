@@ -1,6 +1,8 @@
 -- ヒカマーズ好き嫌い.com v2 — 自鯖PostgreSQL スキーマ
 -- Supabase(myvbc) 時代のデータを全件移行できる後方互換スキーマ + Xユーザー追加・8項目評価対応
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE IF NOT EXISTS people (
   id TEXT PRIMARY KEY,
   handle TEXT,
@@ -19,6 +21,7 @@ CREATE TABLE IF NOT EXISTS people (
   x_description TEXT,
   x_website TEXT,
   x_tweet_signals TEXT,
+  search_hay TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -26,6 +29,20 @@ CREATE INDEX IF NOT EXISTS idx_people_category ON people(category);
 CREATE INDEX IF NOT EXISTS idx_people_tags ON people USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_people_created ON people(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_people_handle ON people(handle);
+
+-- 検索用正規化列の維持トリガー＋trgmインデックス（2026-10-09・検索高速化）
+CREATE OR REPLACE FUNCTION people_search_hay_refresh() RETURNS trigger AS $fn$
+BEGIN
+  NEW.search_hay := replace(replace(replace(replace(replace(replace(replace(translate(translate(lower(COALESCE(NEW.name,'') || ' ' || NEW.id || ' ' || COALESCE(NEW.handle,'') || ' ' || COALESCE(NEW.description,'') || ' ' || COALESCE(NEW.x_description,'') || ' ' || COALESCE(array_to_string(NEW.tags, ' '),'')), 'ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ', 'ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔゕゖ'), 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９　', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '), ' ', ''), '・', ''), '･', ''), '_', ''), '-', ''), '.', ''), '。', '');
+  RETURN NEW;
+END
+$fn$ LANGUAGE plpgsql;
+ALTER TABLE people DISABLE TRIGGER USER;
+UPDATE people SET search_hay = replace(replace(replace(replace(replace(replace(replace(translate(translate(lower(COALESCE(name,'') || ' ' || id || ' ' || COALESCE(handle,'') || ' ' || COALESCE(description,'') || ' ' || COALESCE(x_description,'') || ' ' || COALESCE(array_to_string(tags, ' '),'')), 'ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ', 'ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔゕゖ'), 'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９　', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '), ' ', ''), '・', ''), '･', ''), '_', ''), '-', ''), '.', ''), '。', '');
+ALTER TABLE people ENABLE TRIGGER USER;
+DROP TRIGGER IF EXISTS trg_people_search_hay ON people;
+CREATE TRIGGER trg_people_search_hay BEFORE INSERT OR UPDATE ON people FOR EACH ROW EXECUTE FUNCTION people_search_hay_refresh();
+CREATE INDEX IF NOT EXISTS idx_people_search_hay ON people USING gin (search_hay gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS votes (
   id BIGSERIAL PRIMARY KEY,

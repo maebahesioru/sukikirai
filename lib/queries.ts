@@ -103,9 +103,8 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
     .map((t) => normalizeForSearch(t))
     .filter((t) => t.length >= 2)
     .slice(0, 6);
-  const hay = sqlNorm(
-    `COALESCE(p.name,'') || ' ' || p.id || ' ' || COALESCE(p.handle,'') || ' ' || COALESCE(p.description,'') || ' ' || COALESCE(p.x_description,'') || ' ' || COALESCE(array_to_string(p.tags, ' '),'')`
-  );
+  // 事前計算済みの正規化検索列（トリガー維持・GIN trgmインデックス・2026-10-09）
+  const hay = "p.search_hay";
   const normCond = [
     `($3 <> '' AND ${hay} LIKE '%' || $3 || '%')`,
     tokens.length
@@ -125,11 +124,7 @@ export async function searchPeople(q: string, limit = 60): Promise<PersonWithVot
        FROM votes GROUP BY person_id
      ) v ON v.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND (
-       p.name ILIKE '%' || $1 || '%' OR p.id ILIKE '%' || $1 || '%'
-       OR COALESCE(p.handle,'') ILIKE '%' || $1 || '%' OR p.description ILIKE '%' || $1 || '%'
-      OR COALESCE(p.x_description,'') ILIKE '%' || $1 || '%'
-       OR EXISTS (SELECT 1 FROM unnest(p.tags) tg WHERE tg ILIKE '%' || $1 || '%')
-       OR p.id = $2
+       p.id = $2
        OR ${normCond}
      )
      ORDER BY (${sqlNorm("p.name")} = $3) DESC,
@@ -1966,12 +1961,12 @@ export async function suggestPeople(
   if (!query) return [];
   const h = query.replace(/^@/, "");
   const nq = normalizeForSearch(query);
-  const hay = sqlNorm(`COALESCE(name,'') || ' ' || id || ' ' || COALESCE(handle,'')`);
+  // 事前計算済みの正規化検索列（2026-10-09）
+  const hay = "search_hay";
   return sql<{ id: string; name: string; handle: string | null; avatar_url: string | null }>(
     `SELECT id, name, handle, avatar_url FROM people
      WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok')
-       AND (name ILIKE '%' || $1 || '%' OR ($2 <> '' AND COALESCE(handle,'') ILIKE '%' || $2 || '%') OR ($2 <> '' AND id ILIKE '%' || $2 || '%')
-            OR ($3 <> '' AND ${hay} LIKE '%' || $3 || '%'))
+       AND ($3 <> '' AND ${hay} LIKE '%' || $3 || '%')
      ORDER BY (lower(COALESCE(handle,'')) = lower($2)) DESC,
               (name ILIKE $1 || '%') DESC,
               ($3 <> '' AND ${hay} LIKE $3 || '%') DESC,

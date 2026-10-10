@@ -9,6 +9,7 @@ type MapData = { viewBox: string; districts: { id: string; pref: string; d: stri
 export type DistrictResult = { id: string; color: string; label: string };
 
 /** 日本地図（289小選挙区・当選党色分け・ズーム/パン対応）— 2026-10-10
+ * 2026-10-11: モバイル対応 — 2本指ピンチズーム実装・増分パン・pointercancel対応・iOS callout抑制
  * 境界データ: /election-map.json（地域・交通データ研究所 パブリックドメインを加工） */
 export default function JapanElectionMap({ results }: { results: DistrictResult[] }) {
   const [data, setData] = useState<MapData | null>(null);
@@ -16,7 +17,11 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const dragRef = useRef<{ px: number; py: number; x: number; y: number; moved: boolean } | null>(null);
+  // 単指/マウスパン: sx,sy=開始点 px,py=前回点（増分移動で計算）
+  const dragRef = useRef<{ sx: number; sy: number; px: number; py: number; moved: boolean } | null>(null);
+  // 2本指ピンチ: d=開始時の指間距離 s=開始時のスケール
+  const pinchRef = useRef<{ d: number; s: number } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
   const router = useRouter();
   const t = useT();
 
@@ -36,7 +41,7 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
   const vb = (): [number, number, number, number] =>
     (data?.viewBox.split(" ").map(Number) as [number, number, number, number]) ?? [0, 0, 1000, 1134];
 
-  // ホイールズーム（カーソル位置基準）
+  // ホイールズーム（カーソル位置基準・デスクトップ）
   useEffect(() => {
     const el = svgRef.current;
     if (!el || !data) return;
@@ -72,29 +77,69 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    dragRef.current = { px: e.clientX, py: e.clientY, x: view.x, y: view.y, moved: false };
     try {
       (e.currentTarget as Element).setPointerCapture(e.pointerId);
     } catch {
       /* noop */
     }
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    const d = dragRef.current;
-    if (!d || !svgRef.current) return;
-    const dx = e.clientX - d.px;
-    const dy = e.clientY - d.py;
-    if (Math.abs(dx) + Math.abs(dy) > 5) d.moved = true;
-    if (d.moved) {
-      const rect = svgRef.current.getBoundingClientRect();
-      const [, , w, h] = vb();
-      setView((v) => ({ ...v, x: d.x + (dx / rect.width) * w, y: d.y + (dy / rect.height) * h }));
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 1) {
+      dragRef.current = { sx: e.clientX, sy: e.clientY, px: e.clientX, py: e.clientY, moved: false };
+      pinchRef.current = null;
+    } else if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinchRef.current = { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), s: view.s };
+      if (dragRef.current) dragRef.current.moved = true;
     }
   };
-  const onPointerUp = () => {
-    window.setTimeout(() => {
-      dragRef.current = null;
-    }, 0);
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!pointers.current.has(e.pointerId) || !svgRef.current) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const rect = svgRef.current.getBoundingClientRect();
+    const [, , w, h] = vb();
+
+    if (pointers.current.size >= 2 && pinchRef.current) {
+      // ピンチズーム: 2本指の中点基準。中点が動けばパンも同時に効く
+      const [a, b] = [...pointers.current.values()];
+      const d = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+      const p = pinchRef.current;
+      const cx = (((a.x + b.x) / 2 - rect.left) / rect.width) * w;
+      const cy = (((a.y + b.y) / 2 - rect.top) / rect.height) * h;
+      setView((v) => {
+        const ns = Math.min(16, Math.max(1, p.s * (d / p.d)));
+        if (ns === 1) return { s: 1, x: 0, y: 0 };
+        const k = ns / v.s;
+        return { s: ns, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k };
+      });
+      return;
+    }
+
+    const d = dragRef.current;
+    if (!d) return;
+    if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 5) d.moved = true;
+    const dx = e.clientX - d.px;
+    const dy = e.clientY - d.py;
+    d.px = e.clientX;
+    d.py = e.clientY;
+    if (d.moved) {
+      setView((v) => ({ ...v, x: v.x + (dx / rect.width) * w, y: v.y + (dy / rect.height) * h }));
+    }
+  };
+
+  const endPointer = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size === 1) {
+      // ピンチ→単指に戻ったら、残った指でパンを続けられるよう基準を取り直す
+      const [a] = [...pointers.current.values()];
+      dragRef.current = { sx: a.x, sy: a.y, px: a.x, py: a.y, moved: true };
+      pinchRef.current = null;
+    } else if (pointers.current.size === 0) {
+      pinchRef.current = null;
+      window.setTimeout(() => {
+        dragRef.current = null;
+      }, 0);
+    }
   };
 
   if (!data) {
@@ -108,21 +153,21 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
       <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
         <button
           onClick={() => zoomAtCenter(1.5)}
-          className="w-8 h-8 rounded-lg bg-panel border border-line text-sm font-bold hover:border-line2 transition"
+          className="w-10 h-10 rounded-lg bg-panel border border-line text-base font-bold hover:border-line2 transition"
           aria-label={t("拡大")}
         >
           ＋
         </button>
         <button
           onClick={() => zoomAtCenter(1 / 1.5)}
-          className="w-8 h-8 rounded-lg bg-panel border border-line text-sm font-bold hover:border-line2 transition"
+          className="w-10 h-10 rounded-lg bg-panel border border-line text-base font-bold hover:border-line2 transition"
           aria-label={t("縮小")}
         >
           －
         </button>
         <button
           onClick={() => setView({ s: 1, x: 0, y: 0 })}
-          className="w-8 h-8 rounded-lg bg-panel border border-line text-xs hover:border-line2 transition"
+          className="w-10 h-10 rounded-lg bg-panel border border-line text-sm hover:border-line2 transition"
           aria-label={t("リセット")}
         >
           ⟲
@@ -132,10 +177,12 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         ref={svgRef}
         viewBox={`0 0 ${w} ${h}`}
         className="w-full block touch-none cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+        onPointerLeave={endPointer}
         role="img"
         aria-label="日本地図（289小選挙区・当選党色分け）"
       >
@@ -186,7 +233,7 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         </div>
       )}
       <p className="text-center text-xs text-mut mt-2">
-        {t("ホイール/＋－でズーム・ドラッグで移動・クリックで選挙区ページへ ｜ 色 = 当選党")}
+        {t("ドラッグで移動・ピンチ/＋－でズーム・タップで選挙区ページへ ｜ 色 = 当選党")}
       </p>
       <p className="text-center text-[10px] text-mut/60 mt-1">
         {t("地図データ: 地域・交通データ研究所（パブリックドメイン）を加工")}

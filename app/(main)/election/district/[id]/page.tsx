@@ -98,6 +98,11 @@ export default async function DistrictPage({ params }: { params: Promise<{ id: s
                   <div className="text-[11px] text-mut">
                     {t("好き{n}", { n: num(c.likes) })} / {t("嫌い{n}", { n: num(c.dislikes) })}
                   </div>
+                  {i > 0 && winner.score > 0 && (
+                    <div className="text-[10px] text-mut/80">
+                      {t("惜敗率 {pct}%", { pct: Math.round((Math.max(0, c.score) / winner.score) * 100) })}
+                    </div>
+                  )}
                 </div>
                 {isWinner && (
                   <span className="shrink-0 text-xs font-bold px-2 py-1 rounded-full bg-x text-white whitespace-nowrap">

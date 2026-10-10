@@ -134,3 +134,27 @@ export async function assignElectionEntry(personId: string): Promise<void> {
     /* 選挙テーブル未作成等は無視（投票機能には影響させない） */
   }
 }
+
+/** 参加統計（期間中の投票者・得票者・総票数） */
+export async function getElectionStats(): Promise<{
+  voters: number;
+  votedPeople: number;
+  totalVotes: number;
+  totalCandidates: number;
+}> {
+  const r = await sql<{ voters: number; voted_people: number; total_votes: number; total_candidates: number }>(
+    `SELECT
+       (SELECT count(DISTINCT cookie_id) FROM votes WHERE created_at >= $1 AND created_at <= $2)::int AS voters,
+       (SELECT count(DISTINCT person_id) FROM votes WHERE created_at >= $1 AND created_at <= $2)::int AS voted_people,
+       (SELECT count(*) FROM votes WHERE created_at >= $1 AND created_at <= $2)::int AS total_votes,
+       (SELECT count(*) FROM election_entries)::int AS total_candidates`,
+    [ELECTION.startIso, ELECTION.endIso]
+  );
+  const x = r[0] ?? { voters: 0, voted_people: 0, total_votes: 0, total_candidates: 0 };
+  return {
+    voters: x.voters,
+    votedPeople: x.voted_people,
+    totalVotes: x.total_votes,
+    totalCandidates: x.total_candidates,
+  };
+}

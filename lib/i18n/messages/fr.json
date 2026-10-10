@@ -1,4 +1,6 @@
 {
+ "参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）": "Participation : {v} votants · {p} % des candidats ont des voix ({n} voix au total)",
+ "惜敗率 {pct}%": "Taux de défaite {pct}%",
  "第1回ツイッタラー衆院選": "1re Élection Générale des twittos",
  "289選挙区+176比例・10党で議席を争う2週間イベント": "Un événement de 2 semaines où 10 partis se disputent 289 circonscriptions + 176 sièges proportionnels",
  "{n}議席": "{n} sièges",

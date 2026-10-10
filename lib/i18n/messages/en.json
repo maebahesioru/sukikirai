@@ -1,4 +1,6 @@
 {
+ "参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）": "Participation: {v} voters · {p}% of candidates have votes ({n} votes total)",
+ "惜敗率 {pct}%": "Defeat ratio {pct}%",
  "第1回ツイッタラー衆院選": "The 1st Twitterer General Election",
  "289選挙区+176比例・10党で議席を争う2週間イベント": "A 2-week event where 289 districts + 176 proportional seats are contested by 10 parties",
  "{n}議席": "{n} seats",

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import { getServerT } from "@/lib/i18n-server";
-import { getElectionEntriesWithScores } from "@/lib/election-queries";
+import { getElectionEntriesWithScores, getElectionStats } from "@/lib/election-queries";
 import { computeElection } from "@/lib/election";
 import { ELECTION } from "@/lib/constants";
 import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
@@ -41,6 +41,7 @@ export default async function ElectionPage() {
   const remainDays = Math.max(0, Math.ceil((end - now) / 86400_000));
 
   const entries = await getElectionEntriesWithScores();
+  const stats = await getElectionStats();
   const outcome = computeElection(entries);
 
   const partySeats = PARTIES.map((p) => ({ ...p, seats: outcome.partySeats[p.id] ?? 0 }));
@@ -86,6 +87,13 @@ export default async function ElectionPage() {
           <p className="text-xs text-mut mt-2">
             {t("現在の集計: {n}議席 / 465議席", { n: num(totalElected) })}
             {phase === "live" && <span className="ml-2">（{t("現時点の情勢・随時更新")}）</span>}
+          </p>
+          <p className="text-xs text-mut mt-1">
+            {t("参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）", {
+              v: num(stats.voters),
+              p: stats.totalCandidates > 0 ? Math.round((stats.votedPeople / stats.totalCandidates) * 100) : 0,
+              n: num(stats.totalVotes),
+            })}
           </p>
         </div>
       </section>

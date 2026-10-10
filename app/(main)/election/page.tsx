@@ -5,8 +5,8 @@ import { getServerT } from "@/lib/i18n-server";
 import { getElectionEntriesWithScores } from "@/lib/election-queries";
 import { computeElection } from "@/lib/election";
 import { ELECTION } from "@/lib/constants";
-import { BLOCKS, PARTIES, PREFS, allDistricts } from "@/data/election";
-import JapanElectionMap, { type PrefResult } from "@/components/JapanElectionMap";
+import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
+import JapanElectionMap, { type DistrictResult } from "@/components/JapanElectionMap";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
@@ -49,24 +49,15 @@ export default async function ElectionPage() {
   const districts = allDistricts();
   const entryById = new Map(entries.map((e) => [e.person_id, e]));
 
-  // 県別: 最多当選の党で色分け
-  const prefResults: PrefResult[] = PREFS.map((p) => {
-    const wins: Record<string, number> = {};
-    let total = 0;
-    for (const d of districts) {
-      if (d.pref !== p.name) continue;
-      const w = outcome.districtRaces.get(d.name)?.winner;
-      if (w) {
-        wins[w.party_id] = (wins[w.party_id] ?? 0) + 1;
-        total++;
-      }
-    }
-    const top = Object.entries(wins).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
-    const tp = top ? partyOf(top[0]) : null;
+  // 選挙区ごとの当選党色（地図用）
+  const districtResults: DistrictResult[] = districts.map((d) => {
+    const w = outcome.districtRaces.get(d.name)?.winner;
+    const wn = w ? entryById.get(w.person_id) : undefined;
+    const p = w ? partyOf(w.party_id) : null;
     return {
-      name: p.name,
-      color: tp?.color ?? "#475569",
-      label: tp ? `${tp.name} ${top[1]}/${total}区` : `${total}区`,
+      id: d.name,
+      color: p?.color ?? "#475569",
+      label: w ? `${p?.name ?? ""}・${wn?.name ?? w.person_id}` : t("—"),
     };
   });
 
@@ -123,8 +114,8 @@ export default async function ElectionPage() {
 
       {/* 日本地図 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h2 className="font-bold mb-3">🗾 {t("日本地図")}</h2>
-        <JapanElectionMap results={prefResults} />
+        <h2 className="font-bold mb-3">🗾 {t("日本地図（289選挙区）")}</h2>
+        <JapanElectionMap results={districtResults} />
       </section>
 
       {/* ブロック概要 */}

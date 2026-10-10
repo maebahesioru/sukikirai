@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PARTIES } from "@/data/election";
+import { useT } from "@/lib/i18n-client";
 
 type MapData = { viewBox: string; districts: { id: string; pref: string; d: string }[] };
 export type DistrictResult = { id: string; color: string; label: string };
@@ -17,6 +18,7 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<{ px: number; py: number; x: number; y: number; moved: boolean } | null>(null);
   const router = useRouter();
+  const t = useT();
 
   useEffect(() => {
     let alive = true;
@@ -107,21 +109,21 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         <button
           onClick={() => zoomAtCenter(1.5)}
           className="w-8 h-8 rounded-lg bg-panel border border-line text-sm font-bold hover:border-line2 transition"
-          aria-label="拡大"
+          aria-label={t("拡大")}
         >
           ＋
         </button>
         <button
           onClick={() => zoomAtCenter(1 / 1.5)}
           className="w-8 h-8 rounded-lg bg-panel border border-line text-sm font-bold hover:border-line2 transition"
-          aria-label="縮小"
+          aria-label={t("縮小")}
         >
           －
         </button>
         <button
           onClick={() => setView({ s: 1, x: 0, y: 0 })}
           className="w-8 h-8 rounded-lg bg-panel border border-line text-xs hover:border-line2 transition"
-          aria-label="リセット"
+          aria-label={t("リセット")}
         >
           ⟲
         </button>
@@ -184,10 +186,10 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         </div>
       )}
       <p className="text-center text-xs text-mut mt-2">
-        ホイール/＋－でズーム・ドラッグで移動・クリックで選挙区ページへ ｜ 色 = 当選党
+        {t("ホイール/＋－でズーム・ドラッグで移動・クリックで選挙区ページへ ｜ 色 = 当選党")}
       </p>
       <p className="text-center text-[10px] text-mut/60 mt-1">
-        地図データ: 地域・交通データ研究所（パブリックドメイン）を加工
+        {t("地図データ: 地域・交通データ研究所（パブリックドメイン）を加工")}
       </p>
     </div>
   );

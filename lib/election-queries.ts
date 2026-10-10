@@ -158,3 +158,12 @@ export async function getElectionStats(): Promise<{
     totalCandidates: x.total_candidates,
   };
 }
+
+/** 党勢推移（スナップショット） */
+export async function getElectionTrend(): Promise<
+  { day: string; hour: number; party_id: string; seats: number }[]
+> {
+  return await sql<{ day: string; hour: number; party_id: string; seats: number }>(
+    `SELECT day, hour, party_id, seats FROM election_snapshots ORDER BY day, hour`
+  );
+}

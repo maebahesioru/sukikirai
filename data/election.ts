@@ -85,18 +85,18 @@ export function allDistricts(): { id: string; name: string; pref: string; blockI
   return out;
 }
 
-export type Party = { id: string; name: string; color: string };
+export type Party = { id: string; name: string; color: string; manifesto: string[] };
 
 /** 10党（ありきたりな党名・2026-10-10確定） */
 export const PARTIES: Party[] = [
-  { id: "jiyuu", name: "自由党", color: "#3b82f6" },
-  { id: "minshu", name: "民主党", color: "#ef4444" },
-  { id: "kyowa", name: "共和党", color: "#f97316" },
-  { id: "hoshu", name: "保守党", color: "#0ea5e9" },
-  { id: "shakai", name: "社会党", color: "#ec4899" },
-  { id: "kyosan", name: "共産党", color: "#991b1b" },
-  { id: "kokumin", name: "国民党", color: "#22c55e" },
-  { id: "kaikaku", name: "改革党", color: "#eab308" },
-  { id: "mirai", name: "未来党", color: "#8b5cf6" },
-  { id: "heiwa", name: "平和党", color: "#14b8a6" },
+  { id: "jiyuu", name: "自由党", color: "#3b82f6", manifesto: ["自由と自己責任を尊重する", "小さな政府・低い税負担", "ネットの自由を守る"] },
+  { id: "minshu", name: "民主党", color: "#ef4444", manifesto: ["対話と合意を大切にする", "多様性を認め合う社会", "生活者第一の政治"] },
+  { id: "kyowa", name: "共和党", color: "#f97316", manifesto: ["伝統と秩序を守る", "強い防衛と自立", "自助と相互扶助の精神"] },
+  { id: "hoshu", name: "保守党", color: "#0ea5e9", manifesto: ["保守本流の安定路線", "家族と地域の絆を重視", "継続は力なり"] },
+  { id: "shakai", name: "社会党", color: "#ec4899", manifesto: ["公平な分配と格差是正", "弱い立場の人を支える", "連帯と助け合いの社会"] },
+  { id: "kyosan", name: "共産党", color: "#991b1b", manifesto: ["労働者の権利を守る", "平和と憲法を守る", "格差と貧困の解消"] },
+  { id: "kokumin", name: "国民党", color: "#22c55e", manifesto: ["国民第一の政治", "現場の声を政策に", "現実的な改革を進める"] },
+  { id: "kaikaku", name: "改革党", color: "#eab308", manifesto: ["既得権益の打破", "構造改革とスピード感", "新しい風を政治に"] },
+  { id: "mirai", name: "未来党", color: "#8b5cf6", manifesto: ["テクノロジーで未来を開く", "若者の政治参加を進める", "新しい資本主義のかたち"] },
+  { id: "heiwa", name: "平和党", color: "#14b8a6", manifesto: ["平和主義を貫く", "対話による問題解決", "武器ではなく言葉で"] },
 ];

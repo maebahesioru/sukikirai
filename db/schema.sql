@@ -263,3 +263,16 @@ CREATE TABLE IF NOT EXISTS election_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_election_district ON election_entries(district_id);
 CREATE INDEX IF NOT EXISTS idx_election_block_party ON election_entries(block_id, party_id, list_rank);
+
+-- 衆院選 日次/毎時スナップショット（党勢推移グラフ用・2026-10-11）
+CREATE TABLE IF NOT EXISTS election_snapshots (
+  day TEXT NOT NULL,
+  hour INTEGER NOT NULL DEFAULT 23,
+  party_id TEXT NOT NULL,
+  seats INTEGER NOT NULL,
+  district_wins INTEGER NOT NULL,
+  prop_wins INTEGER NOT NULL,
+  total_score REAL NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS election_snapshots_day_hour_party ON election_snapshots (day, hour, party_id);

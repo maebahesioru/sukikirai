@@ -2,11 +2,12 @@ import Link from "next/link";
 import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import { getServerT } from "@/lib/i18n-server";
-import { getElectionEntriesWithScores, getElectionStats } from "@/lib/election-queries";
+import { getElectionEntriesWithScores, getElectionStats, getElectionTrend } from "@/lib/election-queries";
 import { computeElection } from "@/lib/election";
 import { ELECTION } from "@/lib/constants";
 import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
 import JapanElectionMap, { type DistrictResult } from "@/components/JapanElectionMap";
+import ElectionTrendChart from "@/components/ElectionTrendChart";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
@@ -31,6 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const partyOf = (id: string) => PARTIES.find((p) => p.id === id);
+const fmtScore = (s: number) => (Number.isInteger(s) ? String(s) : s.toFixed(1));
 
 export default async function ElectionPage() {
   const t = await getServerT();
@@ -42,6 +44,7 @@ export default async function ElectionPage() {
 
   const entries = await getElectionEntriesWithScores();
   const stats = await getElectionStats();
+  const trend = await getElectionTrend();
   const outcome = computeElection(entries);
 
   const partySeats = PARTIES.map((p) => ({ ...p, seats: outcome.partySeats[p.id] ?? 0 }));
@@ -49,6 +52,13 @@ export default async function ElectionPage() {
   const totalElected = partySeats.reduce((a, b) => a + b.seats, 0);
   const districts = allDistricts();
   const entryById = new Map(entries.map((e) => [e.person_id, e]));
+
+  // 注目の接戦区（勝者と2位の差が小さい順）
+  const closeRaces = [...outcome.districtRaces.values()]
+    .filter((r) => r.winner && r.candidates.length >= 2 && r.winner.score > 0)
+    .map((r) => ({ r, margin: (r.winner?.score ?? 0) - (r.candidates[1]?.score ?? 0) }))
+    .sort((a, b) => a.margin - b.margin)
+    .slice(0, 8);
 
   // 選挙区ごとの当選党色（地図用）
   const districtResults: DistrictResult[] = districts.map((d) => {
@@ -107,7 +117,12 @@ export default async function ElectionPage() {
             .sort((a, b) => b.seats - a.seats)
             .map((p) => (
               <div key={p.id} className="flex items-center gap-3">
-                <span className="w-20 shrink-0 text-sm font-bold text-right">{p.name}</span>
+                <Link
+                  href={`/election/party/${p.id}`}
+                  className="w-20 shrink-0 text-sm font-bold text-right hover:text-x"
+                >
+                  {p.name}
+                </Link>
                 <div className="flex-1 bg-panel2 rounded-full h-6 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
@@ -117,6 +132,46 @@ export default async function ElectionPage() {
                 <span className="w-12 shrink-0 text-sm font-black">{p.seats}</span>
               </div>
             ))}
+        </div>
+      </section>
+
+      {/* 党勢の推移 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-3">📈 {t("党勢の推移")}</h2>
+        <ElectionTrendChart rows={trend} note={t("データ収集中（毎時更新）")} />
+      </section>
+
+      {/* 注目の接戦区 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-3">⚔️ {t("注目の接戦区")}</h2>
+        <div className="space-y-2.5">
+          {closeRaces.map(({ r, margin }) => {
+            const w = r.winner;
+            const second = r.candidates[1];
+            if (!w || !second) return null;
+            return (
+              <div key={r.districtId} className="flex items-center gap-2 text-sm">
+                <Link
+                  href={`/election/district/${encodeURIComponent(r.districtId)}`}
+                  className="text-x hover:underline font-bold shrink-0 max-w-28 truncate"
+                >
+                  {r.districtId}
+                </Link>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Avatar name={w.name ?? ""} avatarUrl={w.avatar_url} size={20} />
+                  <span className="truncate">{w.name}</span>
+                  <span className="font-black shrink-0">{fmtScore(w.score)}</span>
+                </div>
+                <span className="text-mut text-xs shrink-0">vs</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Avatar name={second.name ?? ""} avatarUrl={second.avatar_url} size={20} />
+                  <span className="truncate">{second.name}</span>
+                  <span className="shrink-0 text-mut">{fmtScore(second.score)}</span>
+                </div>
+                <span className="ml-auto text-xs text-mut shrink-0">{t("差 {n}pt", { n: fmtScore(margin) })}</span>
+              </div>
+            );
+          })}
         </div>
       </section>
 

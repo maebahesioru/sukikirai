@@ -12,6 +12,9 @@ export type ElectionEntryRow = {
   score: number;
   likes: number;
   dislikes: number;
+  /** 表示用（getElectionEntriesWithScores 等では常に付与される） */
+  name?: string;
+  avatar_url?: string | null;
 };
 
 export type DistrictRace = {

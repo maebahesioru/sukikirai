@@ -8,6 +8,7 @@ import {
   ThumbsDown,
   MessageCircle,
   Send,
+  Share2,
   Trash2,
 } from "lucide-react";
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
@@ -75,13 +76,22 @@ export default function CommentSection({
     if (hasVoted || archived) fetchComments();
   }, [hasVoted, archived, fetchComments]);
 
+  // 共有リンク（#c123）で開かれたら、コメント読み込み後に該当コメントへスクロール（2026-10-10）
+  useEffect(() => {
+    if (typeof window === "undefined" || comments.length === 0) return;
+    const m = window.location.hash.match(/^#c(\d+)$/);
+    if (!m) return;
+    const el = document.getElementById(`c${m[1]}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [comments]);
+
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
   const list = (
     <>
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
         {comments.map((c) => (
-          <CommentItem key={c.id} comment={c} myVoteType={myVoteType} onUpdate={fetchComments} locked={archived} />
+          <CommentItem key={c.id} comment={c} myVoteType={myVoteType} onUpdate={fetchComments} locked={archived} personName={personName} />
         ))}
         {comments.length === 0 && !loading && (
           <p className="text-center text-mut py-8 text-sm">
@@ -424,11 +434,13 @@ function CommentItem({
   myVoteType = null,
   onUpdate,
   locked = false,
+  personName,
 }: {
   comment: CommentWithReplies;
   myVoteType?: "like" | "dislike" | null;
   onUpdate: () => void;
   locked?: boolean;
+  personName: string;
 }) {
   const [local, setLocal] = useState<CommentRow>(comment);
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
@@ -513,6 +525,22 @@ function CommentItem({
     }
   };
 
+  // X共有（コメント個別・2026-10-10）
+  const share = () => {
+    const raw = comment.content.trim();
+    const excerpt = raw.length > 80 ? `${raw.slice(0, 80)}…` : raw;
+    const text = t("【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査", {
+      side: t(comment.vote_type === "like" ? "好き派" : "嫌い派"),
+      name: personName,
+      content: excerpt,
+    });
+    const url = `${window.location.origin}/person/${comment.person_id}#c${comment.comment_number}`;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
+
   return (
     <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -586,12 +614,20 @@ function CommentItem({
             {t("返信")}
           </button>
         )}
+        <button
+          onClick={share}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
+          title={t("Xでシェア")}
+        >
+          <Share2 className="w-4 h-4" />
+          {t("シェア")}
+        </button>
       </div>
 
       {replies.length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
           {replies.map((r) => (
-            <ReplyItem key={r.id} reply={r} parentNumber={comment.comment_number} onUpdate={onUpdate} />
+            <ReplyItem key={r.id} reply={r} parentNumber={comment.comment_number} onUpdate={onUpdate} personName={personName} />
           ))}
         </div>
       )}
@@ -618,10 +654,12 @@ function ReplyItem({
   reply,
   parentNumber,
   onUpdate,
+  personName,
 }: {
   reply: CommentRow;
   parentNumber: number;
   onUpdate: () => void;
+  personName: string;
 }) {
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
@@ -695,6 +733,22 @@ function ReplyItem({
     }
   };
 
+  // X共有（返信の個別共有・2026-10-10）
+  const share = () => {
+    const raw = reply.content.trim();
+    const excerpt = raw.length > 80 ? `${raw.slice(0, 80)}…` : raw;
+    const text = t("【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査", {
+      side: t(reply.vote_type === "like" ? "好き派" : "嫌い派"),
+      name: personName,
+      content: excerpt,
+    });
+    const url = `${window.location.origin}/person/${reply.person_id}#c${reply.comment_number}`;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
+
   return (
     <div id={`c${reply.comment_number}`} className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
@@ -745,6 +799,9 @@ function ReplyItem({
         >
           <ThumbsDown className="w-3.5 h-3.5" />
           {local.bad_count}
+        </button>
+        <button onClick={share} className="flex items-center gap-1 text-mut hover:text-x transition" title={t("Xでシェア")}>
+          <Share2 className="w-3.5 h-3.5" />
         </button>
         <button onClick={del} className="flex items-center gap-1 text-mut hover:text-bad transition" title={t("コメントを削除")}>
           <Trash2 className="w-3.5 h-3.5" />

@@ -1,4 +1,7 @@
 {
+  "【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査": "【Poll Talk】{title}\n\n« {content} »\n\n#ツイッタラー世論調査",
+  "【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査": "【{side}】Commentaire sur {name}\n\n« {content} »\n\n#ツイッタラー世論調査",
+  "シェア": "Partager",
  "\n#ツイッタラー世論調査": "\n#ツイッタラー世論調査",
  "10/6(火) 0:00 開幕！期間中の投票で王者を決めよう": "Ouverture le mar. 6 oct. à 0 h 00 ! Les votes de la période désignent le champion.",
  "1人目": "1re personne",

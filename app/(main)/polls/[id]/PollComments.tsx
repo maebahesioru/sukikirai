@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Trash2 } from "lucide-react";
+import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import CommentText from "@/components/CommentText";
 import EmojiText from "@/components/EmojiText";
@@ -38,7 +38,7 @@ function getCharCount(text: string): number {
   return c;
 }
 
-export default function PollComments({ pollId }: { pollId: string }) {
+export default function PollComments({ pollId, pollTitle }: { pollId: string; pollTitle: string }) {
   const t = useT();
   const locale = useLocale();
   const [comments, setComments] = useState<PollComment[]>([]);
@@ -58,6 +58,15 @@ export default function PollComments({ pollId }: { pollId: string }) {
       /* noop */
     }
   }, []);
+
+  // 共有リンク（#c123）で開かれたら、コメント読み込み後に該当コメントへスクロール（2026-10-10）
+  useEffect(() => {
+    if (typeof window === "undefined" || comments.length === 0) return;
+    const m = window.location.hash.match(/^#c(\d+)$/);
+    if (!m) return;
+    const el = document.getElementById(`c${m[1]}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [comments]);
 
   const hide = useCallback((id: string) => {
     setHiddenIds((prev) => {
@@ -239,6 +248,7 @@ export default function PollComments({ pollId }: { pollId: string }) {
             key={c.id}
             comment={c}
             pollId={pollId}
+            pollTitle={pollTitle}
             onUpdate={fetchComments}
             hiddenIds={hiddenIds}
             onHide={hide}
@@ -255,12 +265,14 @@ export default function PollComments({ pollId }: { pollId: string }) {
 function PollCommentItem({
   comment,
   pollId,
+  pollTitle,
   onUpdate,
   hiddenIds,
   onHide,
 }: {
   comment: PollComment;
   pollId: string;
+  pollTitle: string;
   onUpdate: () => void;
   hiddenIds: string[];
   onHide: (id: string) => void;
@@ -376,6 +388,21 @@ function PollCommentItem({
 
   const visibleReplies = (comment.replies ?? []).filter((r) => !hiddenIds.includes(r.id));
 
+  // X共有（コメント個別・2026-10-10）
+  const share = () => {
+    const raw = comment.content.trim();
+    const excerpt = raw.length > 60 ? `${raw.slice(0, 60)}…` : raw;
+    const text = t("【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査", {
+      title: pollTitle.length > 30 ? `${pollTitle.slice(0, 30)}…` : pollTitle,
+      content: excerpt,
+    });
+    const url = `${window.location.origin}/polls/${comment.poll_id}#c${comment.comment_number}`;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
+
   return (
     <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
       <div className="flex items-center gap-2 flex-wrap mb-2 text-sm">
@@ -437,6 +464,14 @@ function PollCommentItem({
         >
           <MessageCircle className="w-4 h-4" />
           {t("返信")}
+        </button>
+        <button
+          onClick={share}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
+          title={t("Xでシェア")}
+        >
+          <Share2 className="w-4 h-4" />
+          {t("シェア")}
         </button>
       </div>
 

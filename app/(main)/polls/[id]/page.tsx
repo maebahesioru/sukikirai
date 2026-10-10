@@ -88,7 +88,7 @@ export default async function PollPage({ params }: Params) {
         related={related.map((p) => ({ id: p.id, name: p.name, avatar_url: p.avatar_url }))}
       />
 
-      <PollComments pollId={poll.id} />
+      <PollComments pollId={poll.id} pollTitle={poll.title} />
 
       <p className="text-center text-xs text-mut">
         {t("投票は1人1回まで（変更できません） ・ コメントは誰でも書き込めます")}

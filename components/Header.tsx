@@ -36,12 +36,12 @@ export default function Header() {
             <span className="font-bold text-lg hidden sm:block">{t(SITE_NAME)}</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 ml-2">
+          <nav className="hidden md:flex flex-wrap items-center gap-1 ml-2">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
-                className="px-3 py-1.5 rounded-full text-sm text-mut hover:text-txt hover:bg-panel2 transition"
+                className="px-3 py-1.5 rounded-full text-sm text-mut hover:text-txt hover:bg-panel2 transition whitespace-nowrap"
               >
                 {t(n.label)}
               </Link>

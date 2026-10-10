@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllTags, listPolls, listSitemapEntries } from "@/lib/queries";
 import { SITE_URL } from "@/lib/site";
 import { LOCALES, localePath } from "@/lib/i18n-core";
+import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/search`, lastModified: now, changeFrequency: "weekly", priority: 0.6, alternates: alternatesFor("/search") },
     { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.3, alternates: alternatesFor("/terms") },
     { url: `${SITE_URL}/meta`, lastModified: now, changeFrequency: "daily", priority: 0.4, alternates: alternatesFor("/meta") },
+    { url: `${SITE_URL}/election`, lastModified: now, changeFrequency: "hourly", priority: 0.9, alternates: alternatesFor("/election") },
+  ];
+
+  // 衆院選ページ（選挙区289・ブロック11・政党10）— 2026-10-11追加
+  const electionPages: MetadataRoute.Sitemap = [
+    ...allDistricts().map((d) => {
+      const path = `/election/district/${encodeURIComponent(d.name)}`;
+      return {
+        url: `${SITE_URL}${path}`,
+        lastModified: now,
+        changeFrequency: "hourly" as const,
+        priority: 0.8,
+        alternates: alternatesFor(path),
+      };
+    }),
+    ...BLOCKS.map((b) => {
+      const path = `/election/block/${b.id}`;
+      return {
+        url: `${SITE_URL}${path}`,
+        lastModified: now,
+        changeFrequency: "hourly" as const,
+        priority: 0.7,
+        alternates: alternatesFor(path),
+      };
+    }),
+    ...PARTIES.map((p) => {
+      const path = `/election/party/${p.id}`;
+      return {
+        url: `${SITE_URL}${path}`,
+        lastModified: now,
+        changeFrequency: "hourly" as const,
+        priority: 0.7,
+        alternates: alternatesFor(path),
+      };
+    }),
   ];
 
   const tagPages: MetadataRoute.Sitemap = tags.map((t) => {
@@ -87,5 +123,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticPages, ...pollPages, ...tagPages, ...personPages];
+  return [...staticPages, ...electionPages, ...pollPages, ...tagPages, ...personPages];
 }

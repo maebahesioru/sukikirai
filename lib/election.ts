@@ -44,6 +44,12 @@ export type ElectionOutcome = {
 const cmp = (a: ElectionEntryRow, b: ElectionEntryRow) =>
   b.score - a.score || a.person_id.localeCompare(b.person_id);
 
+/** 惜敗率（小選挙区の勝者得票に対する比率）— 比例復活の10%要件に使用（2026-10-11） */
+function defeatRatio(e: ElectionEntryRow, winnerScore: number): number {
+  if (winnerScore <= 0) return 1;
+  return Math.max(0, e.score) / winnerScore;
+}
+
 /** ドント式: 各党の得票から seats 議席を配分 */
 export function dhondt(totals: Record<string, number>, seats: number): Record<string, number> {
   const out: Record<string, number> = {};
@@ -90,8 +96,14 @@ export function computeElection(entries: ElectionEntryRow[]): ElectionOutcome {
       const list = entries
         .filter((e) => e.block_id === b.id && e.party_id === partyId && !districtWinners.has(e.person_id))
         .sort((a, b2) => a.list_rank - b2.list_rank);
-      for (let i = 0; i < n && i < list.length; i++) {
-        proportional.push({ person_id: list[i].person_id, party_id: partyId, list_rank: list[i].list_rank });
+      let filled = 0;
+      for (const e of list) {
+        if (filled >= n) break;
+        // 比例復活には惜敗率10%以上が必要（現実のルール・2026-10-11）
+        const wScore = districtRaces.get(e.district_id)?.winner?.score ?? 0;
+        if (defeatRatio(e, wScore) < 0.1) continue;
+        proportional.push({ person_id: e.person_id, party_id: partyId, list_rank: e.list_rank });
+        filled++;
       }
     }
     blocks.set(b.id, { blockId: b.id, seats: b.seats, partyTotals, partySeats, proportional });

@@ -1,4 +1,7 @@
 {
+ "※ 比例復活には惜敗率10%以上（小選挙区の勝者得票の10%以上）が必要です。": "Note: proportional revival requires a defeat ratio of at least 10% (10%+ of the district winner's votes).",
+ "応援をシェア": "Share support",
+ "🗳️ {name}は「{district}」で立候補中！\n{party}からの立候補です。好きなら投票で応援して👇\n#ツイッタラー世論調査": "🗳️ {name} is running in {district}!\nRepresenting {party}. Like them? Vote to support 👇\n#ツイッタラー世論調査",
  "参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）": "Participation: {v} voters · {p}% of candidates have votes ({n} votes total)",
  "惜敗率 {pct}%": "Defeat ratio {pct}%",
  "第1回ツイッタラー衆院選": "The 1st Twitterer General Election",

@@ -87,6 +87,9 @@ export default async function BlockPage({ params }: { params: Promise<{ id: stri
         <p className="text-xs text-mut mt-3">
           {t("党の得票（党員の好き+1・嫌い-0.5の合計）でドント式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。")}
         </p>
+        <p className="text-xs text-mut mt-1">
+          {t("※ 比例復活には惜敗率10%以上（小選挙区の勝者得票の10%以上）が必要です。")}
+        </p>
       </section>
 
       {/* 党別名簿 */}

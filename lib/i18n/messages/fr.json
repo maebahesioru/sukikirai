@@ -1,4 +1,7 @@
 {
+ "※ 比例復活には惜敗率10%以上（小選挙区の勝者得票の10%以上）が必要です。": "※ Le repêchage proportionnel nécessite un taux de défaite d'au moins 10 % (10 %+ des voix du vainqueur de la circonscription).",
+ "応援をシェア": "Partager le soutien",
+ "🗳️ {name}は「{district}」で立候補中！\n{party}からの立候補です。好きなら投票で応援して👇\n#ツイッタラー世論調査": "🗳️ {name} est candidat(e) dans {district} !\nPour {party}. Si vous l'aimez, votez pour soutenir 👇\n#ツイッタラー世論調査",
  "参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）": "Participation : {v} votants · {p} % des candidats ont des voix ({n} voix au total)",
  "惜敗率 {pct}%": "Taux de défaite {pct}%",
  "第1回ツイッタラー衆院選": "1re Élection Générale des twittos",

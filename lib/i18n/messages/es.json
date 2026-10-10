@@ -1,4 +1,7 @@
 {
+ "※ 比例復活には惜敗率10%以上（小選挙区の勝者得票の10%以上）が必要です。": "※ La revivificación proporcional requiere un ratio de derrota de al menos el 10% (10%+ de los votos del ganador del distrito).",
+ "応援をシェア": "Compartir apoyo",
+ "🗳️ {name}は「{district}」で立候補中！\n{party}からの立候補です。好きなら投票で応援して👇\n#ツイッタラー世論調査": "🗳️ ¡{name} se presenta en {district}!\nPor {party}. Si te gusta, vota para apoyar 👇\n#ツイッタラー世論調査",
  "参加状況: {v}人が投票・候補者の{p}%が得票（合計{n}票）": "Participación: {v} votantes · el {p}% de los candidatos tiene votos ({n} votos en total)",
  "惜敗率 {pct}%": "Ratio de derrota {pct}%",
  "第1回ツイッタラー衆院選": "1.ª Elección General de Twitteros",

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PARTIES } from "@/data/election";
 
 type MapData = { viewBox: string; districts: { id: string; pref: string; d: string }[] };
 export type DistrictResult = { id: string; color: string; label: string };
@@ -144,8 +145,8 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
                 key={d.id}
                 d={d.d}
                 fill={r?.color ?? "#475569"}
-                stroke="#0b1220"
-                strokeWidth={0.4 / view.s}
+                stroke="#0f172a"
+                strokeWidth={1.1 / view.s}
                 opacity={0.92}
                 onMouseMove={(e) => {
                   const wrap = wrapRef.current?.getBoundingClientRect();
@@ -163,6 +164,14 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
           })}
         </g>
       </svg>
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3">
+        {PARTIES.map((p) => (
+          <span key={p.id} className="inline-flex items-center gap-1.5 text-xs text-mut">
+            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: p.color }} />
+            {p.name}
+          </span>
+        ))}
+      </div>
       {tip && (
         <div
           className="absolute z-20 pointer-events-none bg-ink border border-line rounded-lg px-2.5 py-1.5 text-xs whitespace-nowrap shadow-lg"

@@ -14,14 +14,15 @@ const SCORE_SUB = `(
 ) s`;
 
 const BASE_SELECT = `SELECT e.person_id, e.district_id, e.block_id, e.party_id, e.list_rank,
-         COALESCE(s.score, 0)::float AS score, COALESCE(s.likes, 0)::int AS likes, COALESCE(s.dislikes, 0)::int AS dislikes
+         COALESCE(s.score, 0)::float AS score, COALESCE(s.likes, 0)::int AS likes, COALESCE(s.dislikes, 0)::int AS dislikes,
+         p.name, p.avatar_url
   FROM election_entries e
   JOIN people p ON p.id = e.person_id AND NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok')
   LEFT JOIN ${SCORE_SUB} ON s.person_id = e.person_id`;
 
 /** 全エントリ（得票付き・約8.5千行）— メインページ用 */
-export async function getElectionEntriesWithScores(): Promise<ElectionEntryRow[]> {
-  return sql<ElectionEntryRow>(`${BASE_SELECT} ORDER BY e.person_id`, [
+export async function getElectionEntriesWithScores(): Promise<EntryWithName[]> {
+  return sql<EntryWithName>(`${BASE_SELECT} ORDER BY e.person_id`, [
     ELECTION.startIso,
     ELECTION.endIso,
   ]);

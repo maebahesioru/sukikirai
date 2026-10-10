@@ -5,7 +5,9 @@ import { getServerT } from "@/lib/i18n-server";
 import { getElectionEntriesWithScores } from "@/lib/election-queries";
 import { computeElection } from "@/lib/election";
 import { ELECTION } from "@/lib/constants";
-import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
+import { BLOCKS, PARTIES, PREFS, allDistricts } from "@/data/election";
+import JapanElectionMap, { type PrefResult } from "@/components/JapanElectionMap";
+import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
 
@@ -45,6 +47,28 @@ export default async function ElectionPage() {
   const maxSeats = Math.max(...partySeats.map((p) => p.seats), 1);
   const totalElected = partySeats.reduce((a, b) => a + b.seats, 0);
   const districts = allDistricts();
+  const entryById = new Map(entries.map((e) => [e.person_id, e]));
+
+  // 県別: 最多当選の党で色分け
+  const prefResults: PrefResult[] = PREFS.map((p) => {
+    const wins: Record<string, number> = {};
+    let total = 0;
+    for (const d of districts) {
+      if (d.pref !== p.name) continue;
+      const w = outcome.districtRaces.get(d.name)?.winner;
+      if (w) {
+        wins[w.party_id] = (wins[w.party_id] ?? 0) + 1;
+        total++;
+      }
+    }
+    const top = Object.entries(wins).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+    const tp = top ? partyOf(top[0]) : null;
+    return {
+      name: p.name,
+      color: tp?.color ?? "#475569",
+      label: tp ? `${tp.name} ${top[1]}/${total}区` : `${total}区`,
+    };
+  });
 
   const headline =
     phase === "before"
@@ -97,6 +121,12 @@ export default async function ElectionPage() {
         </div>
       </section>
 
+      {/* 日本地図 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-3">🗾 {t("日本地図")}</h2>
+        <JapanElectionMap results={prefResults} />
+      </section>
+
       {/* ブロック概要 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-4">🗾 {t("比例ブロック（11）")}</h2>
@@ -141,6 +171,7 @@ export default async function ElectionPage() {
                 {bd.map((d) => {
                   const race = outcome.districtRaces.get(d.name);
                   const w = race?.winner;
+                  const wn = w ? entryById.get(w.person_id) : undefined;
                   const wp = w ? partyOf(w.party_id) : null;
                   return (
                     <Link
@@ -150,7 +181,8 @@ export default async function ElectionPage() {
                       style={wp ? { borderLeftColor: wp.color, borderLeftWidth: 3 } : undefined}
                     >
                       <span className="text-xs font-bold shrink-0">{d.id}</span>
-                      <span className="text-xs text-mut truncate">{w ? w.person_id : t("—")}</span>
+                      {wn && <Avatar name={wn.name} avatarUrl={wn.avatar_url} size={16} />}
+                      <span className="text-xs text-mut truncate">{wn ? wn.name : t("—")}</span>
                     </Link>
                   );
                 })}

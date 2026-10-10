@@ -160,7 +160,7 @@ export default function VotePanel({
           )}
           {streak >= 2 && (
             <p className="text-center text-sm mb-4">
-              🔥 <span className="font-bold text-like">{t("連続{n}日投票中！", { n: streak })}</span>{" "}
+              🔥 <span className="font-bold text-like">{t("この人に連続{n}日投票中！", { n: streak })}</span>{" "}
               <span className="text-xs text-mut">{t("今日も投票して継続しよう")}</span>
             </p>
           )}
@@ -216,7 +216,7 @@ export default function VotePanel({
           <p className="text-center text-xs text-mut mt-1">{t("※投票は1日1回まで")}</p>
           {streak >= 2 && (
             <p className="text-center text-sm mt-2">
-              🔥 <span className="font-bold text-like">{t("連続{n}日投票中！", { n: streak })}</span>{" "}
+              🔥 <span className="font-bold text-like">{t("この人に連続{n}日投票中！", { n: streak })}</span>{" "}
               <span className="text-xs text-mut">{t("明日も投票すると継続します")}</span>
             </p>
           )}

@@ -460,7 +460,7 @@
  "未登録のユーザーは「X上の候補」から選ぶか、IDを直接入力して追加できます": "Unregistered users can be added from X suggestions, or by entering an ID directly",
  "ヒカマズ通信": "Hikamazu Tsushin",
  "ヒカマー界隈のニュースサイト": "News site covering the Hikamer community",
- "連続{n}日投票中！": "{n}-day voting streak!",
+ "この人に連続{n}日投票中！": "Voted for this person {n} days in a row!",
  "明日も投票すると継続します": "Vote again tomorrow to keep the streak going",
  "今日も投票して継続しよう": "Vote today to keep it going!",
  "（コメント）": " (comments)",

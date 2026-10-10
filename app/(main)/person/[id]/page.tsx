@@ -74,7 +74,7 @@ export default async function PersonPage({ params }: Params) {
       getLikeRankingPosition(id),
       getRanking("trending", 8),
       getRecentComments(5),
-      getVoteStreak(token),
+      getVoteStreak(token, person.id),
       Date.now() > new Date(SOUSENKYO.endIso).getTime()
         ? getSousenkyoRank(person.id)
         : Promise.resolve(null),

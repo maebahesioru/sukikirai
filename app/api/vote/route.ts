@@ -79,7 +79,7 @@ export async function POST(request: Request) {
           error: "今日は既に投票済みです。明日また投票できます。",
           voteType: null,
           ...stats,
-          streak: await getVoteStreak(userToken),
+          streak: await getVoteStreak(userToken, person.id),
         },
         { status: 429 }
       );
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 
     const r = await insertVote(person.id, voteType, userToken);
     const stats = await getVoteStats(person.id);
-    const streak = await getVoteStreak(userToken);
+    const streak = await getVoteStreak(userToken, person.id);
     if (r.ok && fp) markFpTarget(fp, "vote", person.id);
     if (r.ok) markSrvTarget(ip, ua, "vote", person.id);
 

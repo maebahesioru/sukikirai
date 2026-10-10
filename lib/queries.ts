@@ -267,14 +267,14 @@ export async function getMyVoteEver(
   return r?.vote_type ?? null;
 }
 
-/** 連続投票日数（JST日基準・今日または昨日までの連続日数） */
-export async function getVoteStreak(cookieId: string): Promise<number> {
+/** 連続投票日数（JST）。personId指定時は「その人物への」連続投票日数（2026-10-10・個別化） */
+export async function getVoteStreak(cookieId: string, personId?: string): Promise<number> {
   if (!cookieId) return 0;
   const rows = await sql<{ d: string }>(
     `SELECT to_char((created_at AT TIME ZONE 'Asia/Tokyo')::date, 'YYYY-MM-DD') AS d
-     FROM votes WHERE cookie_id = $1
+     FROM votes WHERE cookie_id = $1${personId ? " AND person_id = $2" : ""}
      GROUP BY 1 ORDER BY 1 DESC LIMIT 400`,
-    [cookieId]
+    personId ? [cookieId, personId] : [cookieId]
   );
   if (rows.length === 0) return 0;
   const jstNow = new Date(Date.now() + 9 * 3600 * 1000);

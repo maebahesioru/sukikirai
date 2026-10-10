@@ -251,3 +251,15 @@ CREATE TABLE IF NOT EXISTS voter_tokens (
   issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ NOT NULL
 );
+
+-- ツイッタラー衆院選（2026-10-10）
+CREATE TABLE IF NOT EXISTS election_entries (
+  person_id TEXT PRIMARY KEY REFERENCES people(id) ON DELETE CASCADE,
+  district_id TEXT NOT NULL,
+  block_id TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  list_rank INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_election_district ON election_entries(district_id);
+CREATE INDEX IF NOT EXISTS idx_election_block_party ON election_entries(block_id, party_id, list_rank);

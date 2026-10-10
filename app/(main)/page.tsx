@@ -4,7 +4,7 @@ import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import { ArrowRight, Star, ThumbsUp, ThumbsDown, TrendingUp, Trophy } from "lucide-react";
 import { getHomeStats, getPeople, getRanking, getRecentComments } from "@/lib/queries";
-import { SOUSENKYO } from "@/lib/constants";
+import { SOUSENKYO, ELECTION } from "@/lib/constants";
 import HeroSearch from "@/components/HeroSearch";
 import PersonCard from "@/components/PersonCard";
 import Sidebar from "@/components/Sidebar";
@@ -230,19 +230,17 @@ export default async function HomePage() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
-        {/* 総選挙バナー */}
+        {/* 衆院選バナー */}
         <Link
-          href="/sousenkyo"
-          className="block bg-gradient-to-r from-like/15 via-panel to-dislike/15 border border-line rounded-2xl p-4 hover:border-line2 transition group"
+          href="/election"
+          className="block bg-gradient-to-r from-x/15 via-panel to-x/10 border border-line rounded-2xl p-4 hover:border-line2 transition group"
         >
           <div className="flex items-center gap-3">
-            <Trophy className="w-5 h-5 text-gold shrink-0" />
+            <span className="text-lg shrink-0">🗳️</span>
             <div className="min-w-0 flex-1">
-              <div className="font-bold text-sm group-hover:text-x transition">{t(SOUSENKYO.title)}</div>
+              <div className="font-bold text-sm group-hover:text-x transition">{t(ELECTION.title)}</div>
               <div className="text-xs text-mut mt-0.5">
-                {skPhase === "before" && t("10/6(火) 0:00 開幕！期間中の投票で王者を決めよう")}
-                {skPhase === "live" && t("開催中！10/12(月)まで — 毎日投票で推しを押し上げよう")}
-                {skPhase === "after" && t("閉幕！結果をチェック")}
+                {t("開催中！10/24(土)まで — 289選挙区+176比例・毎日投票で推しの議席を獲れ")}
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-mut shrink-0" />

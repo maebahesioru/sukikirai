@@ -141,28 +141,18 @@ export default async function StatsPage() {
         )}
       </section>
 
-      {/* 総選挙 */}
+      {/* 衆院選 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-bold">
-            {SOUSENKYO.title}
-            <span className="ml-2 text-xs font-normal text-gold">{sousenkyoNow ? t("開催中") : t("最終結果")}</span>
+            {t("第1回ツイッタラー衆院選")}
+            <span className="ml-2 text-xs font-normal text-x">{t("開催中")}</span>
           </h2>
-          <Link href="/sousenkyo" className="text-xs text-x hover:underline">{t("特設ページ")}</Link>
+          <Link href="/election" className="text-xs text-x hover:underline">{t("特設ページ")}</Link>
         </div>
-        <p className="text-xs text-mut mb-3">
-          {t("期間: {period}・累計 {n}票", { period: SOUSENKYO.periodLabel, n: num(sousenkyoTotal) })}
+        <p className="text-xs text-mut">
+          {t("10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で289選挙区+176比例を争います。")}
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-          {sousenkyo10.map((p, i) => (
-            <Link key={p.id} href={`/person/${p.id}`} className="flex items-center gap-3 py-1.5 border-b border-line/60 last:border-0 hover:bg-panel2 transition rounded-lg px-1">
-              <span className={`w-6 text-center font-black shrink-0 ${i < 3 ? "text-gold" : "text-mut"}`}>{i + 1}</span>
-              <Avatar name={p.name} avatarUrl={p.avatar_url} size={26} />
-              <span className="text-sm truncate flex-1"><EmojiText text={p.name} /></span>
-              <span className="text-sm font-bold shrink-0">{t("{n}票", { n: num(p.recentVotes) })}</span>
-            </Link>
-          ))}
-        </div>
       </section>
 
       {/* 直近7日の推移 */}

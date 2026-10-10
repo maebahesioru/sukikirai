@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExternalLink, Trophy, Users, Vote } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import EmojiText from "@/components/EmojiText";
+import { PARTIES } from "@/data/election";
 import VotePanel, { type VoteInfo } from "@/components/VotePanel";
 import EvalPanel from "@/components/EvalPanel";
 import ShareButtons from "@/components/ShareButtons";
@@ -28,7 +29,7 @@ export default function PersonClient({
   relatedPeople,
   relatedPolls,
   likeRank,
-  sousenkyoRank,
+  election,
 }: {
   person: Person;
   voteStats: VoteStats;
@@ -42,7 +43,17 @@ export default function PersonClient({
   relatedPeople: Person[];
   relatedPolls: PollWithOptions[];
   likeRank: RankInfo;
-  sousenkyoRank: number | null;
+  election: {
+    district_id: string;
+    block_id: string;
+    party_id: string;
+    list_rank: number;
+    score: number;
+    likes: number;
+    dislikes: number;
+    rank: number;
+    total: number;
+  } | null;
 }) {
   const t = useT();
   const [voteInfo, setVoteInfo] = useState<VoteInfo>({
@@ -79,12 +90,13 @@ export default function PersonClient({
                 </a>
               )}
             </div>
-            {sousenkyoRank !== null && (
+            {election && (
               <Link
-                href="/sousenkyo"
-                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 mt-2 rounded-full bg-gold/15 text-gold border border-gold/40 hover:opacity-80 transition whitespace-nowrap"
+                href={`/election/district/${encodeURIComponent(election.district_id)}`}
+                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 mt-2 rounded-full bg-xsoft text-x border border-x/40 hover:opacity-80 transition whitespace-nowrap"
               >
-                🏆 {t("第1回ツイッタラー総選挙 {rank}位", { rank: sousenkyoRank })}
+                🗳️ {election.district_id}・{PARTIES.find((p) => p.id === election.party_id)?.name}・
+                {t("{rank}位/{total}人", { rank: election.rank, total: election.total })}
               </Link>
             )}
             {profileText && (

@@ -11,6 +11,7 @@ import SearchSuggest from "@/components/SearchSuggest";
 import { useT } from "@/lib/i18n-client";
 
 const NAV = [
+  { href: "/election", label: "衆院選" },
   { href: "/ranking/popularity", label: "ランキング" },
   { href: "/people", label: "人物一覧" },
   { href: "/polls", label: "投票トーク" },

@@ -84,7 +84,7 @@
  "「{q}」の検索結果をすべて見る": "Voir tous les résultats pour « {q} »",
  "「{q}」の検索結果：": "Résultats pour « {q} » :",
  "「{q}」をXで検索して追加しています…": "Recherche de « {q} » sur X pour l'ajouter…",
- "「{tags}」タグを持つ人物の中での好き率": "Taux de J'aime parmi les personnes portant le tag « {tags} »",
+ "「{tags}」タグを持つ人物の中での好き率（20票以上）": "Taux de J'aime parmi les personnes portant le tag « {tags} » (20+ votes)",
  "「{tag}」の人物一覧": "Personnes avec le tag « {tag} »",
  "「{tag}」タグが付いたXユーザー（ツイッタラー）の一覧。好き嫌い投票・8項目評価・コメントをチェックできます。": "Liste des utilisateurs X (twittos) avec le tag « {tag} ». Consultez les votes J'aime/Je n'aime pas, les notes sur 8 critères et les commentaires.",
  "「名前#パスワード」で ◆から始まるトリップ（2ch互換の個人証明）が付きます": "« nom#mot de passe » ajoute un trip commençant par ◆ (preuve d'identité compatible 2ch)",

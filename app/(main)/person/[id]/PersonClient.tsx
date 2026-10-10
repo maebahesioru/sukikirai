@@ -183,7 +183,7 @@ export default function PersonClient({
             {t("タグ内好感度ランキング")}
           </h2>
           <p className="text-xs text-mut mb-4">
-            {t("「{tags}」タグを持つ人物の中での好き率", { tags: person.tags.slice(0, 2).join("・") })}
+            {t("「{tags}」タグを持つ人物の中での好き率（20票以上）", { tags: person.tags.slice(0, 2).join("・") })}
           </p>
           <div className="space-y-3">
             {tagRanking.map((t2, i) => (

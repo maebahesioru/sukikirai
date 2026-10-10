@@ -31,12 +31,19 @@ export async function getPerson(id: string): Promise<Person | null> {
 
 export type PeopleSort = "new" | "name" | "votes" | "like";
 
+// ランキング掲載に必要な最低数（少票での上位独占を防ぐ）
+// 総合評価ランキング（score / lowscore）に掲載するのに必要な最低評価数
+export const EVAL_RANK_MIN = 10;
+// 好き率/嫌い率ランキングに掲載するのに必要な最低投票数
+export const VOTE_RANK_MIN = 20;
+
 const PEOPLE_ORDER: Record<PeopleSort, string> = {
   new: "p.created_at DESC",
   name: "p.name ASC",
   votes: "COALESCE(v.total,0) DESC, p.name ASC",
+  // 好き率順: 20票以上を上位に、未満は下部（一覧の完全性は維持しつつ少票の上位独占を防ぐ）
   like:
-    "(CASE WHEN COALESCE(v.total,0) > 0 THEN v.likes::float / v.total ELSE -1 END) DESC, COALESCE(v.total,0) DESC",
+    `(CASE WHEN COALESCE(v.total,0) >= ${VOTE_RANK_MIN} THEN v.likes::float / v.total ELSE -1 END) DESC, COALESCE(v.total,0) DESC`,
 };
 
 export async function getPeople(f: {
@@ -386,11 +393,6 @@ export async function insertVote(
 // ============================================================
 
 export type RankingType = "popularity" | "unpopular" | "trending" | "daily" | "score" | "lowscore";
-
-// 総合評価ランキング（score / lowscore）に掲載するのに必要な最低評価数
-export const EVAL_RANK_MIN = 10;
-// 好き率/嫌い率ランキングに掲載するのに必要な最低投票数（少票での上位独占を防ぐ）
-export const VOTE_RANK_MIN = 20;
 
 export async function getRanking(type: RankingType, limit = 50): Promise<RankingRow[]> {
   if (type === "trending" || type === "daily") {
@@ -861,7 +863,7 @@ export async function getTagRanking(
          COUNT(*) FILTER (WHERE vote_type='like') AS likes,
          COUNT(*) FILTER (WHERE vote_type='dislike') AS dislikes,
          COUNT(*) AS total
-       FROM votes GROUP BY person_id HAVING COUNT(*) >= 1
+       FROM votes GROUP BY person_id HAVING COUNT(*) >= ${VOTE_RANK_MIN}
      ) v ON v.person_id = p.id
      WHERE NOT p.is_hidden AND (p.x_status IS NULL OR p.x_status = 'ok') AND p.id <> $1 AND p.tags && $2::text[]
      ORDER BY like_pct DESC, v.total DESC

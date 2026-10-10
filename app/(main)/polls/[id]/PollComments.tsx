@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import CommentText from "@/components/CommentText";
@@ -102,7 +102,7 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
       alert(t("コメントは全角140文字（半角280文字）以内です"));
       return;
     }
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("投稿には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
@@ -288,7 +288,7 @@ function PollCommentItem({
   const [busy, setBusy] = useState(false);
 
   const react = async (type: "good" | "bad") => {
-    const token = Cookies.get("user_token") ?? "";
+    const token = getUserToken() ?? "";
     try {
       const res = await fetch("/api/polls/reaction", {
         method: "POST",
@@ -344,7 +344,7 @@ function PollCommentItem({
   const submitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("返信には利用規約への同意が必要です"));
       return;

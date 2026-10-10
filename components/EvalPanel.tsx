@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { Star } from "lucide-react";
 import { EVAL_ITEMS } from "@/lib/constants";
 import type { EvalStats } from "@/lib/types";
@@ -45,7 +46,7 @@ export default function EvalPanel({
       alert(t("1項目以上選んでください"));
       return;
     }
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("評価には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;

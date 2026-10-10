@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import {
   EyeOff,
   ThumbsUp,
@@ -246,7 +246,7 @@ function CommentForm({
       alert(t("コメントは全角{n}文字（半角{m}文字）以内です", { n: Math.floor(MAX_COMMENT_CHARS / 2), m: MAX_COMMENT_CHARS }));
       return;
     }
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("投稿には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
@@ -461,7 +461,7 @@ function CommentItem({
   }, [comment]);
 
   const react = async (type: "good" | "bad") => {
-    const token = Cookies.get("user_token") ?? "";
+    const token = getUserToken() ?? "";
     try {
       const res = await fetch("/api/comments/reaction", {
         method: "POST",
@@ -677,7 +677,7 @@ function ReplyItem({
   }, [reply]);
 
   const react = async (type: "good" | "bad") => {
-    const token = Cookies.get("user_token") ?? "";
+    const token = getUserToken() ?? "";
     try {
       const res = await fetch("/api/comments/reaction", {
         method: "POST",

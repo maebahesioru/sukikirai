@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { Plus, X, Search } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
 import EmojiText from "@/components/EmojiText";
@@ -92,7 +92,7 @@ export default function CreatePollForm() {
       alert(t("関連する人物を1人以上選んでください"));
       return;
     }
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("作成には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;

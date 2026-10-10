@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { MessageSquare } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
 import EmojiText from "./EmojiText";
@@ -40,7 +40,7 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
       alert(t("本文は全角{n}文字（半角{m}文字）以内です", { n: Math.floor(MAX_COMMENT_CHARS / 2), m: MAX_COMMENT_CHARS }));
       return;
     }
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("書き込みには利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;

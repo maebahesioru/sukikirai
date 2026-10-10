@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { Crown, Plus } from "lucide-react";
 import ImageUploadField from "@/components/ImageUploadField";
 import Avatar from "@/components/Avatar";
@@ -75,7 +76,7 @@ export default function PollVoteSection({
 
   const vote = async (optionId: string) => {
     if (myChoice || busy) return;
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("投票には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;
@@ -111,7 +112,7 @@ export default function PollVoteSection({
   const addOption = async () => {
     const text = addText.trim();
     if (!text) return;
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("選択肢の追加には利用規約への同意が必要です"));
       return;

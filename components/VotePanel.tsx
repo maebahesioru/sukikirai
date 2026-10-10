@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Cookies from "js-cookie";
+import { getUserToken } from "@/lib/client-token";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { getFingerprint } from "@/lib/fingerprint";
 import { useT } from "@/lib/i18n-client";
@@ -51,7 +52,7 @@ export default function VotePanel({
 
   const vote = async (kind: "like" | "dislike") => {
     if (voted || busy) return;
-    const token = Cookies.get("user_token");
+    const token = getUserToken();
     if (!token) {
       alert(t("投票には利用規約への同意が必要です。ページを再読み込みしてください。"));
       return;

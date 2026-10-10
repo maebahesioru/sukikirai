@@ -5,7 +5,14 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
-  if (!rateLimit(`terms:ip:${ip}`, 15, 60 * 60 * 1000) || !rateLimit(`terms:ipday:${ip}`, 100, 24 * 60 * 60 * 1000)) {
+  // キャリアNATでIP共有されるモバイル対策: 端末(IP+UA)単位の制限＋IPは緩いバックストップ（2026-10-10）
+  const ua = request.headers.get("user-agent") ?? "";
+  if (
+    !rateLimit(`terms:ipua:${ip}:${ua}`, 20, 60 * 60 * 1000) ||
+    !rateLimit(`terms:ipuaday:${ip}:${ua}`, 100, 24 * 60 * 60 * 1000) ||
+    !rateLimit(`terms:ip:${ip}`, 400, 60 * 60 * 1000) ||
+    !rateLimit(`terms:ipday:${ip}`, 5000, 24 * 60 * 60 * 1000)
+  ) {
     return NextResponse.json(
       { success: false, error: "リクエストが多すぎます。しばらくお待ちください" },
       { status: 429 }

@@ -1,6 +1,7 @@
 // ツイッタラー衆院選 クエリ（2026-10-10）
 import { sql } from "@/lib/db";
 import { ELECTION } from "@/lib/constants";
+import { allDistricts } from "@/data/election";
 import type { ElectionEntryRow } from "@/lib/election";
 
 const SCORE_SUB = `(
@@ -104,4 +105,31 @@ async function getElectionEntriesByDistrictForPerson(
     rank: idx + 1,
     total: cands.length,
   };
+}
+
+/** 新規人物の選挙割り当て（最少人数の区・最少人数の党・名簿末尾に追加）— 2026-10-10 */
+export async function assignElectionEntry(personId: string): Promise<void> {
+  try {
+    const exists = await sql(`SELECT 1 FROM election_entries WHERE person_id = $1`, [personId]);
+    if (exists.length > 0) return;
+    const d = await sql<{ district_id: string }>(
+      `SELECT district_id FROM election_entries GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`
+    );
+    const pt = await sql<{ party_id: string }>(
+      `SELECT party_id FROM election_entries GROUP BY party_id ORDER BY count(*) ASC, party_id ASC LIMIT 1`
+    );
+    if (d.length === 0 || pt.length === 0) return;
+    const districtId = d[0].district_id;
+    const blockId = allDistricts().find((x) => x.name === districtId)?.blockId ?? "tokyo";
+    const partyId = pt[0].party_id;
+    await sql(
+      `INSERT INTO election_entries (person_id, district_id, block_id, party_id, list_rank)
+       SELECT $1, $2, $3, $4, COALESCE(MAX(list_rank), 0) + 1
+       FROM election_entries WHERE party_id = $4 AND block_id = $3
+       ON CONFLICT (person_id) DO NOTHING`,
+      [personId, districtId, blockId, partyId]
+    );
+  } catch {
+    /* 選挙テーブル未作成等は無視（投票機能には影響させない） */
+  }
 }

@@ -78,16 +78,6 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
-    // 対象ページ単位の時間・日上限（組織的な一斉評価対策・2026-10-11）
-    if (
-      !rateLimit(`eval:targethour:${person.id}`, 30, 60 * 60 * 1000) ||
-      !rateLimit(`eval:targetday:${person.id}`, 200, 24 * 60 * 60 * 1000)
-    ) {
-      return NextResponse.json(
-        { success: false, error: "この人物への評価が集中しています。時間をおいてお試しください" },
-        { status: 429 }
-      );
-    }
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "評価できません" }, { status: 403 });
     }

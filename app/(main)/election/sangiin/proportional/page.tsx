@@ -44,7 +44,7 @@ export default async function SangiinProportionalPage() {
     <div className="space-y-5">
       <section className="bg-panel border border-line rounded-2xl p-5">
         <div className="flex items-center gap-2 text-xs text-mut">
-          <Link href="/election/sangiin" className="text-x hover:underline">
+          <Link href="/election?tab=sangiin" className="text-x hover:underline">
             🏛️ {t("参院選")}
           </Link>
           <span>›</span>
@@ -124,7 +124,7 @@ export default async function SangiinProportionalPage() {
       </section>
 
       <section className="bg-panel border border-line rounded-2xl p-5 text-center">
-        <Link href="/election/sangiin" className="text-x hover:underline font-bold">
+        <Link href="/election?tab=sangiin" className="text-x hover:underline font-bold">
           ← {t("参院選トップへ")}
         </Link>
       </section>

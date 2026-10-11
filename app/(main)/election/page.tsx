@@ -8,6 +8,7 @@ import { ELECTION } from "@/lib/constants";
 import { BLOCKS, PARTIES, allDistricts } from "@/data/election";
 import JapanElectionMap, { type DistrictResult } from "@/components/JapanElectionMap";
 import ElectionTrendChart from "@/components/ElectionTrendChart";
+import SangiinHub from "@/components/SangiinHub";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
@@ -34,8 +35,37 @@ export async function generateMetadata(): Promise<Metadata> {
 const partyOf = (id: string) => PARTIES.find((p) => p.id === id);
 const fmtScore = (s: number) => (Number.isInteger(s) ? String(s) : s.toFixed(1));
 
-export default async function ElectionPage() {
+/** 衆院/参院のタブ切替（同じページ内） */
+function ElectionTabs({ active, t }: { active: "shu" | "san"; t: (s: string) => string }) {
+  const base = "flex-1 text-center text-sm font-bold py-2.5 rounded-xl border transition";
+  const on = "bg-x text-white border-x shadow-sm";
+  const off = "bg-panel border-line text-mut hover:border-line2 hover:text-fg";
+  return (
+    <div className="flex gap-2">
+      <Link href="/election" className={`${base} ${active === "shu" ? on : off}`}>
+        🗳️ {t("衆院選")}
+      </Link>
+      <Link href="/election?tab=sangiin" className={`${base} ${active === "san" ? on : off}`}>
+        🏛️ {t("参院選")}
+      </Link>
+    </div>
+  );
+}
+
+export default async function ElectionPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const t = await getServerT();
+  const { tab } = await searchParams;
+
+  // 参院タブ
+  if (tab === "sangiin") {
+    return (
+      <div className="space-y-5">
+        <ElectionTabs active="san" t={t} />
+        <SangiinHub />
+      </div>
+    );
+  }
+
   const now = Date.now();
   const start = Date.parse(ELECTION.startIso);
   const end = Date.parse(ELECTION.endIso);
@@ -81,6 +111,7 @@ export default async function ElectionPage() {
 
   return (
     <div className="space-y-5">
+      <ElectionTabs active="shu" t={t} />
       {/* ヘッダー */}
       <section className="relative overflow-hidden bg-panel border border-line rounded-2xl p-6">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-x/10 blur-3xl" />
@@ -106,21 +137,6 @@ export default async function ElectionPage() {
             })}
           </p>
         </div>
-      </section>
-
-      {/* 参院選へのリンク */}
-      <section className="bg-panel border border-line rounded-2xl p-5 flex items-center gap-3">
-        <span className="text-2xl">🏛️</span>
-        <div className="min-w-0">
-          <div className="font-bold">{t("参院選も同時開催中")}</div>
-          <p className="text-xs text-mut mt-0.5">{t("45選挙区+比例100・計248議席。同じ1票が両方に反映されます。")}</p>
-        </div>
-        <Link
-          href="/election/sangiin"
-          className="ml-auto shrink-0 text-sm font-bold px-3 py-1.5 rounded-full bg-xsoft text-x border border-x/40 hover:opacity-80 transition"
-        >
-          {t("参院選を見る →")}
-        </Link>
       </section>
 
       {/* 議席グラフ */}

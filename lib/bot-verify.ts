@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import dns from "node:dns/promises";
 
 const BOT_RE =
-  /(googlebot|bingbot|yandexbot|duckduckbot|baiduspider|slurp|twitterbot|facebookexternalhit|linkedinbot|applebot|petalbot|ia_archiver|semrushbot|ahrefsbot|bytespider|gptbot|oai-searchbot|claudebot)/i;
+  /(googlebot|bingbot|bingpreview|yandexbot|duckduckbot|baiduspider|slurp|twitterbot|facebookexternalhit|linkedinbot|applebot|petalbot|ia_archiver|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-web|anthropic-ai|perplexitybot|ccbot|amazonbot|googleother|discordbot|telegrambot|slackbot|whatsapp|embedly|quora link preview|pinterest|vkshare|w3c_validator|diffbot|imagesiftbot|youbot)/i;
 
 const cache = new Map<string, { ok: boolean; exp: number }>();
 

@@ -48,6 +48,8 @@ export default async function SangiinHub() {
         : race.districtId === "徳島・高知"
           ? ["徳島県", "高知県"]
           : [race.districtId];
+    // 合区は都道府県名だけでなく選挙区IDでも引けるように（地図のキー照合）
+    prefColor.set(race.districtId, { color, label });
     for (const pref of prefs) prefColor.set(pref, { color, label });
   }
   const districtResults: DistrictResult[] = allDistricts().map((d) => {

@@ -42,3 +42,44 @@ export async function getSangiinEntriesByDistrict(districtId: string): Promise<S
     [ELECTION.startIso, ELECTION.endIso, districtId]
   );
 }
+
+export type PersonSangiinElection = {
+  district_id: string;
+  seat_type: string;
+  party_id: string;
+  list_rank: number;
+  score: number;
+  likes: number;
+  dislikes: number;
+  rank: number;
+  total: number;
+};
+
+/** 人物ページ用: その人の参院エントリ（順位付き） */
+export async function getPersonSangiinElection(personId: string): Promise<PersonSangiinElection | null> {
+  const entry = await sql<{ district_id: string; seat_type: string; party_id: string; list_rank: number }>(
+    `SELECT district_id, seat_type, party_id, list_rank FROM sangiin_entries WHERE person_id = $1`,
+    [personId]
+  );
+  if (entry.length === 0) return null;
+  const e = entry[0];
+  if (e.seat_type === "district") {
+    const cands = await getSangiinEntriesByDistrict(e.district_id);
+    const idx = cands.findIndex((c) => c.person_id === personId);
+    if (idx < 0) return null;
+    const me = cands[idx];
+    return { ...e, score: me.score, likes: me.likes, dislikes: me.dislikes, rank: idx + 1, total: cands.length };
+  }
+  const rows = await sql<{ person_id: string; score: number; likes: number; dislikes: number }>(
+    `SELECT g.person_id, COALESCE(s.score, 0)::float AS score, COALESCE(s.likes, 0)::int AS likes, COALESCE(s.dislikes, 0)::int AS dislikes
+     FROM sangiin_entries g
+     LEFT JOIN ${SCORE_SUB} ON s.person_id = g.person_id
+     WHERE g.seat_type = 'proportional' AND g.party_id = $3
+     ORDER BY COALESCE(s.score, 0) DESC, g.person_id ASC`,
+    [ELECTION.startIso, ELECTION.endIso, e.party_id]
+  );
+  const idx = rows.findIndex((r) => r.person_id === personId);
+  if (idx < 0) return null;
+  const me = rows[idx];
+  return { ...e, score: me.score, likes: me.likes, dislikes: me.dislikes, rank: idx + 1, total: rows.length };
+}

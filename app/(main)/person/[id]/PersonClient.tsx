@@ -30,6 +30,7 @@ export default function PersonClient({
   relatedPolls,
   likeRank,
   election,
+  sangiin,
 }: {
   person: Person;
   voteStats: VoteStats;
@@ -46,6 +47,17 @@ export default function PersonClient({
   election: {
     district_id: string;
     block_id: string;
+    party_id: string;
+    list_rank: number;
+    score: number;
+    likes: number;
+    dislikes: number;
+    rank: number;
+    total: number;
+  } | null;
+  sangiin: {
+    district_id: string;
+    seat_type: string;
     party_id: string;
     list_rank: number;
     score: number;
@@ -107,6 +119,38 @@ export default function PersonClient({
                         name: person.name,
                         district: election.district_id,
                         party: PARTIES.find((p) => p.id === election.party_id)?.name ?? "",
+                      }
+                    );
+                    const url = `${window.location.origin}/person/${person.id}`;
+                    window.open(
+                      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+                      "_blank"
+                    );
+                  }}
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-panel border border-line text-mut hover:text-x hover:border-line2 transition whitespace-nowrap"
+                >
+                  📣 {t("応援をシェア")}
+                </button>
+              </div>
+            )}
+            {!election && sangiin && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Link
+                  href="/election?tab=sangiin"
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-xsoft text-x border border-x/40 hover:opacity-80 transition whitespace-nowrap"
+                >
+                  🏛️ {sangiin.seat_type === "proportional" ? t("比例代表") : sangiin.district_id}・
+                  {PARTIES.find((p) => p.id === sangiin.party_id)?.name}・
+                  {t("{rank}位/{total}人", { rank: sangiin.rank, total: sangiin.total })}
+                </Link>
+                <button
+                  onClick={() => {
+                    const text = t(
+                      "🗳️ {name}は「{district}」で立候補中！\n{party}からの立候補です。好きなら投票で応援して👇\n#ツイッタラー世論調査",
+                      {
+                        name: person.name,
+                        district: sangiin.seat_type === "proportional" ? t("比例代表") : sangiin.district_id,
+                        party: PARTIES.find((p) => p.id === sangiin.party_id)?.name ?? "",
                       }
                     );
                     const url = `${window.location.origin}/person/${person.id}`;

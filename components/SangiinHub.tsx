@@ -84,7 +84,7 @@ export default async function SangiinHub() {
             {t("45選挙区+比例100・計248議席。比例はサン＝ラグ方式・非拘束名簿（党内は得票順）。")}
           </p>
           <p className="text-xs text-mut mt-1">
-            {t("1回の投票が衆院選・参院選の両方に反映されます。")}
+            {t("投票は、その人が立候補している選挙（衆院選または参院選）に反映されます。")}
           </p>
           <p className="text-xs text-mut mt-2">
             {t("現在の集計: {n}議席 / {total}議席", { n: num(outcome.totalElected), total: num(SANGIIN_TOTAL_SEATS) })}

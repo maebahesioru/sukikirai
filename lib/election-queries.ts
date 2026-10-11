@@ -108,27 +108,81 @@ async function getElectionEntriesByDistrictForPerson(
   };
 }
 
-/** 新規人物の選挙割り当て（最少人数の区・最少人数の党・名簿末尾に追加）— 2026-10-10 */
+/** プロフから都道府県を検出（プロフ・リンク欄の記載→確定配属に使用）— 2026-10-11 */
+const PREF_CITIES: Record<string, string> = {
+  札幌: "北海道", 仙台: "宮城", さいたま: "埼玉", 横浜: "神奈川", 川崎: "神奈川", 相模原: "神奈川",
+  名古屋: "愛知", 堺: "大阪", 神戸: "兵庫", 北九州: "福岡", 那覇: "沖縄", 金沢: "石川", 大津: "滋賀",
+  高松: "香川", 松山: "愛媛", 長崎: "長崎", 大分: "大分", 宮崎: "宮崎", 鹿児島: "鹿児島", 松江: "島根",
+  鳥取: "鳥取", 山口: "山口", 徳島: "徳島", 奈良: "奈良", 和歌山: "和歌山", 甲府: "山梨", 富山: "富山",
+  福井: "福井", 岐阜: "岐阜", 長野: "長野", 水戸: "茨城", 宇都宮: "栃木", 前橋: "群馬", 盛岡: "岩手",
+  秋田: "秋田", 山形: "山形", 福島: "福島", 青森: "青森", 静岡: "静岡", 浜松: "静岡", 新潟: "新潟",
+  熊本: "熊本", 広島: "広島", 岡山: "岡山", 大阪: "大阪",
+};
+const PREF_NAMES =
+  "北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|東京|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|京都|大阪|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄".split("|");
+/** 政党・思想ワード→党（優先順） */
+const PARTY_RULES: [string, string[]][] = [
+  ["kyosan", ["共産", "マルクス"]],
+  ["shakai", ["社民", "社会民主"]],
+  ["minshu", ["立憲", "リベラル", "左翼", "パヨク"]],
+  ["kaikaku", ["維新"]],
+  ["kokumin", ["国民民主"]],
+  ["hoshu", ["自民", "保守", "右翼", "ネトウヨ", "参政", "反動"]],
+  ["heiwa", ["反戦", "平和主義", "護憲"]],
+  ["jiyuu", ["リバタリアン", "自由主義"]],
+];
+
+export function detectPref(text: string): string | null {
+  for (const [c, p] of Object.entries(PREF_CITIES)) if (text.includes(c)) return p;
+  for (const p of PREF_NAMES) if (text.includes(p)) return p;
+  return null;
+}
+
+export function detectParty(text: string): string | null {
+  for (const [pid, kws] of PARTY_RULES) for (const kw of kws) if (text.includes(kw)) return pid;
+  return null;
+}
+
+/** 新規人物の選挙割り当て（プロフの都道府県/政党記載を優先・なければ最少人数の区/党・名簿末尾に追加）— 2026-10-11更新 */
 export async function assignElectionEntry(personId: string): Promise<void> {
   try {
     const exists = await sql(`SELECT 1 FROM election_entries WHERE person_id = $1`, [personId]);
     if (exists.length > 0) return;
-    const d = await sql<{ district_id: string }>(
-      `SELECT district_id FROM election_entries GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`
+    // プロフ・リンク欄から確定配属を試みる
+    const pr = await sql<{ text: string }>(
+      `SELECT COALESCE(x_description,'') || ' ' || COALESCE(description,'') || ' ' || COALESCE(x_website,'') AS text FROM people WHERE id = $1`,
+      [personId]
     );
-    const pt = await sql<{ party_id: string }>(
-      `SELECT party_id FROM election_entries GROUP BY party_id ORDER BY count(*) ASC, party_id ASC LIMIT 1`
-    );
-    if (d.length === 0 || pt.length === 0) return;
-    const districtId = d[0].district_id;
+    const text = pr[0]?.text ?? "";
+    const pref = detectPref(text);
+    const party = detectParty(text);
+    let districtId: string | null = null;
+    if (pref) {
+      const pd = await sql<{ district_id: string }>(
+        `SELECT district_id FROM election_entries WHERE district_id LIKE $1 GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`,
+        [`${pref}%`]
+      );
+      districtId = pd[0]?.district_id ?? null;
+    }
+    if (!districtId) {
+      const d = await sql<{ district_id: string }>(
+        `SELECT district_id FROM election_entries GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`
+      );
+      districtId = d[0]?.district_id ?? null;
+    }
+    const pt = party
+      ? [{ party_id: party }]
+      : await sql<{ party_id: string }>(
+          `SELECT party_id FROM election_entries GROUP BY party_id ORDER BY count(*) ASC, party_id ASC LIMIT 1`
+        );
+    if (!districtId || pt.length === 0) return;
     const blockId = allDistricts().find((x) => x.name === districtId)?.blockId ?? "tokyo";
-    const partyId = pt[0].party_id;
     await sql(
       `INSERT INTO election_entries (person_id, district_id, block_id, party_id, list_rank)
        SELECT $1, $2, $3, $4, COALESCE(MAX(list_rank), 0) + 1
        FROM election_entries WHERE party_id = $4 AND block_id = $3
        ON CONFLICT (person_id) DO NOTHING`,
-      [personId, districtId, blockId, partyId]
+      [personId, districtId, blockId, pt[0].party_id]
     );
   } catch {
     /* 選挙テーブル未作成等は無視（投票機能には影響させない） */

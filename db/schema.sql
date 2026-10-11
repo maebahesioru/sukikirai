@@ -226,14 +226,30 @@ ALTER TABLE poll_comments ADD COLUMN IF NOT EXISTS mail TEXT;
 -- 管理スレ（要望・バグ報告）: 単一固定スレッド
 CREATE TABLE IF NOT EXISTS meta_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_number INTEGER NOT NULL,
   name TEXT,
   mail TEXT,
   content TEXT NOT NULL,
   cookie_id TEXT,
   is_hidden BOOLEAN NOT NULL DEFAULT false,
+  good_count INTEGER NOT NULL DEFAULT 0,
+  bad_count INTEGER NOT NULL DEFAULT 0,
+  parent_post_id UUID REFERENCES meta_posts(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_meta_posts_created ON meta_posts(created_at);
+CREATE INDEX IF NOT EXISTS idx_meta_posts_parent ON meta_posts(parent_post_id);
+
+-- 管理スレ投稿のgood/bad（2026-10-12 掲示板化）
+CREATE TABLE IF NOT EXISTS meta_post_reactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES meta_posts(id) ON DELETE CASCADE,
+  reaction_type TEXT NOT NULL CHECK (reaction_type IN ('good','bad')),
+  cookie_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (post_id, cookie_id)
+);
+CREATE INDEX IF NOT EXISTS idx_meta_reactions_post ON meta_post_reactions(post_id);
 
 -- 翻訳キャッシュ（原文ハッシュ×対象言語で一意・NLLB自前翻訳）
 CREATE TABLE IF NOT EXISTS translations (

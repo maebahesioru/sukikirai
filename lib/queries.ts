@@ -2008,31 +2008,93 @@ export async function getMetaPostsFor2ch() {
   );
 }
 
-export async function getMetaPosts(limit = 500) {
-  const rows = await sql<{
-    id: string;
-    name: string | null;
-    content: string;
-    created_at: string;
-    cookie_id: string | null;
-    is_hidden: boolean;
-  }>(
-    `SELECT id, name, content, created_at, cookie_id, is_hidden
+export type MetaPostRow = {
+  id: string;
+  post_number: number;
+  name: string | null;
+  content: string;
+  created_at: string;
+  anon_id: string;
+  mail: string | null;
+  good_count: number;
+  bad_count: number;
+  parent_post_id: string | null;
+};
+export type MetaPostWithReplies = MetaPostRow & { replies: MetaPostRow[] };
+
+/** 管理スレ投稿一覧（親投稿＋返信のネスト・2026-10-12 掲示板化） */
+export async function getMetaPosts(limit = 500): Promise<MetaPostWithReplies[]> {
+  const rows = await sql<MetaPostRow & { cookie_id: string | null }>(
+    `SELECT id, post_number, name, content, created_at, cookie_id, mail, good_count, bad_count, parent_post_id
      FROM meta_posts
      WHERE NOT is_hidden
-     ORDER BY created_at ASC, id ASC
+     ORDER BY post_number ASC
      LIMIT $1`,
     [limit]
   );
-  return rows.map((r) => {
+  const mapped: MetaPostRow[] = rows.map((r) => {
     const { cookie_id, ...rest } = r;
     return { ...rest, anon_id: anonId(cookie_id ?? null, r.id) };
   });
+  const byParent = new Map<string, MetaPostRow[]>();
+  for (const p of mapped) {
+    if (p.parent_post_id) {
+      const arr = byParent.get(p.parent_post_id) ?? [];
+      arr.push(p);
+      byParent.set(p.parent_post_id, arr);
+    }
+  }
+  return mapped
+    .filter((p) => !p.parent_post_id)
+    .map((m) => ({ ...m, replies: byParent.get(m.id) ?? [] }));
 }
 
 export async function getMetaResCount(): Promise<number> {
   const rows = await sql<{ c: number }>(`SELECT (COUNT(*) + 1)::int AS c FROM meta_posts`);
   return rows[0]?.c ?? 1;
+}
+
+/** 管理スレ投稿の good/bad リアクション（コメント板と同じ挙動・2026-10-12） */
+export async function toggleMetaReaction(
+  postId: string,
+  type: "good" | "bad",
+  cookieId: string
+): Promise<{ myReaction: "good" | "bad" | null; good: number; bad: number }> {
+  const cid = cookieId || "anon";
+  return withTx(async (c) => {
+    const existing = await c.query<{ reaction_type: "good" | "bad" }>(
+      "SELECT reaction_type FROM meta_post_reactions WHERE post_id = $1 AND cookie_id = $2 FOR UPDATE",
+      [postId, cid]
+    );
+    if (existing.rowCount && existing.rows[0].reaction_type === type) {
+      await c.query("DELETE FROM meta_post_reactions WHERE post_id = $1 AND cookie_id = $2", [postId, cid]);
+    } else {
+      await c.query(
+        `INSERT INTO meta_post_reactions (post_id, cookie_id, reaction_type)
+         VALUES ($1,$2,$3)
+         ON CONFLICT (post_id, cookie_id) DO UPDATE SET reaction_type = EXCLUDED.reaction_type`,
+        [postId, cid, type]
+      );
+    }
+    const counts = await c.query<{ g: number; b: number }>(
+      `SELECT COUNT(*) FILTER (WHERE reaction_type='good')::int AS g,
+              COUNT(*) FILTER (WHERE reaction_type='bad')::int AS b
+       FROM meta_post_reactions WHERE post_id = $1`,
+      [postId]
+    );
+    const g = counts.rows[0]?.g ?? 0;
+    const b = counts.rows[0]?.b ?? 0;
+    await c.query("UPDATE meta_posts SET good_count = $2, bad_count = $3 WHERE id = $1", [postId, g, b]);
+    const mine = await c.query<{ reaction_type: "good" | "bad" }>(
+      "SELECT reaction_type FROM meta_post_reactions WHERE post_id = $1 AND cookie_id = $2",
+      [postId, cid]
+    );
+    return {
+      myReaction: (mine.rows[0]?.reaction_type ?? null) as "good" | "bad" | null,
+      good: g,
+      bad: b,
+    };
+  });
 }
 
 export async function insertMetaPost(input: {
@@ -2041,8 +2103,9 @@ export async function insertMetaPost(input: {
   cookieId: string;
   mail?: string | null;
   deleteKeyHash?: string | null;
+  parentPostId?: string | null;
 }): Promise<
-  | { ok: true; post: { id: string; name: string | null; content: string; created_at: string; is_hidden: boolean } }
+  | { ok: true; post: { id: string; post_number: number; name: string | null; content: string; created_at: string; is_hidden: boolean; parent_post_id: string | null } }
   | { ok: false; error: string; status: number }
 > {
   const spam = isSpamContent(input.content, { allowUrls: true });
@@ -2068,17 +2131,39 @@ export async function insertMetaPost(input: {
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
 
+    let parentPostId: string | null = null;
+    if (input.parentPostId) {
+      const p = await c.query<{ id: string }>(
+        `SELECT id FROM meta_posts WHERE id = $1 AND NOT is_hidden`,
+        [input.parentPostId]
+      );
+      if (!p.rowCount) return { ok: false as const, error: "返信先の投稿が見つかりません", status: 404 };
+      parentPostId = input.parentPostId;
+    }
+    const num = await c.query<{ n: number }>(
+      `SELECT (COALESCE(MAX(post_number),0) + 1)::int AS n FROM meta_posts`
+    );
     const inserted = await c.query<{
       id: string;
+      post_number: number;
       name: string | null;
       content: string;
       created_at: string;
       is_hidden: boolean;
+      parent_post_id: string | null;
     }>(
-      `INSERT INTO meta_posts (name, content, cookie_id, mail, delete_key_hash)
-       VALUES ($1,$2,$3,$4,$5)
-       RETURNING id, name, content, created_at, is_hidden`,
-      [input.name, input.content, input.cookieId, input.mail ?? null, input.deleteKeyHash ?? null]
+      `INSERT INTO meta_posts (post_number, name, content, cookie_id, mail, delete_key_hash, parent_post_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id, post_number, name, content, created_at, is_hidden, parent_post_id`,
+      [
+        num.rows[0]?.n ?? 1,
+        input.name,
+        input.content,
+        input.cookieId,
+        input.mail ?? null,
+        input.deleteKeyHash ?? null,
+        parentPostId,
+      ]
     );
     return { ok: true as const, post: inserted.rows[0] };
   });

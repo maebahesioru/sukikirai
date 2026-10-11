@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMetaPosts, insertMetaPost, deleteMetaPostByKey } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { charCount, isValidToken, str } from "@/lib/validate";
+import { charCount, isValidToken, isUuid, str } from "@/lib/validate";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { applyTrip } from "@/lib/trip";
 import { genDeleteKey, hashDeleteKey } from "@/lib/delete-key";
@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     const mail = body.mail ? (str(body.mail, 64).trim() || null) : null;
     const content = str(body.content, 2000).trim();
     const userToken = body.userToken;
+    const parentPostId =
+      typeof body.parentPostId === "string" && isUuid(body.parentPostId) ? body.parentPostId : null;
 
     if (!content) {
       return NextResponse.json({ success: false, error: "本文を入力してください" }, { status: 400 });
@@ -58,6 +60,7 @@ export async function POST(request: Request) {
       cookieId: userToken,
       mail,
       deleteKeyHash: hashDeleteKey(deleteKey),
+      parentPostId,
     });
     if (!result.ok) {
       return NextResponse.json({ success: false, error: result.error }, { status: result.status });

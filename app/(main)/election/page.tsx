@@ -21,12 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t(ELECTION.title),
     description: t(
-      "全登録ユーザーが289の小選挙区と10党にランダム配属され、期間中の「好き」票（嫌い票は-0.5）で議席を争う2週間イベント。比例復活あり。"
+      "全登録ユーザーが300の小選挙区と10党にランダム配属され、期間中の「好き」票（嫌い票は-0.5）で議席を争う2週間イベント。比例復活あり。"
     ),
     alternates: { canonical: localePath(locale, "/election") },
     openGraph: {
       title: t(ELECTION.title),
-      description: t("289選挙区+176比例・10党で議席を争う2週間イベント"),
+      description: t("300選挙区+212比例・10党で議席を争う2週間イベント"),
       images: ["/og.png"],
     },
   };
@@ -122,11 +122,11 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
           <p className="mt-4 font-black text-lg">{headline}</p>
           <p className="text-sm text-mut mt-1 leading-relaxed">
             {t(
-              "全登録ユーザーが289の小選挙区・10党にランダム配属。期間中の「好き」+1票・「嫌い」-0.5票の合計で競います。小選挙区1位は当選、敗者も比例名簿から復活当選の可能性あり。"
+              "全登録ユーザーが300の小選挙区・10党にランダム配属。期間中の「好き」+1票・「嫌い」-0.5票の合計で競います。小選挙区1位は当選、敗者も比例名簿から復活当選の可能性あり。"
             )}
           </p>
           <p className="text-xs text-mut mt-2">
-            {t("現在の集計: {n}議席 / 500議席", { n: num(totalElected) })}
+            {t("現在の集計: {n}議席 / 512議席", { n: num(totalElected) })}
             {phase === "live" && <span className="ml-2">（{t("現時点の情勢・随時更新")}）</span>}
           </p>
           <p className="text-xs text-mut mt-1">
@@ -208,7 +208,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
 
       {/* 日本地図 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h2 className="font-bold mb-3">🗾 {t("日本地図（289選挙区）")}</h2>
+        <h2 className="font-bold mb-3">🗾 {t("日本地図（300選挙区）")}</h2>
         <JapanElectionMap results={districtResults} />
       </section>
 
@@ -244,7 +244,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
 
       {/* 小選挙区 結果一覧 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h2 className="font-bold mb-4">🏛️ {t("小選挙区（289）— 現在の首位")}</h2>
+        <h2 className="font-bold mb-4">🏛️ {t("小選挙区（300）— 現在の首位")}</h2>
         {BLOCKS.map((b) => {
           const bd = districts.filter((d) => d.blockId === b.id);
           return (
@@ -281,10 +281,10 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
       <section className="bg-panel border border-line rounded-2xl p-5 text-sm text-mut leading-relaxed">
         <h2 className="font-bold text-txt mb-2">{t("ルール")}</h2>
         <ul className="list-disc pl-5 space-y-1">
-          <li>{t("全登録ユーザーが289小選挙区のどれか・10党のどれかにランダム配属（名簿順位もランダム）")}</li>
+          <li>{t("全登録ユーザーが300小選挙区のどれか・10党のどれかにランダム配属（名簿順位もランダム）")}</li>
           <li>{t("得票 = 期間中の「好き」+1票、「嫌い」-0.5票（毎日投票できるほど有利）")}</li>
-          <li>{t("小選挙区 = 1位が当選（289議席）")}</li>
-          <li>{t("比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（211議席）")}</li>
+          <li>{t("小選挙区 = 1位が当選（300議席）")}</li>
+          <li>{t("比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（212議席）")}</li>
           <li>{t("期間終了（10/24 23:59）時点の数字で確定します")}</li>
         </ul>
       </section>

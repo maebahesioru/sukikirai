@@ -232,7 +232,7 @@ export default async function SangiinHub() {
       {/* 相互リンク */}
       <section className="bg-panel border border-line rounded-2xl p-5 text-center">
         <Link href="/election" className="text-x hover:underline font-bold">
-          🗳️ {t("衆院選（289小選挙区+211比例）を見る")}
+          🗳️ {t("衆院選（300小選挙区+212比例）を見る")}
         </Link>
       </section>
     </div>

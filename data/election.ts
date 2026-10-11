@@ -1,7 +1,7 @@
 // ツイッタラー衆院選 基礎データ（2026-10-10・2022年区割り/現行定数・Wikipediaで検算済み）
 
 export const ELECTION_BASE = {
-  totalSeats: 500,
+  totalSeats: 512,
   districtSeats: 289,
   proportionalSeats: 176,
 } as const;
@@ -16,7 +16,7 @@ export const BLOCKS: Block[] = [
   { id: "tokyo", name: "東京", seats: 23 },
   { id: "hokurikushinetsu", name: "北陸信越", seats: 12 },
   { id: "tokai", name: "東海", seats: 25 },
-  { id: "kinki", name: "近畿", seats: 33 },
+  { id: "kinki", name: "近畿", seats: 34 },
   { id: "chugoku", name: "中国", seats: 12 },
   { id: "shikoku", name: "四国", seats: 7 },
   { id: "kyushu", name: "九州", seats: 24 },
@@ -25,34 +25,34 @@ export const BLOCKS: Block[] = [
 export type Pref = { name: string; districts: number; blockId: string };
 
 export const PREFS: Pref[] = [
-  { name: "北海道", districts: 12, blockId: "hokkaido" },
+  { name: "北海道", districts: 13, blockId: "hokkaido" },
   { name: "青森県", districts: 3, blockId: "tohoku" },
   { name: "岩手県", districts: 3, blockId: "tohoku" },
   { name: "宮城県", districts: 5, blockId: "tohoku" },
   { name: "秋田県", districts: 3, blockId: "tohoku" },
   { name: "山形県", districts: 3, blockId: "tohoku" },
   { name: "福島県", districts: 4, blockId: "tohoku" },
-  { name: "茨城県", districts: 7, blockId: "kitakanto" },
+  { name: "茨城県", districts: 8, blockId: "kitakanto" },
   { name: "栃木県", districts: 5, blockId: "kitakanto" },
   { name: "群馬県", districts: 5, blockId: "kitakanto" },
-  { name: "埼玉県", districts: 16, blockId: "kitakanto" },
-  { name: "千葉県", districts: 14, blockId: "minamikanto" },
-  { name: "神奈川県", districts: 20, blockId: "minamikanto" },
+  { name: "埼玉県", districts: 17, blockId: "kitakanto" },
+  { name: "千葉県", districts: 15, blockId: "minamikanto" },
+  { name: "神奈川県", districts: 21, blockId: "minamikanto" },
   { name: "山梨県", districts: 2, blockId: "minamikanto" },
-  { name: "東京都", districts: 30, blockId: "tokyo" },
+  { name: "東京都", districts: 31, blockId: "tokyo" },
   { name: "新潟県", districts: 5, blockId: "hokurikushinetsu" },
   { name: "富山県", districts: 3, blockId: "hokurikushinetsu" },
   { name: "石川県", districts: 3, blockId: "hokurikushinetsu" },
   { name: "福井県", districts: 2, blockId: "hokurikushinetsu" },
   { name: "長野県", districts: 5, blockId: "hokurikushinetsu" },
   { name: "岐阜県", districts: 5, blockId: "tokai" },
-  { name: "静岡県", districts: 8, blockId: "tokai" },
-  { name: "愛知県", districts: 16, blockId: "tokai" },
+  { name: "静岡県", districts: 9, blockId: "tokai" },
+  { name: "愛知県", districts: 17, blockId: "tokai" },
   { name: "三重県", districts: 4, blockId: "tokai" },
   { name: "滋賀県", districts: 3, blockId: "kinki" },
   { name: "京都府", districts: 6, blockId: "kinki" },
-  { name: "大阪府", districts: 19, blockId: "kinki" },
-  { name: "兵庫県", districts: 12, blockId: "kinki" },
+  { name: "大阪府", districts: 20, blockId: "kinki" },
+  { name: "兵庫県", districts: 13, blockId: "kinki" },
   { name: "奈良県", districts: 3, blockId: "kinki" },
   { name: "和歌山県", districts: 2, blockId: "kinki" },
   { name: "鳥取県", districts: 2, blockId: "chugoku" },
@@ -64,7 +64,7 @@ export const PREFS: Pref[] = [
   { name: "香川県", districts: 3, blockId: "shikoku" },
   { name: "愛媛県", districts: 3, blockId: "shikoku" },
   { name: "高知県", districts: 2, blockId: "shikoku" },
-  { name: "福岡県", districts: 11, blockId: "kyushu" },
+  { name: "福岡県", districts: 12, blockId: "kyushu" },
   { name: "佐賀県", districts: 2, blockId: "kyushu" },
   { name: "長崎県", districts: 3, blockId: "kyushu" },
   { name: "熊本県", districts: 4, blockId: "kyushu" },
@@ -74,7 +74,7 @@ export const PREFS: Pref[] = [
   { name: "沖縄県", districts: 4, blockId: "kyushu" },
 ];
 
-/** 289小選挙区を全国順で列挙（例: 北海道1区 … 沖縄県4区） */
+/** 300小選挙区を全国順で列挙（例: 北海道1区 … 沖縄県4区） */
 export function allDistricts(): { id: string; name: string; pref: string; blockId: string }[] {
   const out: { id: string; name: string; pref: string; blockId: string }[] = [];
   for (const p of PREFS) {

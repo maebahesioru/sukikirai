@@ -8,7 +8,7 @@ import { useT } from "@/lib/i18n-client";
 type MapData = { viewBox: string; districts: { id: string; pref: string; d: string }[] };
 export type DistrictResult = { id: string; color: string; label: string };
 
-/** 日本地図（289小選挙区・当選党色分け・ズーム/パン対応）— 2026-10-10
+/** 日本地図（300小選挙区・当選党色分け・ズーム/パン対応）— 2026-10-10
  * 2026-10-11: モバイル対応 — 2本指ピンチズーム実装・増分パン・pointercancel対応・iOS callout抑制
  * 境界データ: /election-map.json（地域・交通データ研究所 パブリックドメインを加工） */
 export default function JapanElectionMap({ results }: { results: DistrictResult[] }) {
@@ -184,7 +184,7 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         onPointerCancel={endPointer}
         onPointerLeave={endPointer}
         role="img"
-        aria-label="日本地図（289小選挙区・当選党色分け）"
+        aria-label="日本地図（300小選挙区・当選党色分け）"
       >
         <g transform={`translate(${view.x} ${view.y}) scale(${view.s})`}>
           {data.districts.map((d) => {

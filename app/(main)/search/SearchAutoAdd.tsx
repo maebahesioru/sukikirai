@@ -1,24 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertTriangle, UserPlus } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { useT } from "@/lib/i18n-client";
 
 type State =
-  | { status: "confirm" }
   | { status: "adding" }
   | { status: "cancelled" }
   | { status: "error"; message: string };
 
 /**
- * 未登録の@IDをその場で追加する。
- * 勝手には追加せず、確認ポップを挟んでから追加し、完了後にページを開く。
+ * 未登録の@IDをその場で自動追加する。
+ * 2026-10-12: 確認ポップを廃止して自動追加に戻した（検索→即追加→ページを開く）。
+ * 失敗時のみエラーを表示する。
  */
 export default function SearchAutoAdd({ query }: { query: string }) {
   const t = useT();
   const router = useRouter();
-  const [state, setState] = useState<State>({ status: "confirm" });
+  const [state, setState] = useState<State>({ status: "adding" });
+  const started = useRef(false);
 
   const add = async () => {
     setState({ status: "adding" });
@@ -39,65 +40,28 @@ export default function SearchAutoAdd({ query }: { query: string }) {
     }
   };
 
-  // 確認ポップ中はEscキーでもキャンセル
+  // マウント直後に自動で追加（StrictModeの二重実行はrefでガード）
   useEffect(() => {
-    if (state.status !== "confirm") return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setState({ status: "cancelled" });
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [state.status]);
+    if (started.current) return;
+    started.current = true;
+    add();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (state.status === "confirm" || state.status === "adding") {
+  if (state.status === "adding") {
     return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-        onClick={(e) => {
-          if (state.status === "confirm" && e.target === e.currentTarget) {
-            setState({ status: "cancelled" });
-          }
-        }}
-      >
-        <div className="bg-panel border border-line rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-          {state.status === "adding" ? (
-            <>
-              <Loader2 className="w-8 h-8 text-x animate-spin mx-auto mb-3" />
-              <p className="font-bold">
-                {t("「{q}」をXで検索して追加しています…", { q: query })}
-              </p>
-              <p className="text-xs text-mut mt-1">
-                {t("未登録のユーザーはその場でページを作成します")}
-              </p>
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-8 h-8 text-x mx-auto mb-3" />
-              <h2 className="font-bold mb-1">
-                {t("「{q}」はまだ登録されていません", { q: query })}
-              </h2>
-              <p className="text-sm text-mut mb-1">{t("追加してページを開きますか？")}</p>
-              <p className="text-xs text-mut mb-5">{t("誰でも匿名で追加できます")}</p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={add}
-                  className="px-5 py-2.5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
-                >
-                  {t("追加して開く")}
-                </button>
-                <button
-                  onClick={() => setState({ status: "cancelled" })}
-                  className="px-5 py-2.5 rounded-xl border border-line text-sm font-bold text-mut hover:text-txt transition"
-                >
-                  {t("やめる")}
-                </button>
-              </div>
-            </>
-          )}
+      <section>
+        <h2 className="font-bold mb-3">{t("検索結果")}</h2>
+        <div className="bg-panel border border-line rounded-2xl p-8 text-center max-w-md">
+          <Loader2 className="w-8 h-8 text-x animate-spin mx-auto mb-3" />
+          <p className="font-bold">
+            {t("「{q}」をXで検索して追加しています…", { q: query })}
+          </p>
+          <p className="text-xs text-mut mt-1">
+            {t("未登録のユーザーはその場でページを作成します")}
+          </p>
         </div>
-      </div>
+      </section>
     );
   }
 

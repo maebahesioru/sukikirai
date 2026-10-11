@@ -40,28 +40,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = await getPerson(decodeURIComponent(id));
   if (!p || p.is_hidden) return { title: "人物が見つかりません" };
   const archived = !!p.x_status && p.x_status !== "ok";
-  // SEO: 票数スタッツをタイトル・説明文に反映（クリック率・スニペット強化）
-  let statLine = "";
-  try {
-    const vs = await getVoteStats(p.id);
-    if (vs && vs.total > 0) {
-      const likePct = Math.round((vs.likes / vs.total) * 100);
-      statLine = `好き${likePct}%・嫌い${100 - likePct}%（${vs.total}票）`;
-    }
-  } catch {
-    /* スタッツ取得失敗は無視 */
-  }
-  const bio = p.x_description || p.description || "";
   return {
-    title: statLine ? `${p.name}の評価・好き嫌い｜${statLine}` : `${p.name}の評価・好き嫌い`,
+    title: `${p.name}の評価・好き嫌い`,
     description:
-      [statLine, bio].filter(Boolean).join(" ").slice(0, 320) ||
+      p.x_description ||
+      p.description ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
     alternates: { canonical: localePath(locale, `/person/${p.id}`) },
     ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,
-      description: [statLine, bio].filter(Boolean).join(" ").slice(0, 200) || undefined,
+      description: p.x_description || p.description || undefined,
     },
   };
 }
@@ -106,12 +95,12 @@ export default async function PersonPage({ params }: Params) {
   // SEO: コメントプレビュー（ユーザー=最新5件 / クローラー=全件）＋ペイウォール宣言
   let previewComments: CommentWithReplies[] = [];
   let previewTotal = 0;
-  try {
-    const isBot = await isCrawler();
-    const first = await getComments(person.id, { perPage: isBot ? 100 : 5, page: 1 });
-    previewTotal = first.total;
-    previewComments = first.comments;
-    if (isBot) {
+  const isBot = await isCrawler();
+  if (isBot) {
+    try {
+      const first = await getComments(person.id, { perPage: 100, page: 1 });
+      previewTotal = first.total;
+      previewComments = first.comments;
       let page = 2;
       while (first.comments.length === 100 && previewComments.length < Math.min(previewTotal, 800) && page <= 9) {
         const next = await getComments(person.id, { perPage: 100, page });
@@ -119,9 +108,9 @@ export default async function PersonPage({ params }: Params) {
         previewComments = previewComments.concat(next.comments);
         page++;
       }
+    } catch {
+      /* 取得失敗時は空のまま */
     }
-  } catch {
-    /* 取得失敗時は空のまま */
   }
 
   const jsonLd = {
@@ -164,6 +153,7 @@ export default async function PersonPage({ params }: Params) {
           sangiin={sangiinEntry}
           commentsPreview={previewComments}
           commentsTotal={previewTotal}
+          isBot={isBot}
           myEval={myEval}
           tagRanking={tagRanking}
           relatedPeople={relatedPeople}

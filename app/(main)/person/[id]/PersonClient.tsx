@@ -34,6 +34,7 @@ export default function PersonClient({
   sangiin,
   commentsPreview,
   commentsTotal,
+  isBot = false,
 }: {
   person: Person;
   voteStats: VoteStats;
@@ -71,6 +72,7 @@ export default function PersonClient({
   } | null;
   commentsPreview: { id: string; name: string | null; content: string; created_at: string; replies: { id: string; name: string | null; content: string; created_at: string }[] }[];
   commentsTotal: number;
+  isBot?: boolean;
 }) {
   const t = useT();
   const [voteInfo, setVoteInfo] = useState<VoteInfo>({
@@ -237,6 +239,7 @@ export default function PersonClient({
         initialStreak={initialStreak}
         onVotedChange={setVoteInfo}
         archived={archived}
+        showStats={isBot}
       />
 
       {!archived && voted && (

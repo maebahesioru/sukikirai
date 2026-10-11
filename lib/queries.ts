@@ -747,6 +747,15 @@ export async function deleteCommentByKey(commentId: string, keyHash: string): Pr
   return rows.length > 0;
 }
 
+/** 管理スレ投稿の削除（削除キー方式・2026-10-11） */
+export async function deleteMetaPostByKey(id: string, keyHash: string): Promise<boolean> {
+  const rows = await sql(`DELETE FROM meta_posts WHERE id = $1 AND delete_key_hash = $2 RETURNING id`, [
+    id,
+    keyHash,
+  ]);
+  return rows.length > 0;
+}
+
 /** 投票トークのコメント版 */
 export async function deletePollCommentByKey(commentId: string, keyHash: string): Promise<boolean> {
   const rows = await sql(
@@ -2031,6 +2040,7 @@ export async function insertMetaPost(input: {
   content: string;
   cookieId: string;
   mail?: string | null;
+  deleteKeyHash?: string | null;
 }): Promise<
   | { ok: true; post: { id: string; name: string | null; content: string; created_at: string; is_hidden: boolean } }
   | { ok: false; error: string; status: number }
@@ -2065,10 +2075,10 @@ export async function insertMetaPost(input: {
       created_at: string;
       is_hidden: boolean;
     }>(
-      `INSERT INTO meta_posts (name, content, cookie_id, mail)
-       VALUES ($1,$2,$3,$4)
+      `INSERT INTO meta_posts (name, content, cookie_id, mail, delete_key_hash)
+       VALUES ($1,$2,$3,$4,$5)
        RETURNING id, name, content, created_at, is_hidden`,
-      [input.name, input.content, input.cookieId, input.mail ?? null]
+      [input.name, input.content, input.cookieId, input.mail ?? null, input.deleteKeyHash ?? null]
     );
     return { ok: true as const, post: inserted.rows[0] };
   });

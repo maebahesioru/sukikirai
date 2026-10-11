@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerT } from "@/lib/i18n-server";
-import { getSangiinEntriesWithScores } from "@/lib/sangiin-queries";
+import { getSangiinEntriesWithScores, getSangiinTrend } from "@/lib/sangiin-queries";
 import { computeSangiin } from "@/lib/sangiin";
 import { ELECTION } from "@/lib/constants";
 import { PARTIES, allDistricts } from "@/data/election";
@@ -11,6 +11,7 @@ import {
   SANGIIN_PROPORTIONAL_SEATS,
 } from "@/data/sangiin";
 import JapanElectionMap, { type DistrictResult } from "@/components/JapanElectionMap";
+import ElectionTrendChart from "@/components/ElectionTrendChart";
 import Avatar from "@/components/Avatar";
 import { num } from "@/lib/format";
 
@@ -29,7 +30,20 @@ function sangiinOf(name: string): string {
 export default async function SangiinHub() {
   const t = await getServerT();
   const entries = await getSangiinEntriesWithScores();
+  const trend = await getSangiinTrend();
   const outcome = computeSangiin(entries);
+
+  // 注目の接戦区（当落線上の差が小さい順）
+  const closeRaces = [...outcome.districtRaces.values()]
+    .filter((r) => r.candidates.length > r.seats)
+    .map((r) => ({
+      r,
+      last: r.candidates[r.seats - 1],
+      next: r.candidates[r.seats],
+      margin: (r.candidates[r.seats - 1]?.score ?? 0) - (r.candidates[r.seats]?.score ?? 0),
+    }))
+    .sort((a, b) => a.margin - b.margin)
+    .slice(0, 8);
 
   const partySeats = PARTIES.map((p) => ({ ...p, seats: outcome.partySeatsTotal[p.id] ?? 0 }));
   const maxSeats = Math.max(...partySeats.map((p) => p.seats), 1);
@@ -119,6 +133,45 @@ export default async function SangiinHub() {
         <p className="text-xs text-mut mt-3">
           {t("選挙区{d}議席＋比例{p}議席。比例の配分はサン＝ラグ方式。", { d: num(SANGIIN_DISTRICT_SEATS), p: num(SANGIIN_PROPORTIONAL_SEATS) })}
         </p>
+      </section>
+
+      {/* 党勢の推移 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-3">📈 {t("党勢の推移")}</h2>
+        <ElectionTrendChart rows={trend} note={t("データ収集中（毎時更新）")} />
+      </section>
+
+      {/* 注目の接戦区 */}
+      <section className="bg-panel border border-line rounded-2xl p-5">
+        <h2 className="font-bold mb-3">⚔️ {t("注目の接戦区")}（{t("当落線上")}）</h2>
+        <div className="space-y-2.5">
+          {closeRaces.map(({ r, last, next, margin }) => {
+            if (!last || !next) return null;
+            return (
+              <div key={r.districtId} className="flex items-center gap-2 text-sm">
+                <Link
+                  href={`/election/sangiin/district/${encodeURIComponent(r.districtId)}`}
+                  className="text-x hover:underline font-bold shrink-0 max-w-28 truncate"
+                >
+                  {r.districtId}
+                </Link>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Avatar name={last.name ?? ""} avatarUrl={last.avatar_url} size={20} />
+                  <span className="truncate">{last.name}</span>
+                  <span className="font-black shrink-0">{fmtScore(last.score)}</span>
+                </div>
+                <span className="text-mut text-xs shrink-0">vs</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Avatar name={next.name ?? ""} avatarUrl={next.avatar_url} size={20} />
+                  <span className="truncate">{next.name}</span>
+                  <span className="shrink-0 text-mut">{fmtScore(next.score)}</span>
+                </div>
+                <span className="ml-auto text-xs text-mut shrink-0">{t("差 {n}pt", { n: fmtScore(margin) })}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-xs text-mut mt-3">{t("各選挙区の「最後の当選枠」と「次点」の差が小さい順。")}</p>
       </section>
 
       {/* 地図 */}

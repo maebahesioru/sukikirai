@@ -83,3 +83,12 @@ export async function getPersonSangiinElection(personId: string): Promise<Person
   const me = rows[idx];
   return { ...e, score: me.score, likes: me.likes, dislikes: me.dislikes, rank: idx + 1, total: rows.length };
 }
+
+/** 参院の党勢推移（スナップショット） */
+export async function getSangiinTrend(): Promise<
+  { day: string; hour: number; party_id: string; seats: number }[]
+> {
+  return await sql<{ day: string; hour: number; party_id: string; seats: number }>(
+    `SELECT day, hour, party_id, seats FROM sangiin_snapshots ORDER BY day, hour`
+  );
+}

@@ -26,6 +26,9 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
   const [mail, setMail] = useState("");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
+  const [delId, setDelId] = useState("");
+  const [delKey, setDelKey] = useState("");
 
   const count = charCount(content);
   const over = count > MAX_COMMENT_CHARS;
@@ -54,6 +57,14 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
       });
       const data = await res.json();
       if (data.success) {
+        if (data.deleteKey && data.post?.id) {
+          try {
+            localStorage.setItem(`sk-metadelkey-${data.post.id}`, data.deleteKey);
+          } catch {
+            /* noop */
+          }
+          setIssuedKey({ id: data.post.id, key: data.deleteKey });
+        }
         // 最新一覧を取り直す（ID表示はサーバー側で計算されるため）
         const r2 = await fetch("/api/meta");
         const d2 = await r2.json();
@@ -66,6 +77,38 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
       }
     } catch {
       alert(t("書き込みに失敗しました"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const del = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!delId.trim() || !delKey.trim()) {
+      alert(t("投稿IDと削除キーを入力してください"));
+      return;
+    }
+    if (!confirm(t("この投稿を削除しますか？"))) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/meta", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: delId.trim(), deleteKey: delKey.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const r2 = await fetch("/api/meta");
+        const d2 = await r2.json();
+        if (d2.success) setPosts(d2.posts);
+        setDelId("");
+        setDelKey("");
+        alert(t("投稿を削除しました"));
+      } else {
+        alert(data.error || t("削除できませんでした"));
+      }
+    } catch {
+      alert(t("削除できませんでした"));
     } finally {
       setBusy(false);
     }
@@ -93,6 +136,15 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
                 <span className="font-bold text-txt text-sm"><EmojiText text={p.name || t("名無しさん")} /></span>
                 <span>{fmtTime2ch(p.created_at)}</span>
                 <span className="font-mono text-[11px]">ID:{p.anon_id}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(p.id).then(() => alert(t("投稿IDをコピーしました"))).catch(() => {});
+                  }}
+                  className="text-[11px] text-mut hover:text-x underline"
+                >
+                  {t("IDをコピー")}
+                </button>
               </div>
               <TranslateBox text={p.content} variant="plain" className="text-sm whitespace-pre-wrap break-words leading-relaxed" />
               <LinkEmbeds text={p.content} />
@@ -139,6 +191,46 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPost[] 
           </button>
         </div>
       </form>
+
+      {issuedKey && (
+        <div className="mt-4 bg-good/10 border border-good/40 rounded-xl p-4 text-sm">
+          <div className="font-bold mb-1">{t("投稿しました。削除キーはこちら:")}</div>
+          <div className="font-mono text-lg tracking-wider">{issuedKey.key}</div>
+          <div className="text-xs text-mut mt-1">{t("このキーで後から投稿を削除できます。メモ推奨。")}</div>
+        </div>
+      )}
+
+      <details className="mt-4">
+        <summary className="text-xs text-mut cursor-pointer hover:text-txt">
+          {t("投稿を削除（削除キー方式）")}
+        </summary>
+        <form onSubmit={del} className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+          <input
+            type="text"
+            value={delId}
+            onChange={(e) => setDelId(e.target.value)}
+            placeholder={t("投稿ID")}
+            className="px-3 py-2 rounded-lg border border-line text-sm font-mono focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+          <input
+            type="text"
+            value={delKey}
+            onChange={(e) => setDelKey(e.target.value)}
+            placeholder={t("削除キー")}
+            className="px-3 py-2 rounded-lg border border-line text-sm font-mono focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+          <button
+            type="submit"
+            disabled={busy || !delId.trim() || !delKey.trim()}
+            className="px-4 py-2 rounded-lg bg-panel2 border border-line text-sm font-bold hover:border-line2 transition disabled:opacity-50"
+          >
+            {t("削除する")}
+          </button>
+        </form>
+        <p className="text-[11px] text-mut mt-2">
+          {t("投稿IDは各投稿の「IDをコピー」から。投稿時に発行される削除キーとセットで本人削除できます。")}
+        </p>
+      </details>
     </section>
   );
 }

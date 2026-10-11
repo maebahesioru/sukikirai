@@ -67,6 +67,17 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
+    // 対象ページ単位の時間・日上限（外部からの組織的な一斉投票対策・2026-10-11）
+    // 「1IP1票ずつ大量に来る波」はIP系上限では防げないため、ページ単位で集計して締める
+    if (
+      !rateLimit(`vote:targethour:${person.id}`, 30, 60 * 60 * 1000) ||
+      !rateLimit(`vote:targetday:${person.id}`, 200, 24 * 60 * 60 * 1000)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "この人物への投票が集中しています。時間をおいてお試しください" },
+        { status: 429 }
+      );
+    }
     if (person.x_status && person.x_status !== "ok") {
       return NextResponse.json({ success: false, error: "投票できません" }, { status: 403 });
     }

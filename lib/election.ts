@@ -1,7 +1,8 @@
 // ツイッタラー衆院選 議席計算（2026-10-10）
-// 小選挙区=スコア1位 / 比例=党のブロック得票でドント式→党内名簿順（比例復活あり）
+// 小選挙区=スコア1位 / 比例=党のブロック得票でサン＝ラグ方式→党内名簿順（比例復活あり）
 
 import { BLOCKS } from "@/data/election";
+import { sainteLague } from "./sangiin";
 
 export type ElectionEntryRow = {
   person_id: string;
@@ -93,7 +94,7 @@ export function computeElection(entries: ElectionEntryRow[]): ElectionOutcome {
       if (e.block_id !== b.id) continue;
       partyTotals[e.party_id] = (partyTotals[e.party_id] ?? 0) + e.score;
     }
-    const partySeats = dhondt(partyTotals, b.seats);
+    const partySeats = sainteLague(partyTotals, b.seats);
     const proportional: BlockOutcome["proportional"] = [];
     for (const [partyId, n] of Object.entries(partySeats)) {
       const list = entries

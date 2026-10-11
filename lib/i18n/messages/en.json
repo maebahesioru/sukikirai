@@ -1,4 +1,6 @@
 {
+ "党の得票（党員の好き+1・嫌い-0.5の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Seats are allocated by the Sainte-Laguë method using each party's votes (sum of members' likes +1 and dislikes −0.5). Winners are taken from the top of the list (district winners are excluded from lists).",
+ "比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（176議席）": "Proportional: seats allocated by Sainte-Laguë using party votes per block → winners taken in list order. Even if you lose your district, a high list position can win you a revival seat (176 seats)",
  "運営: ヒカマーの十時間_mania（@maebahesioru2）｜※無法地帯です。投稿はすべてそのまま掲載され、削除・非表示は行いません。": "Operator: ヒカマーの十時間_mania (@maebahesioru2) | * A lawless zone. All posts are published as-is; we do not delete or hide anything.",
  "第4条（コンテンツの取り扱い）": "Article 4 (Content handling)",
  "当サイトは匿名・無法地帯です。ユーザーが投稿したコンテンツはそのまま掲載され、運営者が内容を削除・非表示にすることはありません。": "This site is an anonymous lawless zone. User posts are published as-is; the operators will not delete or hide content.",

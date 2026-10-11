@@ -52,6 +52,17 @@ function ElectionTabs({ active, t }: { active: "shu" | "san"; t: (s: string) => 
   );
 }
 
+/** イベントの位置づけ明記（2026-10-12）: 現実の政治・思想・選挙区・出来事とは無関係のお遊び企画 */
+function ElectionNotice({ t }: { t: (s: string) => string }) {
+  return (
+    <div className="bg-panel2 border border-line rounded-xl px-4 py-3 text-xs text-mut leading-relaxed">
+      {t(
+        "※ このイベントは運営の自己満によるお遊び企画です。実在の政党・政治家・選挙制度・選挙区・時事問題とは一切関係がなく、特定の思想や政治的立場を支持・表現するものではありません。"
+      )}
+    </div>
+  );
+}
+
 export default async function ElectionPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const t = await getServerT();
   const { tab } = await searchParams;
@@ -61,6 +72,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
     return (
       <div className="space-y-5">
         <ElectionTabs active="san" t={t} />
+        <ElectionNotice t={t} />
         <SangiinHub />
       </div>
     );
@@ -112,6 +124,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-5">
       <ElectionTabs active="shu" t={t} />
+      <ElectionNotice t={t} />
       {/* ヘッダー */}
       <section className="relative overflow-hidden bg-panel border border-line rounded-2xl p-6">
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-x/10 blur-3xl" />

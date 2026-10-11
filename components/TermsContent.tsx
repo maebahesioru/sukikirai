@@ -17,6 +17,11 @@ export default function TermsContent() {
             { site: t(SITE_NAME) }
           )}
         </p>
+        <p className="mt-1 text-mut">
+          {t(
+            "※ 期間限定イベント（ツイッタラー衆院選・参院選）は運営の自己満によるお遊び企画です。実在の政党・政治家・思想・選挙区・時事問題とは一切関係がなく、特定の立場を支持するものではありません。"
+          )}
+        </p>
       </section>
 
       <section>

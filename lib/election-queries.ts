@@ -223,6 +223,26 @@ export async function assignSangiinEntry(personId: string): Promise<void> {
   }
 }
 
+/** 新規人物をランダムに衆院/参院のどちらかへ配属（現在の人口比で抽選）— 2026-10-11 */
+export async function assignRandomHouse(personId: string): Promise<void> {
+  try {
+    const [e, g] = await Promise.all([
+      sql<{ n: string }>(`SELECT count(*)::text AS n FROM election_entries`),
+      sql<{ n: string }>(`SELECT count(*)::text AS n FROM sangiin_entries`),
+    ]);
+    const ne = parseInt(e[0]?.n ?? "1", 10) || 1;
+    const ng = parseInt(g[0]?.n ?? "1", 10) || 1;
+    const pShu = ne / (ne + ng);
+    if (Math.random() < pShu) {
+      await assignElectionEntry(personId);
+    } else {
+      await assignSangiinEntry(personId);
+    }
+  } catch {
+    /* 選挙テーブル未作成等は無視 */
+  }
+}
+
 /** 新規人物の選挙割り当て（プロフの都道府県/政党記載を優先・なければ最少人数の区/党・名簿末尾に追加）— 2026-10-11更新 */
 export async function assignElectionEntry(personId: string): Promise<void> {
   try {

@@ -4,7 +4,7 @@ import { sql, sql1, withTx, jstDayStart } from "./db";
 import { EVAL_KEYS, DEFAULT_CATEGORY, SOUSENKYO } from "./constants";
 import { isSpamContent, calculateSimilarity } from "./spam-filter";
 import { fetchFxUser } from "./fxtwitter";
-import { assignElectionEntry } from "./election-queries";
+import { assignRandomHouse } from "./election-queries";
 import { anonId } from "./bbs2ch";
 import type {
   CommentRow,
@@ -977,7 +977,7 @@ export async function addPersonFromX(
     return r.rows[0];
   });
 
-  if (person) await assignElectionEntry(person.id);
+  if (person) await assignRandomHouse(person.id);
   return { person, created: true };
 }
 
@@ -1605,7 +1605,7 @@ export async function adminCreatePerson(input: {
       input.related,
     ]
   );
-  if (person) await assignElectionEntry(person.id);
+  if (person) await assignRandomHouse(person.id);
   return person ? { ok: true, person } : { ok: false, error: "作成に失敗しました" };
 }
 

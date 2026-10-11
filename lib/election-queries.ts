@@ -108,18 +108,47 @@ async function getElectionEntriesByDistrictForPerson(
   };
 }
 
-/** プロフから都道府県を検出（プロフ・リンク欄の記載→確定配属に使用）— 2026-10-11 */
-const PREF_CITIES: Record<string, string> = {
-  札幌: "北海道", 仙台: "宮城", さいたま: "埼玉", 横浜: "神奈川", 川崎: "神奈川", 相模原: "神奈川",
-  名古屋: "愛知", 堺: "大阪", 神戸: "兵庫", 北九州: "福岡", 那覇: "沖縄", 金沢: "石川", 大津: "滋賀",
-  高松: "香川", 松山: "愛媛", 長崎: "長崎", 大分: "大分", 宮崎: "宮崎", 鹿児島: "鹿児島", 松江: "島根",
-  鳥取: "鳥取", 山口: "山口", 徳島: "徳島", 奈良: "奈良", 和歌山: "和歌山", 甲府: "山梨", 富山: "富山",
-  福井: "福井", 岐阜: "岐阜", 長野: "長野", 水戸: "茨城", 宇都宮: "栃木", 前橋: "群馬", 盛岡: "岩手",
-  秋田: "秋田", 山形: "山形", 福島: "福島", 青森: "青森", 静岡: "静岡", 浜松: "静岡", 新潟: "新潟",
-  熊本: "熊本", 広島: "広島", 岡山: "岡山", 大阪: "大阪",
+/** プロフから都道府県を検出（プロフ・リンク欄の記載→確定配属に使用）— 2026-10-11
+ * 市区町村1,891件（data/municipalities.json）＋都道府県＋地方の3段判定 */
+import municipalitiesData from "@/data/municipalities.json";
+import { prefToSangiinDistrict } from "@/data/sangiin";
+
+const MUNI: Record<string, string> = municipalitiesData.cities as Record<string, string>;
+const REGIONS: Record<string, string[]> = {
+  関東: ["茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県"],
+  関西: ["滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県"],
+  近畿: ["滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県"],
+  東海: ["岐阜県", "静岡県", "愛知県", "三重県"],
+  東北: ["青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県"],
+  九州: ["福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県"],
+  四国: ["徳島県", "香川県", "愛媛県", "高知県"],
+  中国: ["鳥取県", "島根県", "岡山県", "広島県", "山口県"],
+  北陸: ["富山県", "石川県", "福井県"],
+  甲信越: ["山梨県", "長野県", "新潟県"],
 };
+
+function normalizePref(p: string): string {
+  if (p === "北海道") return "北海道";
+  if (p === "東京" || p === "東京都") return "東京都";
+  if (p === "京都" || p === "京都府") return "京都府";
+  if (p === "大阪" || p === "大阪府") return "大阪府";
+  if (p.endsWith("県") || p.endsWith("府") || p.endsWith("都")) return p;
+  return `${p}県`;
+}
+
+export function detectPref(text: string): string | null {
+  for (const [c, p] of Object.entries(MUNI)) if (text.includes(c)) return normalizePref(p);
+  for (const p of PREF_NAMES) if (text.includes(p)) return normalizePref(p);
+  return null;
+}
+
 const PREF_NAMES =
   "北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|東京|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|京都|大阪|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄".split("|");
+
+export function detectRegion(text: string): string[] | null {
+  for (const [r, plist] of Object.entries(REGIONS)) if (text.includes(r)) return plist;
+  return null;
+}
 /** 政党・思想ワード→党（優先順） */
 const PARTY_RULES: [string, string[]][] = [
   ["kyosan", ["共産", "マルクス"]],
@@ -132,15 +161,66 @@ const PARTY_RULES: [string, string[]][] = [
   ["jiyuu", ["リバタリアン", "自由主義"]],
 ];
 
-export function detectPref(text: string): string | null {
-  for (const [c, p] of Object.entries(PREF_CITIES)) if (text.includes(c)) return p;
-  for (const p of PREF_NAMES) if (text.includes(p)) return p;
-  return null;
-}
-
 export function detectParty(text: string): string | null {
   for (const [pid, kws] of PARTY_RULES) for (const kw of kws) if (text.includes(kw)) return pid;
   return null;
+}
+
+/** 参院選の新規人物割り当て（区/比例60:40・プロフ確定配属連動）— 2026-10-11 */
+export async function assignSangiinEntry(personId: string): Promise<void> {
+  try {
+    const exists = await sql(`SELECT 1 FROM sangiin_entries WHERE person_id = $1`, [personId]);
+    if (exists.length > 0) return;
+    const pr = await sql<{ text: string }>(
+      `SELECT COALESCE(x_description,'') || ' ' || COALESCE(description,'') || ' ' || COALESCE(x_website,'') AS text FROM people WHERE id = $1`,
+      [personId]
+    );
+    const text = pr[0]?.text ?? "";
+    let h = 0;
+    for (let i = 0; i < personId.length; i++) h = (h * 31 + personId.charCodeAt(i)) >>> 0;
+    const isDistrict = h % 5 < 3; // 60% 選挙区 / 40% 比例
+    const partyRow = await sql<{ party_id: string }>(`SELECT party_id FROM election_entries WHERE person_id = $1`, [personId]);
+    const partyFallback = await sql<{ party_id: string }>(
+      `SELECT party_id FROM sangiin_entries GROUP BY party_id ORDER BY count(*) ASC, party_id ASC LIMIT 1`
+    );
+    const partyId = partyRow[0]?.party_id ?? partyFallback[0]?.party_id ?? "jiyuu";
+    if (isDistrict) {
+      const pref = detectPref(text);
+      const region = pref ? null : detectRegion(text);
+      let districtId: string | null = null;
+      if (pref) {
+        districtId = prefToSangiinDistrict(pref);
+      } else if (region) {
+        const likes = region.map((p) => `district_id LIKE '${prefToSangiinDistrict(p)}'`).join(" OR ");
+        const r = await sql<{ district_id: string }>(
+          `SELECT district_id FROM sangiin_entries WHERE seat_type = 'district' AND (${likes}) GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`
+        );
+        districtId = r[0]?.district_id ?? null;
+      }
+      if (!districtId) {
+        const r = await sql<{ district_id: string }>(
+          `SELECT district_id FROM sangiin_entries WHERE seat_type = 'district' GROUP BY district_id ORDER BY count(*) ASC, district_id ASC LIMIT 1`
+        );
+        districtId = r[0]?.district_id ?? null;
+      }
+      if (!districtId) return;
+      await sql(
+        `INSERT INTO sangiin_entries (person_id, district_id, seat_type, party_id, list_rank)
+         SELECT $1, $2, 'district', $3, COALESCE(MAX(list_rank), 0) + 1 FROM sangiin_entries WHERE district_id = $2
+         ON CONFLICT (person_id) DO NOTHING`,
+        [personId, districtId, partyId]
+      );
+    } else {
+      await sql(
+        `INSERT INTO sangiin_entries (person_id, district_id, seat_type, party_id, list_rank)
+         SELECT $1, '比例', 'proportional', $2, COALESCE(MAX(list_rank), 0) + 1 FROM sangiin_entries WHERE party_id = $2 AND seat_type = 'proportional'
+         ON CONFLICT (person_id) DO NOTHING`,
+        [personId, partyId]
+      );
+    }
+  } catch {
+    /* 選挙テーブル未作成等は無視 */
+  }
 }
 
 /** 新規人物の選挙割り当て（プロフの都道府県/政党記載を優先・なければ最少人数の区/党・名簿末尾に追加）— 2026-10-11更新 */

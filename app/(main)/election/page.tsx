@@ -108,6 +108,21 @@ export default async function ElectionPage() {
         </div>
       </section>
 
+      {/* 参院選へのリンク */}
+      <section className="bg-panel border border-line rounded-2xl p-5 flex items-center gap-3">
+        <span className="text-2xl">🏛️</span>
+        <div className="min-w-0">
+          <div className="font-bold">{t("参院選も同時開催中")}</div>
+          <p className="text-xs text-mut mt-0.5">{t("45選挙区+比例100・計248議席。同じ1票が両方に反映されます。")}</p>
+        </div>
+        <Link
+          href="/election/sangiin"
+          className="ml-auto shrink-0 text-sm font-bold px-3 py-1.5 rounded-full bg-xsoft text-x border border-x/40 hover:opacity-80 transition"
+        >
+          {t("参院選を見る →")}
+        </Link>
+      </section>
+
       {/* 議席グラフ */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-4">📊 {t("議席グラフ")}</h2>

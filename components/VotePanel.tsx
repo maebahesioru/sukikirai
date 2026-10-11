@@ -149,9 +149,23 @@ export default function VotePanel({
         {t("{name}のことは…好き？嫌い？", { name: personName })}
       </h2>
 
+      {/* 票数・バーは常時公開（SEO: クローラーにも見せる・2026-10-11） */}
+      <div className="flex justify-between mb-2 text-sm font-bold">
+        <span className="text-like">
+          {t("好き {n}票（{pct}%）", { n: likes, pct: likePct.toFixed(1) })}
+        </span>
+        <span className="text-dislike">
+          {t("嫌い {n}票（{pct}%）", { n: dislikes, pct: (100 - likePct).toFixed(1) })}
+        </span>
+      </div>
+      <div className="w-full bg-panel2 rounded-full h-4 overflow-hidden flex border border-line">
+        <div className="bg-gradient-to-r from-like to-pink-500 h-full bar-anim" style={{ width: `${likePct}%` }} />
+        <div className="bg-gradient-to-r from-indigo-500 to-dislike h-full bar-anim" style={{ width: `${100 - likePct}%` }} />
+      </div>
+
       {!voted ? (
         <>
-          <p className="text-center text-mut text-sm mb-5">
+          <p className="text-center text-mut text-sm mb-5 mt-4">
             {t("投票すると、みんなのコメントが読めるようになり、8項目評価を書き込めます")}
           </p>
           {lastVote && (
@@ -194,19 +208,7 @@ export default function VotePanel({
           </label>
         </>
       ) : (
-        <div>
-          <div className="flex justify-between mb-2 text-sm font-bold">
-            <span className="text-like">
-              {t("好き {n}票（{pct}%）", { n: likes, pct: likePct.toFixed(1) })}
-            </span>
-            <span className="text-dislike">
-              {t("嫌い {n}票（{pct}%）", { n: dislikes, pct: (100 - likePct).toFixed(1) })}
-            </span>
-          </div>
-          <div className="w-full bg-panel2 rounded-full h-4 overflow-hidden flex border border-line">
-            <div className="bg-gradient-to-r from-like to-pink-500 h-full bar-anim" style={{ width: `${likePct}%` }} />
-            <div className="bg-gradient-to-r from-indigo-500 to-dislike h-full bar-anim" style={{ width: `${100 - likePct}%` }} />
-          </div>
+        <>
           <p className="text-center text-sm mt-4">
             {t("あなたは「")}
             <span className={voteType === "like" ? "text-like font-bold" : "text-dislike font-bold"}>
@@ -221,7 +223,7 @@ export default function VotePanel({
               <span className="text-xs text-mut">{t("明日も投票すると継続します")}</span>
             </p>
           )}
-        </div>
+        </>
       )}
     </section>
   );

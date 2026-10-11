@@ -13,6 +13,7 @@ import CommentSection from "@/components/CommentSection";
 import type { EvalStats, Person, PollWithOptions, VoteStats } from "@/lib/types";
 import { useT } from "@/lib/i18n-client";
 import TranslateBox from "@/components/TranslateBox";
+import { fmtTime2ch } from "@/lib/format";
 
 type RankInfo = { rank: number; total: number } | null;
 
@@ -31,6 +32,8 @@ export default function PersonClient({
   likeRank,
   election,
   sangiin,
+  commentsPreview,
+  commentsTotal,
 }: {
   person: Person;
   voteStats: VoteStats;
@@ -66,6 +69,8 @@ export default function PersonClient({
     rank: number;
     total: number;
   } | null;
+  commentsPreview: { id: string; name: string | null; content: string; created_at: string; replies: { id: string; name: string | null; content: string; created_at: string }[] }[];
+  commentsTotal: number;
 }) {
   const t = useT();
   const [voteInfo, setVoteInfo] = useState<VoteInfo>({
@@ -330,8 +335,43 @@ export default function PersonClient({
         </section>
       )}
 
+      {/* コメント（SEO: 未投票者には最新5件を公開=lead-in。クローラーには全件） */}
+      {!voted && commentsPreview.length > 0 && (
+        <section className="bg-panel border border-line rounded-2xl p-5">
+          <h2 className="font-bold mb-3">
+            💬 {t("コメント（{n}）", { n: commentsTotal })}
+          </h2>
+          <div className="space-y-3">
+            {commentsPreview.map((c) => (
+              <div key={c.id} className="text-sm">
+                <div className="flex items-center gap-2 text-xs text-mut mb-0.5">
+                  <span className="font-bold text-txt">{c.name || t("名無しさん")}</span>
+                  <span>{fmtTime2ch(c.created_at)}</span>
+                </div>
+                <p className="whitespace-pre-wrap break-words leading-relaxed">{c.content}</p>
+                {c.replies.map((r) => (
+                  <div key={r.id} className="ml-5 mt-2 pl-3 border-l-2 border-line text-sm">
+                    <div className="flex items-center gap-2 text-xs text-mut mb-0.5">
+                      <span className="font-bold text-txt">{r.name || t("名無しさん")}</span>
+                      <span>{fmtTime2ch(r.created_at)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap break-words leading-relaxed">{r.content}</p>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          {commentsTotal > commentsPreview.length && (
+            <p className="text-xs text-mut mt-3">
+              {t("投票すると、続き（全{n}件）と返信が読めます。", { n: commentsTotal })}
+            </p>
+          )}
+        </section>
+      )}
       {/* コメント */}
-      <CommentSection personId={person.id} personName={person.name} hasVoted={voted} myVoteType={voteInfo.voteType} archived={archived} />
+      <div className="gated-comments">
+        <CommentSection personId={person.id} personName={person.name} hasVoted={voted} myVoteType={voteInfo.voteType} archived={archived} />
+      </div>
     </div>
   );
 }

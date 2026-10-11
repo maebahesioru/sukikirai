@@ -21,6 +21,9 @@ import {
 } from "@/lib/queries";
 import { SOUSENKYO } from "@/lib/constants";
 import { getPersonElection } from "@/lib/election-queries";
+import { isCrawler } from "@/lib/bot-verify";
+import { getComments } from "@/lib/queries";
+import type { CommentWithReplies } from "@/lib/types";
 import { getPersonSangiinElection } from "@/lib/sangiin-queries";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { maybeRefreshPersonProfile } from "@/lib/xsync";
@@ -37,17 +40,28 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = await getPerson(decodeURIComponent(id));
   if (!p || p.is_hidden) return { title: "人物が見つかりません" };
   const archived = !!p.x_status && p.x_status !== "ok";
+  // SEO: 票数スタッツをタイトル・説明文に反映（クリック率・スニペット強化）
+  let statLine = "";
+  try {
+    const vs = await getVoteStats(p.id);
+    if (vs && vs.total > 0) {
+      const likePct = Math.round((vs.likes / vs.total) * 100);
+      statLine = `好き${likePct}%・嫌い${100 - likePct}%（${vs.total}票）`;
+    }
+  } catch {
+    /* スタッツ取得失敗は無視 */
+  }
+  const bio = p.x_description || p.description || "";
   return {
-    title: `${p.name}の評価・好き嫌い`,
+    title: statLine ? `${p.name}の評価・好き嫌い｜${statLine}` : `${p.name}の評価・好き嫌い`,
     description:
-      p.x_description ||
-      p.description ||
+      [statLine, bio].filter(Boolean).join(" ").slice(0, 320) ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
     alternates: { canonical: localePath(locale, `/person/${p.id}`) },
     ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,
-      description: p.x_description || p.description || undefined,
+      description: [statLine, bio].filter(Boolean).join(" ").slice(0, 200) || undefined,
     },
   };
 }
@@ -89,6 +103,27 @@ export default async function PersonPage({ params }: Params) {
   const sousenkyoRank =
     sousenkyoRankRaw !== null && sousenkyoRankRaw <= 10 ? sousenkyoRankRaw : null;
 
+  // SEO: コメントプレビュー（ユーザー=最新5件 / クローラー=全件）＋ペイウォール宣言
+  let previewComments: CommentWithReplies[] = [];
+  let previewTotal = 0;
+  try {
+    const isBot = await isCrawler();
+    const first = await getComments(person.id, { perPage: isBot ? 100 : 5, page: 1 });
+    previewTotal = first.total;
+    previewComments = first.comments;
+    if (isBot) {
+      let page = 2;
+      while (first.comments.length === 100 && previewComments.length < Math.min(previewTotal, 800) && page <= 9) {
+        const next = await getComments(person.id, { perPage: 100, page });
+        if (next.comments.length === 0) break;
+        previewComments = previewComments.concat(next.comments);
+        page++;
+      }
+    }
+  } catch {
+    /* 取得失敗時は空のまま */
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -127,6 +162,8 @@ export default async function PersonPage({ params }: Params) {
           initialStreak={streak}
           election={electionEntry}
           sangiin={sangiinEntry}
+          commentsPreview={previewComments}
+          commentsTotal={previewTotal}
           myEval={myEval}
           tagRanking={tagRanking}
           relatedPeople={relatedPeople}
@@ -138,6 +175,21 @@ export default async function PersonPage({ params }: Params) {
         <Sidebar trending={trending} recentComments={recent} />
       </div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            isAccessibleForFree: false,
+            hasPart: {
+              "@type": "WebPageElement",
+              isAccessibleForFree: false,
+              cssSelector: ".gated-comments",
+            },
+          }),
+        }}
+      />
     </div>
   );
 }

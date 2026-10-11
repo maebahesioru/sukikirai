@@ -1,4 +1,12 @@
 {
+ "比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（211議席）": "Proporcional: escaños por Sainte-Laguë según votos por bloque → electos en orden de lista. Aunque pierdas tu distrito, una posición alta en la lista puede darte un escaño de revivificación (211 escaños)",
+ "47選挙区+比例100・計252議席。サン＝ラグ方式・非拘束名簿（党内は得票順）。": "45 distritos + 100 proporcionales, 252 escaños en total. Método Sainte-Laguë, lista abierta (orden interno por votos).",
+ "日本地図（47選挙区・最多当選の党で色分け）": "Mapa de Japón (45 distritos, color del partido con más escaños)",
+ "衆院選（289小選挙区+211比例）を見る": "Ver la elección de la Cámara Baja (289 + 211)",
+ "現在の集計: {n}議席 / 500議席": "Recuento actual: {n} / 500 escaños",
+ "289選挙区+211比例・10党で議席を争う2週間イベント": "Un evento de 2 semanas en el que 10 partidos compiten por 289 distritos + 211 escaños proporcionales",
+ "開催中！10/24(土)まで — 289選挙区+211比例・毎日投票で推しの議席を獲れ": "¡En curso hasta el 24/10 (sáb)! — 289 distritos + 211 proporcionales; vota a diario para ganar escaños para tu favorito",
+ "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で289選挙区+211比例を争います。": "Dos semanas del 10/10 (sáb) al 24/10 (sáb). Me gusta +1, no me gusta -0.5: compite por 289 distritos + 211 proporcionales.",
  "投票すると、続き（全{n}件）と返信が読めます。": "Vota para leer el resto (todos: {n}) y las respuestas.",
  "党の得票（党員の好き+1・嫌い-0.5の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Los escaños se reparten por el método Sainte-Laguë según los votos de cada partido (suma de me gusta +1 y no me gusta −0.5). Los ganadores se toman desde lo alto de la lista (los ganadores de distrito se excluyen).",
  "比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（176議席）": "Proporcional: escaños por Sainte-Laguë según votos por bloque → electos en orden de lista. Aunque pierdas tu distrito, una posición alta en la lista puede darte un escaño de revivificación (176 escaños)",

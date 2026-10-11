@@ -97,7 +97,7 @@ export default async function SangiinHub() {
           <div className="flex items-center gap-2 text-x text-sm font-bold mt-3">🏛️ {t("衆参同時選挙")}</div>
           <h1 className="text-3xl font-black mt-2">{t("第1回ツイッタラー参院選")}</h1>
           <p className="text-sm text-mut mt-2 leading-relaxed">
-            {t("45選挙区+比例100・計248議席。比例はサン＝ラグ方式・非拘束名簿（党内は得票順）。")}
+            {t("47選挙区+比例100・計252議席。比例はサン＝ラグ方式・非拘束名簿（党内は得票順）。")}
           </p>
           <p className="text-xs text-mut mt-1">
             {t("投票は、その人が立候補している選挙（衆院選または参院選）に反映されます。")}
@@ -176,7 +176,7 @@ export default async function SangiinHub() {
 
       {/* 地図 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
-        <h2 className="font-bold mb-3">🗾 {t("日本地図（45選挙区・最多当選の党で色分け）")}</h2>
+        <h2 className="font-bold mb-3">🗾 {t("日本地図（47選挙区・最多当選の党で色分け）")}</h2>
         <JapanElectionMap results={districtResults} />
       </section>
 
@@ -232,7 +232,7 @@ export default async function SangiinHub() {
       {/* 相互リンク */}
       <section className="bg-panel border border-line rounded-2xl p-5 text-center">
         <Link href="/election" className="text-x hover:underline font-bold">
-          🗳️ {t("衆院選（289小選挙区+176比例）を見る")}
+          🗳️ {t("衆院選（289小選挙区+211比例）を見る")}
         </Link>
       </section>
     </div>

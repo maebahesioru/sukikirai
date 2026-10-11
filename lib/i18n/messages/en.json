@@ -1,4 +1,12 @@
 {
+ "比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（211議席）": "Proportional: seats allocated by Sainte-Laguë using party votes per block → winners taken in list order. Even if you lose your district, a high list position can win you a revival seat (211 seats)",
+ "47選挙区+比例100・計252議席。サン＝ラグ方式・非拘束名簿（党内は得票順）。": "47 districts + 100 proportional, 252 seats total. Sainte-Laguë method, open list (intra-party order by votes).",
+ "日本地図（47選挙区・最多当選の党で色分け）": "Japan map (47 districts, colored by most-winning party)",
+ "衆院選（289小選挙区+211比例）を見る": "View the Lower House election (289 + 211)",
+ "現在の集計: {n}議席 / 500議席": "Current tally: {n} / 500 seats",
+ "289選挙区+211比例・10党で議席を争う2週間イベント": "A 2-week event where 289 districts + 211 proportional seats are contested by 10 parties",
+ "開催中！10/24(土)まで — 289選挙区+211比例・毎日投票で推しの議席を獲れ": "Live until 10/24 (Sat) — 289 districts + 211 proportional seats; vote daily to win seats for your favorite",
+ "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で289選挙区+211比例を争います。": "Two weeks from 10/10 (Sat) to 10/24 (Sat). Likes +1, dislikes -0.5 — fight for 289 districts + 211 proportional seats.",
  "投票すると、続き（全{n}件）と返信が読めます。": "Vote to read the rest (all {n}) and the replies.",
  "党の得票（党員の好き+1・嫌い-0.5の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Seats are allocated by the Sainte-Laguë method using each party's votes (sum of members' likes +1 and dislikes −0.5). Winners are taken from the top of the list (district winners are excluded from lists).",
  "比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（176議席）": "Proportional: seats allocated by Sainte-Laguë using party votes per block → winners taken in list order. Even if you lose your district, a high list position can win you a revival seat (176 seats)",

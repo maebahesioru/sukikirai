@@ -126,7 +126,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
             )}
           </p>
           <p className="text-xs text-mut mt-2">
-            {t("現在の集計: {n}議席 / 465議席", { n: num(totalElected) })}
+            {t("現在の集計: {n}議席 / 500議席", { n: num(totalElected) })}
             {phase === "live" && <span className="ml-2">（{t("現時点の情勢・随時更新")}）</span>}
           </p>
           <p className="text-xs text-mut mt-1">
@@ -284,7 +284,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
           <li>{t("全登録ユーザーが289小選挙区のどれか・10党のどれかにランダム配属（名簿順位もランダム）")}</li>
           <li>{t("得票 = 期間中の「好き」+1票、「嫌い」-0.5票（毎日投票できるほど有利）")}</li>
           <li>{t("小選挙区 = 1位が当選（289議席）")}</li>
-          <li>{t("比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（176議席）")}</li>
+          <li>{t("比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（211議席）")}</li>
           <li>{t("期間終了（10/24 23:59）時点の数字で確定します")}</li>
         </ul>
       </section>

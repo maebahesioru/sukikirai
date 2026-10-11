@@ -1,7 +1,7 @@
 // ツイッタラー衆院選 基礎データ（2026-10-10・2022年区割り/現行定数・Wikipediaで検算済み）
 
 export const ELECTION_BASE = {
-  totalSeats: 465,
+  totalSeats: 500,
   districtSeats: 289,
   proportionalSeats: 176,
 } as const;
@@ -9,17 +9,17 @@ export const ELECTION_BASE = {
 export type Block = { id: string; name: string; seats: number };
 
 export const BLOCKS: Block[] = [
-  { id: "hokkaido", name: "北海道", seats: 8 },
-  { id: "tohoku", name: "東北", seats: 12 },
-  { id: "kitakanto", name: "北関東", seats: 19 },
-  { id: "minamikanto", name: "南関東", seats: 23 },
-  { id: "tokyo", name: "東京", seats: 19 },
-  { id: "hokurikushinetsu", name: "北陸信越", seats: 10 },
-  { id: "tokai", name: "東海", seats: 21 },
-  { id: "kinki", name: "近畿", seats: 28 },
-  { id: "chugoku", name: "中国", seats: 10 },
-  { id: "shikoku", name: "四国", seats: 6 },
-  { id: "kyushu", name: "九州", seats: 20 },
+  { id: "hokkaido", name: "北海道", seats: 10 },
+  { id: "tohoku", name: "東北", seats: 14 },
+  { id: "kitakanto", name: "北関東", seats: 23 },
+  { id: "minamikanto", name: "南関東", seats: 28 },
+  { id: "tokyo", name: "東京", seats: 23 },
+  { id: "hokurikushinetsu", name: "北陸信越", seats: 12 },
+  { id: "tokai", name: "東海", seats: 25 },
+  { id: "kinki", name: "近畿", seats: 33 },
+  { id: "chugoku", name: "中国", seats: 12 },
+  { id: "shikoku", name: "四国", seats: 7 },
+  { id: "kyushu", name: "九州", seats: 24 },
 ];
 
 export type Pref = { name: string; districts: number; blockId: string };

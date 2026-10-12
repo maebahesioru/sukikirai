@@ -10,6 +10,7 @@ import {
   Send,
   Share2,
   Trash2,
+  Link2,
 } from "lucide-react";
 import type { CommentRow, CommentWithReplies } from "@/lib/types";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
@@ -52,13 +53,42 @@ export default function CommentSection({
   const [sort, setSort] = useState<SortType>("newest");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [hiddenIds, setHiddenIds] = useState<string[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
   const t = useT();
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQ(q.trim()), 400);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  useEffect(() => {
+    try {
+      setHiddenIds(JSON.parse(localStorage.getItem("hiddenComments") ?? "[]"));
+    } catch {
+      setHiddenIds([]);
+    }
+  }, []);
+
+  const toggleHide = useCallback((id: string) => {
+    setHiddenIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem("hiddenComments", JSON.stringify(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  }, []);
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/comments?personId=${encodeURIComponent(personId)}&filter=${filter}&sort=${sort}&page=${page}`
+        `/api/comments?personId=${encodeURIComponent(personId)}&filter=${filter}&sort=${sort}&page=${page}${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ""}`
       );
       const data = await res.json();
       if (data.success) {
@@ -70,7 +100,7 @@ export default function CommentSection({
     } finally {
       setLoading(false);
     }
-  }, [personId, filter, sort, page]);
+  }, [personId, filter, sort, page, debouncedQ]);
 
   useEffect(() => {
     if (hasVoted || archived) fetchComments();
@@ -87,18 +117,41 @@ export default function CommentSection({
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
+  const visibleComments = comments.filter((c) => showHidden || !hiddenIds.includes(c.id));
+  const hiddenCount = comments.filter((c) => hiddenIds.includes(c.id)).length;
+
   const list = (
     <>
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
-        {comments.map((c) => (
-          <CommentItem key={c.id} comment={c} myVoteType={myVoteType} onUpdate={fetchComments} locked={archived} personName={personName} />
+        {visibleComments.map((c) => (
+          <CommentItem
+            key={c.id}
+            comment={c}
+            myVoteType={myVoteType}
+            onUpdate={fetchComments}
+            locked={archived}
+            personName={personName}
+            hiddenIds={hiddenIds}
+            showHidden={showHidden}
+            onHide={toggleHide}
+          />
         ))}
-        {comments.length === 0 && !loading && (
+        {visibleComments.length === 0 && !loading && (
           <p className="text-center text-mut py-8 text-sm">
-            {archived ? t("コメントはありません") : t("まだコメントがありません。最初のコメントを書いてみよう！")}
+            {debouncedQ ? t("一致するコメントがありません") : archived ? t("コメントはありません") : t("まだコメントがありません。最初のコメントを書いてみよう！")}
           </p>
         )}
       </div>
+
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowHidden(!showHidden)}
+          className="mt-3 text-xs text-mut hover:text-txt underline"
+        >
+          {showHidden ? t("非表示のレス（{n}件）を隠す", { n: hiddenCount }) : t("非表示のレス（{n}件）を表示", { n: hiddenCount })}
+        </button>
+      )}
 
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 mt-6">
@@ -178,6 +231,16 @@ export default function CommentSection({
           >
             {t("人気順")}
           </button>
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+            placeholder={t("レス内検索…")}
+            className="w-36 px-3 py-1.5 rounded-full border border-line text-xs focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
         </div>
       </div>
 
@@ -227,6 +290,7 @@ function CommentForm({
   const [tweet, setTweet] = useState(true);
   const [busy, setBusy] = useState(false);
   const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
+  const [preview, setPreview] = useState(false);
   const t = useT();
 
   // 自分の投票（好き/嫌い）が判明しているときはデフォルトを合わせる（手動変更後は尊重）
@@ -386,13 +450,43 @@ function CommentForm({
       </div>
 
       <div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("コメントを入力...（全角500文字まで）")}
-          rows={parentNumber ? 3 : 4}
-          className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
-        />
+        <div className="flex gap-2 text-xs mb-1.5">
+          <button
+            type="button"
+            onClick={() => setPreview(false)}
+            className={`px-3 py-1 rounded-full border transition font-medium ${
+              !preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+            }`}
+          >
+            {t("書く")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreview(true)}
+            className={`px-3 py-1 rounded-full border transition font-medium ${
+              preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+            }`}
+          >
+            {t("プレビュー")}
+          </button>
+        </div>
+        {preview ? (
+          <div className="min-h-[5rem] rounded-lg border border-line bg-panel px-3 py-2">
+            {content.trim() ? (
+              <CommentText content={content} className="text-sm" />
+            ) : (
+              <p className="text-xs text-mut">{t("プレビューする内容がありません")}</p>
+            )}
+          </div>
+        ) : (
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("コメントを入力...（全角500文字まで）")}
+            rows={parentNumber ? 3 : 4}
+            className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+        )}
         <div className="flex justify-between items-center mt-1">
           <p className="text-xs text-mut">{t("リンクは自動で埋め込み表示されます")}</p>
           <span className={`text-xs ${count > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
@@ -435,12 +529,18 @@ function CommentItem({
   onUpdate,
   locked = false,
   personName,
+  hiddenIds,
+  showHidden,
+  onHide,
 }: {
   comment: CommentWithReplies;
   myVoteType?: "like" | "dislike" | null;
   onUpdate: () => void;
   locked?: boolean;
   personName: string;
+  hiddenIds: string[];
+  showHidden: boolean;
+  onHide: (id: string) => void;
 }) {
   const [local, setLocal] = useState<CommentRow>(comment);
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
@@ -481,13 +581,8 @@ function CommentItem({
     }
   };
 
-  const hide = () => {
-    const hidden = JSON.parse(localStorage.getItem("hiddenComments") ?? "[]");
-    if (!hidden.includes(comment.id)) hidden.push(comment.id);
-    localStorage.setItem("hiddenComments", JSON.stringify(hidden));
-    onUpdate();
-    alert(t("コメントを非表示にしました"));
-  };
+  const isHidden = hiddenIds.includes(comment.id);
+  const hide = () => onHide(comment.id);
 
   const del = async () => {
     let key = "";
@@ -542,7 +637,7 @@ function CommentItem({
   };
 
   return (
-    <div id={`c${comment.comment_number}`} className="border border-line rounded-xl p-4">
+    <div id={`c${comment.comment_number}`} className={`border border-line rounded-xl p-4 ${isHidden ? "opacity-40" : ""}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 flex-wrap text-sm">
           <span className="text-mut text-xs">#{comment.comment_number}</span>
@@ -574,10 +669,26 @@ function CommentItem({
         </div>
         {!locked && (
           <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => {
+                navigator.clipboard
+                  ?.writeText(`${window.location.origin}/person/${comment.person_id}#c${comment.comment_number}`)
+                  .then(() => alert(t("レスへのリンクをコピーしました")))
+                  .catch(() => {});
+              }}
+              className="text-mut hover:text-x transition"
+              title={t("レスへのリンクをコピー")}
+            >
+              <Link2 className="w-4 h-4" />
+            </button>
             <button onClick={del} className="text-mut hover:text-bad transition" title={t("コメントを削除")}>
               <Trash2 className="w-4 h-4" />
             </button>
-            <button onClick={hide} className="text-mut hover:text-txt transition" title={t("非表示")}>
+            <button
+              onClick={hide}
+              className={`transition ${isHidden ? "text-x" : "text-mut hover:text-txt"}`}
+              title={isHidden ? t("非表示を解除") : t("非表示（あぼーん）")}
+            >
               <EyeOff className="w-4 h-4" />
             </button>
           </div>
@@ -624,11 +735,21 @@ function CommentItem({
         </button>
       </div>
 
-      {replies.length > 0 && (
+      {replies.filter((r) => showHidden || !hiddenIds.includes(r.id)).length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
-          {replies.map((r) => (
-            <ReplyItem key={r.id} reply={r} parentNumber={comment.comment_number} onUpdate={onUpdate} personName={personName} />
-          ))}
+          {replies
+            .filter((r) => showHidden || !hiddenIds.includes(r.id))
+            .map((r) => (
+              <ReplyItem
+                key={r.id}
+                reply={r}
+                parentNumber={comment.comment_number}
+                onUpdate={onUpdate}
+                personName={personName}
+                hiddenIds={hiddenIds}
+                onHide={onHide}
+              />
+            ))}
         </div>
       )}
 
@@ -655,11 +776,15 @@ function ReplyItem({
   parentNumber,
   onUpdate,
   personName,
+  hiddenIds,
+  onHide,
 }: {
   reply: CommentRow;
   parentNumber: number;
   onUpdate: () => void;
   personName: string;
+  hiddenIds: string[];
+  onHide: (id: string) => void;
 }) {
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
@@ -750,7 +875,7 @@ function ReplyItem({
   };
 
   return (
-    <div id={`c${reply.comment_number}`} className="border border-line rounded-lg p-3 bg-panel2/40 text-sm">
+    <div id={`c${reply.comment_number}`} className={`border border-line rounded-lg p-3 bg-panel2/40 text-sm ${hiddenIds.includes(reply.id) ? "opacity-40" : ""}`}>
       <div className="flex items-center gap-2 flex-wrap mb-1.5">
         <span className="text-mut text-xs">&gt;&gt;{parentNumber}</span>
         <span className="font-medium"><EmojiText text={reply.name || t("匿名")} /></span>
@@ -802,6 +927,25 @@ function ReplyItem({
         </button>
         <button onClick={share} className="flex items-center gap-1 text-mut hover:text-x transition" title={t("Xでシェア")}>
           <Share2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => {
+            navigator.clipboard
+              ?.writeText(`${window.location.origin}/person/${reply.person_id}#c${reply.comment_number}`)
+              .then(() => alert(t("レスへのリンクをコピーしました")))
+              .catch(() => {});
+          }}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
+          title={t("レスへのリンクをコピー")}
+        >
+          <Link2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onHide(reply.id)}
+          className={`flex items-center gap-1 transition ${hiddenIds.includes(reply.id) ? "text-x" : "text-mut hover:text-txt"}`}
+          title={hiddenIds.includes(reply.id) ? t("非表示を解除") : t("非表示（あぼーん）")}
+        >
+          <EyeOff className="w-3.5 h-3.5" />
         </button>
         <button onClick={del} className="flex items-center gap-1 text-mut hover:text-bad transition" title={t("コメントを削除")}>
           <Trash2 className="w-3.5 h-3.5" />

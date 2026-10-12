@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getUserToken } from "@/lib/client-token";
-import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2 } from "lucide-react";
+import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2, Link2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import CommentText from "@/components/CommentText";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
@@ -51,6 +51,8 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
   const [sort, setSort] = useState<SortType>("number");
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
+  const [q, setQ] = useState("");
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     try {
@@ -144,7 +146,12 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
     }
   };
 
-  const visible = comments.filter((c) => !hiddenIds.includes(c.id));
+  const needle = q.trim().toLowerCase();
+  const matchesQ = (c: { content: string; name: string | null }) =>
+    !needle || c.content.toLowerCase().includes(needle) || (c.name ?? "").toLowerCase().includes(needle);
+  const visible = comments.filter(
+    (c) => !hiddenIds.includes(c.id) && (matchesQ(c) || (c.replies ?? []).some((r) => matchesQ(r)))
+  );
 
   return (
     <section className="bg-panel border border-line rounded-2xl p-6">
@@ -167,6 +174,13 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
               {t(label)}
             </button>
           ))}
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("レス内検索…")}
+            className="w-32 px-3 py-1.5 rounded-full border border-line text-xs focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
         </div>
       </div>
 
@@ -219,13 +233,43 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
             className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
           />
         </div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={t("コメントを入力...（全角500文字まで）")}
-          rows={3}
-          className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
-        />
+        <div className="flex gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setPreview(false)}
+            className={`px-3 py-1 rounded-full border transition font-medium ${
+              !preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+            }`}
+          >
+            {t("書く")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreview(true)}
+            className={`px-3 py-1 rounded-full border transition font-medium ${
+              preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+            }`}
+          >
+            {t("プレビュー")}
+          </button>
+        </div>
+        {preview ? (
+          <div className="min-h-[4rem] rounded-lg border border-line bg-panel px-3 py-2">
+            {content.trim() ? (
+              <CommentText content={content} className="text-sm" />
+            ) : (
+              <p className="text-xs text-mut">{t("プレビューする内容がありません")}</p>
+            )}
+          </div>
+        ) : (
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={t("コメントを入力...（全角500文字まで）")}
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
+          />
+        )}
         <div className="flex items-center justify-between">
           <span className={`text-xs ${getCharCount(content) > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
             {getCharCount(content)} / {MAX_COMMENT_CHARS}
@@ -422,6 +466,18 @@ function PollCommentItem({
         </span>
         <span className="text-[11px] text-mut font-mono">ID:{comment.anon_id}</span>
         <span className="ml-auto flex gap-2">
+          <button
+            onClick={() => {
+              navigator.clipboard
+                ?.writeText(`${window.location.origin}/polls/${comment.poll_id}#c${comment.comment_number}`)
+                .then(() => alert(t("レスへのリンクをコピーしました")))
+                .catch(() => {});
+            }}
+            className="text-mut hover:text-x transition"
+            title={t("レスへのリンクをコピー")}
+          >
+            <Link2 className="w-4 h-4" />
+          </button>
           <button onClick={del} className="text-mut hover:text-bad transition" title={t("コメントを削除")}>
             <Trash2 className="w-4 h-4" />
           </button>
@@ -495,13 +551,27 @@ function PollCommentItem({
                   {fmtTime2ch(r.created_at)}
                 </span>
                 <span className="text-[11px] text-mut font-mono">ID:{r.anon_id}</span>
-                <button
-                  onClick={() => onHide(r.id)}
-                  className="ml-auto text-mut hover:text-txt transition"
-                  title={t("非表示")}
-                >
-                  <EyeOff className="w-3.5 h-3.5" />
-                </button>
+                <span className="ml-auto flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard
+                        ?.writeText(`${window.location.origin}/polls/${r.poll_id}#c${r.comment_number}`)
+                        .then(() => alert(t("レスへのリンクをコピーしました")))
+                        .catch(() => {});
+                    }}
+                    className="text-mut hover:text-x transition"
+                    title={t("レスへのリンクをコピー")}
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onHide(r.id)}
+                    className="text-mut hover:text-txt transition"
+                    title={t("非表示")}
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                  </button>
+                </span>
               </div>
               {r.voted_option && (
                 <p className="text-xs font-bold text-x mb-1">

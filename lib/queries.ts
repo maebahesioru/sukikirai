@@ -565,14 +565,17 @@ const COMMENT_COLS = `c.id, c.person_id, c.comment_number, c.name, c.mail, c.use
 
 export async function getComments(
   personId: string,
-  opts: { filter?: "all" | "like" | "dislike"; sort?: "newest" | "popular"; page?: number; perPage?: number }
+  opts: { filter?: "all" | "like" | "dislike"; sort?: "newest" | "popular"; page?: number; perPage?: number; q?: string }
 ): Promise<{ comments: CommentWithReplies[]; total: number }> {
   const per = Math.min(Math.max(opts.perPage ?? 20, 1), 100);
   const page = Math.max(opts.page ?? 1, 1);
   const off = (page - 1) * per;
   const filter = opts.filter ?? "all";
   const sort = opts.sort ?? "newest";
+  const q = (opts.q ?? "").trim();
   const filterSql = filter === "all" ? "" : `AND c.vote_type = '${filter}'`;
+  const qSql = q ? "AND c.content ILIKE '%' || $2 || '%'" : "";
+  const params: unknown[] = q ? [personId, q] : [personId];
   const orderSql =
     sort === "popular"
       ? "ORDER BY (COALESCE(r.g,0)+COALESCE(r.b,0)) DESC, c.created_at DESC"
@@ -581,10 +584,10 @@ export async function getComments(
   const mains = await sql<CommentRow & { total_count: number }>(
     `SELECT ${COMMENT_COLS}, COUNT(*) OVER()::int AS total_count
      FROM comments c ${REACTION_JOIN}
-     WHERE c.person_id = $1 AND NOT c.is_hidden AND c.parent_comment_id IS NULL ${filterSql}
+     WHERE c.person_id = $1 AND NOT c.is_hidden AND c.parent_comment_id IS NULL ${filterSql} ${qSql}
      ${orderSql}
      LIMIT ${per} OFFSET ${off}`,
-    [personId]
+    params
   );
 
   let total: number;
@@ -593,8 +596,8 @@ export async function getComments(
   } else {
     const t = await sql1<{ c: number }>(
       `SELECT COUNT(*)::int AS c FROM comments c
-       WHERE c.person_id = $1 AND NOT c.is_hidden AND c.parent_comment_id IS NULL ${filterSql}`,
-      [personId]
+       WHERE c.person_id = $1 AND NOT c.is_hidden AND c.parent_comment_id IS NULL ${filterSql} ${qSql}`,
+      params
     );
     total = t?.c ?? 0;
   }
@@ -1177,9 +1180,11 @@ const POLL_REACTION_JOIN = `LEFT JOIN (
 
 export async function getPollComments(
   pollId: string,
-  sort: "number" | "new" = "number"
+  sort: "number" | "new" = "number",
+  q = ""
 ): Promise<{ comments: CommentWithReplies[]; total: number }> {
   const order = sort === "new" ? "c.created_at DESC" : "c.comment_number ASC";
+  const query = q.trim();
   const rows = await sql<
     PollCommentRow & { good_count: number; bad_count: number; voted_option: string | null }
   >(
@@ -1190,9 +1195,9 @@ export async function getPollComments(
      FROM poll_comments c ${POLL_REACTION_JOIN}
      LEFT JOIN poll_votes v ON v.poll_id = c.poll_id AND v.cookie_id = c.cookie_id
      LEFT JOIN poll_options o ON o.id = v.option_id
-     WHERE c.poll_id = $1 AND NOT c.is_hidden
+     WHERE c.poll_id = $1 AND NOT c.is_hidden ${query ? "AND c.content ILIKE '%' || $2 || '%'" : ""}
      ORDER BY ${order}`,
-    [pollId]
+    query ? [pollId, query] : [pollId]
   );
   const mains = rows.filter((r) => !r.parent_comment_id);
   const byParent = new Map<string, CommentWithReplies["replies"]>();

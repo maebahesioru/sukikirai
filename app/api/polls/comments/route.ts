@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deletePollCommentByKey, getPollComments, insertPollComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isValidToken, isUuid, str } from "@/lib/validate";
+import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { applyTrip } from "@/lib/trip";
 import { genDeleteKey, hashDeleteKey } from "@/lib/delete-key";
 
@@ -13,7 +14,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "pollId required" }, { status: 400 });
     }
     const sort = searchParams.get("sort") === "new" ? "new" : "number";
-    const { comments, total } = await getPollComments(pollId, sort);
+    const q = (searchParams.get("q") ?? "").trim().slice(0, 100);
+    const { comments, total } = await getPollComments(pollId, sort, q);
     return NextResponse.json({ success: true, comments, total });
   } catch (e) {
     console.error("poll comments GET error:", e);
@@ -35,9 +37,9 @@ export async function POST(request: Request) {
     if (!isUuid(pollId) || !content || !isValidToken(userToken)) {
       return NextResponse.json({ success: false, error: "必須項目が不足しています" }, { status: 400 });
     }
-    if (charCount(content) > 280) {
+    if (charCount(content) > MAX_COMMENT_CHARS) {
       return NextResponse.json(
-        { success: false, error: "コメントは全角140文字（半角280文字）以内です" },
+        { success: false, error: `コメントは全角${Math.floor(MAX_COMMENT_CHARS / 2)}文字（半角${MAX_COMMENT_CHARS}文字）以内です` },
         { status: 400 }
       );
     }

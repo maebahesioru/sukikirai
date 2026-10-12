@@ -211,3 +211,60 @@ mark.search-hl {
 .md-body .mermaid-box svg { max-width: 100%; height: auto; }
 .md-body img { max-width: 100%; height: auto; }
 .md-body img.emoji { height: 1em; width: 1em; }
+
+/* リッチ掲示板 追加分（2026-10-12）: メンション/スポイラー/画像/ダイス */
+.md-body a.mention {
+  color: var(--color-x);
+  font-weight: 600;
+  text-decoration: none;
+}
+.md-body a.mention:hover { text-decoration: underline; }
+.md-body .spoiler {
+  background: var(--t-line2);
+  color: transparent;
+  border-radius: 4px;
+  padding: 0 3px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.md-body .spoiler.open {
+  background: color-mix(in srgb, var(--color-line) 25%, transparent);
+  color: inherit;
+  user-select: text;
+}
+.md-body a.img-link { display: inline-block; margin: 0.3rem 0; }
+.md-body a.img-link img {
+  max-height: 340px;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--color-line);
+  cursor: zoom-in;
+  display: block;
+}
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  cursor: zoom-out;
+}
+.img-lightbox img {
+  max-width: 95vw;
+  max-height: 92vh;
+  border-radius: 8px;
+}
+.md-body .dice-box {
+  display: inline-block;
+  background: color-mix(in srgb, var(--color-line) 22%, transparent);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.95em;
+  margin: 0.15rem 0;
+}
+.md-body .dice-box code { background: none; padding: 0; }

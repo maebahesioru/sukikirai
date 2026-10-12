@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { localePath } from "@/lib/i18n-core";
-import { getLocale } from "@/lib/i18n-server";
+import { getLocale, getServerT } from "@/lib/i18n-server";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
@@ -59,7 +60,26 @@ export default async function PersonPage({ params }: Params) {
   const { id: rawId } = await params;
   const id = decodeURIComponent(rawId);
   const person = await getPerson(id);
-  if (!person || person.is_hidden) notFound();
+  if (person?.is_hidden) notFound();
+
+  // 未登録（@メンション等から来た場合）: 検索・追加への案内を表示（2026-10-12）
+  if (!person) {
+    const t = await getServerT();
+    return (
+      <div className="space-y-5">
+        <section className="bg-panel border border-line rounded-2xl p-8 text-center max-w-lg mx-auto">
+          <h1 className="text-xl font-black mb-2">{t("「{q}」は未登録です", { q: id })}</h1>
+          <p className="text-sm text-mut mb-5">{t("誰でも匿名で追加できます")}</p>
+          <Link
+            href={`/search?q=${encodeURIComponent(id)}`}
+            className="inline-block px-6 py-2.5 rounded-xl bg-x text-white text-sm font-bold hover:opacity-90 transition"
+          >
+            {t("追加する")}
+          </Link>
+        </section>
+      </div>
+    );
+  }
 
   // 閲覧時にプロフィールをバックグラウンド同期（1時間キャッシュ・次の表示から反映）
   void maybeRefreshPersonProfile(person.id).catch(() => {});

@@ -4,7 +4,7 @@
 // Markdown / 色タグ(<font color>等) / LaTeX(KaTeX) / Mermaid / >>Nアンカー / URL / AA / Twemoji
 // パイプライン: lib/richtext（markdown-it→sanitize）→ Twemoji遅延適用 → MermaidはReactコンポーネントで描画
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { isAA } from "@/lib/format";
 import { looksRich, renderRich } from "@/lib/richtext";
 import MermaidBlock from "./MermaidBlock";
@@ -89,6 +89,22 @@ export default function CommentText({
   const aa = isAA(content) && !looksRich(content);
   const rich = useMemo(() => (aa ? null : renderRich(content)), [content, aa]);
   const [twemojiHtml, setTwemojiHtml] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // スポイラー開閉・画像クリック拡大（委譲ハンドラ）
+  const onClick = (e: MouseEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLElement;
+    const spoiler = t.closest(".spoiler");
+    if (spoiler) {
+      spoiler.classList.toggle("open");
+      return;
+    }
+    const imgLink = t.closest("a.img-link") as HTMLAnchorElement | null;
+    if (imgLink) {
+      e.preventDefault();
+      setLightbox(imgLink.getAttribute("href"));
+    }
+  };
 
   // Twemojiはクライアントで遅延適用（絵文字を含む時だけロード）
   useEffect(() => {
@@ -135,5 +151,15 @@ export default function CommentText({
     }
   });
   const cleanClass = (className ?? "").replace(/\bwhitespace-pre-wrap\b/g, "");
-  return <div className={`md-body ${cleanClass}`}>{out}</div>;
+  return (
+    <div className={`md-body ${cleanClass}`} onClick={onClick}>
+      {out}
+      {lightbox && (
+        <div className="img-lightbox" onClick={() => setLightbox(null)}>
+          {/* クリックで開いた画像（srcは sanitize 済みHTML由来 or リンクhref） */}
+          <img src={lightbox} alt="" />
+        </div>
+      )}
+    </div>
+  );
 }

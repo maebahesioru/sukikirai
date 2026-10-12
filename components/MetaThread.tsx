@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { getUserToken } from "@/lib/client-token";
-import { MessageSquare, MessageCircle, ThumbsUp, ThumbsDown, Trash2, Send } from "lucide-react";
+import { MessageSquare, MessageCircle, ThumbsUp, ThumbsDown, Trash2, Send, EyeOff, Link2 } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
 import EmojiText from "./EmojiText";
 import LinkEmbeds from "./LinkEmbeds";
+import CommentText from "./CommentText";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
 import { useT } from "@/lib/i18n-client";
@@ -27,7 +28,7 @@ type MetaPostWithReplies = MetaPost & { replies: MetaPost[] };
 
 const isSageMail = (m?: string | null) => (m ?? "").trim().toLowerCase() === "sage";
 
-/** 管理スレ（2026-10-12 掲示板化: 番号・>>アンカー・返信・good/bad） */
+/** 管理スレ（2026-10-12 掲示板化: 番号・>>アンカー・返信・good/bad + 検索/プレビュー/あぼーん） */
 export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWithReplies[] }) {
   const t = useT();
   const [posts, setPosts] = useState<MetaPostWithReplies[]>(initialPosts);
@@ -35,6 +36,29 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
   const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
   const [delId, setDelId] = useState("");
   const [delKey, setDelKey] = useState("");
+  const [q, setQ] = useState("");
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      setHidden(JSON.parse(localStorage.getItem("hiddenMetaPosts") ?? "[]"));
+    } catch {
+      setHidden([]);
+    }
+  }, []);
+
+  const toggleHide = (id: string) => {
+    setHidden((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        localStorage.setItem("hiddenMetaPosts", JSON.stringify(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   const refresh = async () => {
     try {
@@ -45,6 +69,14 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
       /* noop */
     }
   };
+
+  const needle = q.trim().toLowerCase();
+  const matchPost = (p: MetaPost) =>
+    !needle ||
+    (p.name ?? "").toLowerCase().includes(needle) ||
+    p.content.toLowerCase().includes(needle);
+  const visible = posts.filter((p) => (showHidden || !hidden.includes(p.id)) && (matchPost(p) || p.replies.some(matchPost)));
+  const hiddenCount = posts.filter((p) => hidden.includes(p.id)).length;
 
   const del = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,15 +118,46 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
         {t("機能要望・バグ報告・その他、運営への連絡はここにどうぞ。2ch専ブラ（Siki等）からも書き込めます。")}
       </p>
 
-      <div className="space-y-4">
-        {posts.length === 0 ? (
-          <p className="text-sm text-mut text-center py-8">
-            {t("まだ書き込みがありません。最初の1件をどうぞ。")}
-          </p>
-        ) : (
-          posts.map((p) => <PostItem key={p.id} post={p} onUpdate={refresh} />)
+      <div className="flex items-center gap-2 mb-3">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t("レス内検索…（本文・名前）")}
+          className="flex-1 px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
+        />
+        {q && (
+          <button
+            type="button"
+            onClick={() => setQ("")}
+            className="text-xs text-mut hover:text-txt underline shrink-0"
+          >
+            {t("クリア")}
+          </button>
         )}
       </div>
+
+      <div className="space-y-4">
+        {visible.length === 0 ? (
+          <p className="text-sm text-mut text-center py-8">
+            {q ? t("一致するレスがありません") : t("まだ書き込みがありません。最初の1件をどうぞ。")}
+          </p>
+        ) : (
+          visible.map((p) => (
+            <PostItem key={p.id} post={p} onUpdate={refresh} hidden={hidden.includes(p.id)} onHide={toggleHide} />
+          ))
+        )}
+      </div>
+
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowHidden(!showHidden)}
+          className="mt-3 text-xs text-mut hover:text-txt underline"
+        >
+          {showHidden ? t("非表示のレス（{n}件）を隠す", { n: hiddenCount }) : t("非表示のレス（{n}件）を表示", { n: hiddenCount })}
+        </button>
+      )}
 
       <MetaForm onPosted={refresh} onKey={setIssuedKey} />
 
@@ -181,6 +244,7 @@ function MetaForm({
   const [content, setContent] = useState(parentNumber ? `>>${parentNumber}\n` : "");
   const [busy, setBusy] = useState(false);
   const [issuedKey, setIssuedKey] = useState<{ id: string; key: string } | null>(null);
+  const [preview, setPreview] = useState(false);
 
   const count = charCount(content);
   const over = count > MAX_COMMENT_CHARS;
@@ -261,13 +325,43 @@ function MetaForm({
           className="px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
         />
       </div>
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("要望・バグ報告・その他を入力...（全角500文字まで）")}
-        rows={parentNumber ? 3 : 4}
-        className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
-      />
+      <div className="flex gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setPreview(false)}
+          className={`px-3 py-1 rounded-full border transition font-medium ${
+            !preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+          }`}
+        >
+          {t("書く")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setPreview(true)}
+          className={`px-3 py-1 rounded-full border transition font-medium ${
+            preview ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+          }`}
+        >
+          {t("プレビュー")}
+        </button>
+      </div>
+      {preview ? (
+        <div className="min-h-[6rem] rounded-lg border border-line bg-panel px-3 py-2">
+          {content.trim() ? (
+            <CommentText content={content} className="text-sm" />
+          ) : (
+            <p className="text-xs text-mut">{t("プレビューする内容がありません")}</p>
+          )}
+        </div>
+      ) : (
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("要望・バグ報告・その他を入力...（全角500文字まで）")}
+          rows={parentNumber ? 3 : 4}
+          className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
+        />
+      )}
       <div className="flex items-center justify-between gap-3">
         <span className={`text-xs ${over ? "text-bad font-bold" : "text-mut"}`}>
           {count}/{MAX_COMMENT_CHARS}
@@ -287,7 +381,17 @@ function MetaForm({
 
 // ---------------- 投稿表示（親） ----------------
 
-function PostItem({ post, onUpdate }: { post: MetaPostWithReplies; onUpdate: () => void }) {
+function PostItem({
+  post,
+  onUpdate,
+  hidden,
+  onHide,
+}: {
+  post: MetaPostWithReplies;
+  onUpdate: () => void;
+  hidden: boolean;
+  onHide: (id: string) => void;
+}) {
   const t = useT();
   const [local, setLocal] = useState(post);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
@@ -361,7 +465,7 @@ function PostItem({ post, onUpdate }: { post: MetaPostWithReplies; onUpdate: () 
   };
 
   return (
-    <div id={`c${post.post_number}`} className="bg-panel2 border border-line rounded-xl p-4">
+    <div id={`c${post.post_number}`} className={`bg-panel2 border border-line rounded-xl p-4 ${hidden ? "opacity-40" : ""}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 text-xs text-mut flex-wrap">
           <span className="text-mut text-xs">#{post.post_number}</span>
@@ -419,6 +523,25 @@ function PostItem({ post, onUpdate }: { post: MetaPostWithReplies; onUpdate: () 
         >
           <MessageCircle className="w-4 h-4" />
           {t("返信")}
+        </button>
+        <button
+          onClick={() => {
+            navigator.clipboard
+              ?.writeText(`${window.location.origin}/meta#c${post.post_number}`)
+              .then(() => alert(t("レスへのリンクをコピーしました")))
+              .catch(() => {});
+          }}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
+          title={t("レスへのリンクをコピー")}
+        >
+          <Link2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onHide(post.id)}
+          className={`flex items-center gap-1 transition ${hidden ? "text-x" : "text-mut hover:text-txt"}`}
+          title={hidden ? t("非表示を解除") : t("非表示（あぼーん）")}
+        >
+          <EyeOff className="w-4 h-4" />
         </button>
       </div>
 
@@ -554,6 +677,18 @@ function ReplyItem({ reply, parentNumber, onUpdate }: { reply: MetaPost; parentN
         >
           <ThumbsDown className="w-3.5 h-3.5" />
           {local.bad_count}
+        </button>
+        <button
+          onClick={() => {
+            navigator.clipboard
+              ?.writeText(`${window.location.origin}/meta#c${reply.post_number}`)
+              .then(() => alert(t("レスへのリンクをコピーしました")))
+              .catch(() => {});
+          }}
+          className="flex items-center gap-1 text-mut hover:text-x transition"
+          title={t("レスへのリンクをコピー")}
+        >
+          <Link2 className="w-3.5 h-3.5" />
         </button>
         <button onClick={del} className="flex items-center gap-1 text-mut hover:text-bad transition" title={t("投稿を削除")}>
           <Trash2 className="w-3.5 h-3.5" />

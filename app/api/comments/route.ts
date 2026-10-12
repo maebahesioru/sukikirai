@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     const filterRaw = searchParams.get("filter");
     const sortRaw = searchParams.get("sort");
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const q = (searchParams.get("q") ?? "").trim().slice(0, 100);
 
     if (!personId) {
       return NextResponse.json({ success: false, error: "personId required" }, { status: 400 });
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     const filter = filterRaw === "like" || filterRaw === "dislike" ? filterRaw : "all";
     const sort = sortRaw === "popular" ? "popular" : "newest";
 
-    const { comments, total } = await getComments(personId, { filter, sort, page });
+    const { comments, total } = await getComments(personId, { filter, sort, page, q: q || undefined });
     return NextResponse.json({ success: true, comments, total });
   } catch (e) {
     console.error("comments GET error:", e);

@@ -153,8 +153,6 @@ export default function JapanElectionMap({
     return <div className="h-80 rounded-xl bg-panel2 animate-pulse" />;
   }
   const byId = new Map(results.map((r) => [r.id, r]));
-  /** 参院は県単位の色（区ジオメトリ→県名でルックアップ）。衆院は区IDそのまま */
-  const keyOf = (d: { id: string; pref: string }) => (mode === "sangiin" ? d.pref : d.id);
   const [, , w, h] = vb();
 
   return (
@@ -201,7 +199,7 @@ export default function JapanElectionMap({
       >
         <g transform={`translate(${view.x} ${view.y}) scale(${view.s})`}>
           {data.districts.map((d) => {
-            const r = byId.get(keyOf(d));
+            const r = byId.get(d.id);
             const label = mode === "sangiin" ? d.pref : d.id;
             return (
               <path

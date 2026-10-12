@@ -153,6 +153,42 @@ export default async function BlockPage({ params }: { params: Promise<{ id: stri
                 );
               })}
             </div>
+            {(() => {
+              const full = entries
+                .filter((e) => e.party_id === p.id)
+                .sort((a, b) => a.list_rank - b.list_rank);
+              const rest = full.slice(list.length);
+              if (rest.length === 0) return null;
+              return (
+                <details className="mt-1.5">
+                  <summary className="text-xs text-mut cursor-pointer hover:text-txt">
+                    {t("当選圏外（{n}人）を表示", { n: rest.length })}
+                  </summary>
+                  <div className="space-y-0.5 mt-1.5 opacity-60">
+                    {rest.map((e) => (
+                      <div
+                        key={e.person_id}
+                        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm"
+                      >
+                        <span className="w-8 text-center text-xs font-bold text-mut shrink-0">{e.list_rank}位</span>
+                        <Avatar name={e.name} avatarUrl={e.avatar_url} size={24} />
+                        <Link href={`/person/${e.person_id}`} className="truncate flex-1 hover:text-x transition">
+                          <EmojiText text={e.name} />
+                        </Link>
+                        <Link
+                          href={`/election/district/${encodeURIComponent(e.district_id)}`}
+                          className="text-xs text-mut hover:text-x transition shrink-0 hidden sm:block"
+                        >
+                          {e.district_id}
+                        </Link>
+                        <span className="text-xs text-mut shrink-0 w-16 text-right">{fmtScore(e.score)}pt</span>
+                        <span className="text-[11px] text-mut shrink-0 w-20 text-right">{t("圏外")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              );
+            })()}
           </section>
         );
       })}

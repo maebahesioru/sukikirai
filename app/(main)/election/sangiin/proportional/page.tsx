@@ -86,37 +86,52 @@ export default async function SangiinProportionalPage() {
         </div>
       </section>
 
-      {/* 当選者一覧（党別・得票順） */}
+      {/* 当選者一覧（党別・得票順）+ 当選圏外も全員見られるように（2026-10-12） */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-4">🎖️ {t("比例 当選者一覧（党内は得票順）")}</h2>
         <div className="space-y-5">
           {partiesSorted.map((p) => {
             const seats = outcome.proportional.partySeats[p.id] ?? 0;
-            if (seats === 0) return null;
-            const list = (byParty.get(p.id) ?? []).slice(0, seats);
+            const all = byParty.get(p.id) ?? [];
+            if (all.length === 0) return null;
+            const winners = all.slice(0, seats);
+            const rest = all.slice(seats);
+            const row = (c: (typeof all)[number], rank: number) => (
+              <Link
+                key={c.person_id}
+                href={`/person/${c.person_id}`}
+                className="flex items-center gap-2 text-sm hover:opacity-80 transition min-w-0"
+              >
+                <span className="w-5 text-xs text-mut text-right shrink-0">{rank}</span>
+                <Avatar name={c.name ?? ""} avatarUrl={c.avatar_url} size={22} />
+                <span className="truncate">{c.name}</span>
+                <span className="ml-auto text-xs text-mut shrink-0">{fmtScore(c.score)}pt</span>
+              </Link>
+            );
             return (
               <div key={p.id}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
                   <span className="font-bold text-sm">{p.name}</span>
                   <span className="text-xs text-mut">
-                    {seats} {t("議席")}
+                    {seats} {t("議席")}・{t("候補{n}人", { n: all.length })}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {list.map((c, i) => (
-                    <Link
-                      key={c.person_id}
-                      href={`/person/${c.person_id}`}
-                      className="flex items-center gap-2 text-sm hover:opacity-80 transition min-w-0"
-                    >
-                      <span className="w-5 text-xs text-mut text-right shrink-0">{i + 1}</span>
-                      <Avatar name={c.name ?? ""} avatarUrl={c.avatar_url} size={22} />
-                      <span className="truncate">{c.name}</span>
-                      <span className="ml-auto text-xs text-mut shrink-0">{fmtScore(c.score)}pt</span>
-                    </Link>
-                  ))}
-                </div>
+                {winners.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {winners.map((c, i) => row(c, i + 1))}
+                  </div>
+                )}
+                {rest.length > 0 && (
+                  <details className="mt-1.5">
+                    <summary className="text-xs text-mut cursor-pointer hover:text-txt">
+                      {t("当選圏外（{n}人）を表示", { n: rest.length })}
+                    </summary>
+                    <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 opacity-60">
+                      {rest.map((c, i) => row(c, seats + i + 1))}
+                    </div>
+                  </details>
+                )}
               </div>
             );
           })}

@@ -1,4 +1,7 @@
 {
+ "候補{n}人": "{n} candidates",
+ "当選圏外（{n}人）を表示": "Show {n} below the line",
+ "圏外": "below line",
  "書く": "Write",
  "プレビュー": "Preview",
  "プレビューする内容がありません": "Nothing to preview yet",

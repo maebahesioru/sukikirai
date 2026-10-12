@@ -1,4 +1,7 @@
 {
+ "候補{n}人": "{n} candidatos",
+ "当選圏外（{n}人）を表示": "Mostrar {n} fuera de escaño",
+ "圏外": "sin escaño",
  "書く": "Escribir",
  "プレビュー": "Vista previa",
  "プレビューする内容がありません": "No hay nada que previsualizar",

@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import dns from "node:dns/promises";
 
 const BOT_RE =
-  /(googlebot|bingbot|bingpreview|yandexbot|duckduckbot|baiduspider|slurp|twitterbot|facebookexternalhit|linkedinbot|applebot|petalbot|ia_archiver|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-web|anthropic-ai|perplexitybot|ccbot|amazonbot|googleother|discordbot|telegrambot|slackbot|whatsapp|embedly|quora link preview|pinterest|vkshare|w3c_validator|diffbot|imagesiftbot|youbot)/i;
+  /(googlebot|mediapartners|adsbot|bingbot|bingpreview|yandexbot|duckduckbot|baiduspider|slurp|twitterbot|facebookexternalhit|linkedinbot|applebot|petalbot|ia_archiver|semrushbot|ahrefsbot|mj12bot|dotbot|bytespider|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-web|anthropic-ai|perplexitybot|ccbot|amazonbot|googleother|discordbot|telegrambot|slackbot|whatsapp|embedly|quora link preview|pinterest|vkshare|w3c_validator|diffbot|imagesiftbot|youbot)/i;
 
 const cache = new Map<string, { ok: boolean; exp: number }>();
 
@@ -44,7 +44,7 @@ export async function isCrawler(): Promise<boolean> {
     const ua = h.get("user-agent") ?? "";
     if (!BOT_RE.test(ua)) return false;
     const ip = (h.get("cf-connecting-ip") ?? h.get("x-forwarded-for") ?? "").split(",")[0].trim();
-    if (/googlebot/i.test(ua)) {
+    if (/googlebot|mediapartners|adsbot/i.test(ua)) {
       if (!ip) return false;
       return (await verifyRdns(ip, [".googlebot.com", ".google.com"])) === true;
     }

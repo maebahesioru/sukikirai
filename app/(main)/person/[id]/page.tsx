@@ -40,7 +40,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const p = await getPerson(decodeURIComponent(id));
   if (!p || p.is_hidden) return { title: "人物が見つかりません" };
-  const archived = !!p.x_status && p.x_status !== "ok";
   return {
     title: `${p.name}の評価・好き嫌い`,
     description:
@@ -51,7 +50,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       canonical: localePath(locale, `/person/${p.id}`),
       types: { "application/atom+xml": `/feed/person/${encodeURIComponent(p.id)}` },
     },
-    ...(archived ? { robots: { index: false, follow: true } } : {}),
+    // アーカイブ済み（垢消し等）も投票・コメントの実コンテンツがあるためインデックス対象にする（2026-10-12 GSC「noindex除外」対応）
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,
       description: p.x_description || p.description || undefined,

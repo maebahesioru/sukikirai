@@ -16,6 +16,7 @@ export const CATEGORIES = [
   "スポーツ好き",
   "鉄道好き",
   "大喜利好き",
+  "プロフ未設定",
   "その他",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];

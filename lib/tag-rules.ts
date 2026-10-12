@@ -419,9 +419,11 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   if (STUDENT_RE.test(text) || STUDENT_GRADE_RE.test(text)) return "学生";
   // 5) 趣味系（タイプ・界隈・学生のどれでもない人の受け皿）
   // 大喜利・ネタツイ界隈（大喜利茶屋ユーザー等。アニメより先に判定＝これが主アイデンティティのコミュニティ）
-  if (/大喜利|ググガガ/.test(text)) return "大喜利好き";
+  if (/大喜利|ググガガ|ネタツイ/.test(text)) return "大喜利好き";
   if (ANIME_FAN_ANY.some((k) => text.includes(k))) return "アニメ・ゲーム好き";
   if (SPORTS_ANY.some((k) => text.includes(k))) return "スポーツ好き";
   if (RAILWAY_ANY.some((k) => text.includes(k))) return "鉄道好き";
+  // プロフィールが完全に空（bio/リンク/ツイートシグナルなし）の人は「その他」と分離する
+  if (!bio || !bio.trim()) return "プロフ未設定";
   return "その他";
 }

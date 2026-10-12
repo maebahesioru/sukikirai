@@ -26,10 +26,7 @@
  "衆院選（300小選挙区+212比例）を見る": "View the Lower House election (300 + 212)",
  "現在の集計: {n}議席 / 512議席": "Current tally: {n} / 512 seats",
  "300選挙区+212比例・10党で議席を争う2週間イベント": "A 2-week event where 300 districts + 212 proportional seats are contested by 10 parties",
- "300選挙区+212比例・10党で議席を争う2週間イベント": "A 2-week event where 300 districts + 212 proportional seats are contested by 10 parties",
  "開催中！10/24(土)まで — 300選挙区+212比例・毎日投票で推しの議席を獲れ": "Live until 10/24 (Sat) — 300 districts + 212 proportional seats; vote daily to win seats for your favorite",
- "開催中！10/24(土)まで — 300選挙区+212比例・毎日投票で推しの議席を獲れ": "Live until 10/24 (Sat) — 300 districts + 212 proportional seats; vote daily to win seats for your favorite",
- "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で300選挙区+212比例を争います。": "Two weeks from 10/10 (Sat) to 10/24 (Sat). Likes +1, dislikes -0.5 — fight for 300 districts + 212 proportional seats.",
  "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で300選挙区+212比例を争います。": "Two weeks from 10/10 (Sat) to 10/24 (Sat). Likes +1, dislikes -0.5 — fight for 300 districts + 212 proportional seats.",
  "全登録ユーザーが300小選挙区のどれか・10党のどれかにランダム配属（名簿順位もランダム）": "All registered users are randomly assigned to one of the 300 districts and one of the 10 parties (list rank is random too)",
  "小選挙区 = 1位が当選（300議席）": "Single-member districts: the top candidate wins (300 seats)",
@@ -158,9 +155,9 @@
  "拡大": "Zoom in",
  "縮小": "Zoom out",
  "リセット": "Reset",
-  "【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査": "【Poll Talk】{title}\n\n“{content}”\n\n#ツイッタラー世論調査",
-  "【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査": "【{side}】Comment on {name}\n\n“{content}”\n\n#ツイッタラー世論調査",
-  "シェア": "Share",
+ "【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査": "【Poll Talk】{title}\n\n“{content}”\n\n#ツイッタラー世論調査",
+ "【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査": "【{side}】Comment on {name}\n\n“{content}”\n\n#ツイッタラー世論調査",
+ "シェア": "Share",
  "\n#ツイッタラー世論調査": "\n#ツイッタラー世論調査",
  "10/6(火) 0:00 開幕！期間中の投票で王者を決めよう": "Opens Tue Oct 6, 0:00! Votes during the event decide the champion.",
  "1人目": "First person",
@@ -688,5 +685,6 @@
  "ソースコード（GitHub）": "Source code (GitHub)",
  "前回のあなたの投票: {vote}": "Your previous vote: {vote}",
  "好き？": "Like?",
- "嫌い？": "Dislike?"
+ "嫌い？": "Dislike?",
+ "大喜利好き": "Ogiri & Memes"
 }

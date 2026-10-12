@@ -26,10 +26,7 @@
  "衆院選（300小選挙区+212比例）を見る": "Ver la elección de la Cámara Baja (300 + 212)",
  "現在の集計: {n}議席 / 512議席": "Recuento actual: {n} / 512 escaños",
  "300選挙区+212比例・10党で議席を争う2週間イベント": "Un evento de 2 semanas en el que 10 partidos compiten por 300 distritos + 212 escaños proporcionales",
- "300選挙区+212比例・10党で議席を争う2週間イベント": "Un evento de 2 semanas en el que 10 partidos compiten por 300 distritos + 212 escaños proporcionales",
  "開催中！10/24(土)まで — 300選挙区+212比例・毎日投票で推しの議席を獲れ": "¡En curso hasta el 24/10 (sáb)! — 300 distritos + 212 proporcionales; vota a diario para ganar escaños para tu favorito",
- "開催中！10/24(土)まで — 300選挙区+212比例・毎日投票で推しの議席を獲れ": "¡En curso hasta el 24/10 (sáb)! — 300 distritos + 212 proporcionales; vota a diario para ganar escaños para tu favorito",
- "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で300選挙区+212比例を争います。": "Dos semanas del 10/10 (sáb) al 24/10 (sáb). Me gusta +1, no me gusta -0.5: compite por 300 distritos + 212 proporcionales.",
  "10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で300選挙区+212比例を争います。": "Dos semanas del 10/10 (sáb) al 24/10 (sáb). Me gusta +1, no me gusta -0.5: compite por 300 distritos + 212 proporcionales.",
  "全登録ユーザーが300小選挙区のどれか・10党のどれかにランダム配属（名簿順位もランダム）": "Todos los usuarios registrados se asignan aleatoriamente a uno de los 300 distritos y a uno de los 10 partidos (la posición en la lista también es aleatoria)",
  "小選挙区 = 1位が当選（300議席）": "Distritos uninominales: gana el primero (300 escaños)",
@@ -158,9 +155,9 @@
  "拡大": "Acercar",
  "縮小": "Alejar",
  "リセット": "Restablecer",
-  "【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査": "【Encuesta-Debate】{title}\n\n«{content}»\n\n#ツイッタラー世論調査",
-  "【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査": "【{side}】Comentario sobre {name}\n\n«{content}»\n\n#ツイッタラー世論調査",
-  "シェア": "Compartir",
+ "【投票トーク】{title}\n\n「{content}」\n\n#ツイッタラー世論調査": "【Encuesta-Debate】{title}\n\n«{content}»\n\n#ツイッタラー世論調査",
+ "【{side}】{name}へのコメント\n\n「{content}」\n\n#ツイッタラー世論調査": "【{side}】Comentario sobre {name}\n\n«{content}»\n\n#ツイッタラー世論調査",
+ "シェア": "Compartir",
  "\n#ツイッタラー世論調査": "\n#ツイッタラー世論調査",
  "10/6(火) 0:00 開幕！期間中の投票で王者を決めよう": "¡Comienza el 6/10 (mar) a las 0:00! Los votos durante el evento deciden al campeón.",
  "1人目": "Primera persona",
@@ -688,5 +685,6 @@
  "ソースコード（GitHub）": "Código fuente (GitHub)",
  "前回のあなたの投票: {vote}": "Tu voto anterior: {vote}",
  "好き？": "¿Me gusta?",
- "嫌い？": "¿No me gusta?"
+ "嫌い？": "¿No me gusta?",
+ "大喜利好き": "Ogiri y memes"
 }

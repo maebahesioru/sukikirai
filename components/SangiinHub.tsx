@@ -18,13 +18,10 @@ import { num } from "@/lib/format";
 const partyOf = (id: string) => PARTIES.find((p) => p.id === id);
 const fmtScore = (s: number) => (Number.isInteger(s) ? String(s) : s.toFixed(1));
 
-/** 衆院の区名 → 参院の選挙区ID（合区対応） */
+/** 衆院の区名 → 参院の選挙区ID = 都道府県名（47区制・合区なしになったので単純化） */
 function sangiinOf(name: string): string {
   const m = name.match(/^(.+?)第\d+区$/);
-  const pref = m ? m[1] : name;
-  if (pref === "鳥取県" || pref === "島根県") return "鳥取・島根";
-  if (pref === "徳島県" || pref === "高知県") return "徳島・高知";
-  return pref;
+  return m ? m[1] : name;
 }
 
 export default async function SangiinHub() {

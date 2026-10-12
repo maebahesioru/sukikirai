@@ -1682,7 +1682,7 @@ export async function getLikeRankingPosition(
 /** サイトマップ用 */
 export async function listSitemapEntries(): Promise<{ id: string; updated_at: string }[]> {
   return sql(
-    "SELECT id, updated_at FROM people WHERE NOT is_hidden AND (x_status IS NULL OR x_status = 'ok') ORDER BY created_at DESC"
+    "SELECT id, updated_at FROM people WHERE NOT is_hidden ORDER BY created_at DESC"
   );
 }
 

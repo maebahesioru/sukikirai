@@ -389,7 +389,7 @@ function CommentForm({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("コメントを入力...（全角140文字まで）")}
+          placeholder={parentNumber ? t(">>{n}\n返信内容を入力...", { n: parentNumber }) : t("コメントを入力...（全角500文字まで）")}
           rows={parentNumber ? 3 : 4}
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />

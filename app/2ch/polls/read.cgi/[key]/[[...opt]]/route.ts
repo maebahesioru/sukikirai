@@ -3,7 +3,8 @@ import { randomBytes } from "crypto";
 import { buildPollDat, resolvePollThread } from "@/lib/thread2ch";
 import { insertPollComment } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { isValidToken } from "@/lib/validate";
+import { charCount, isValidToken } from "@/lib/validate";
+import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { to2chResponse } from "@/lib/bbs2ch";
 import { applyTrip } from "@/lib/trip";
 
@@ -53,8 +54,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ key
   if (!message) {
     return new NextResponse("本文が空です", { status: 400, headers: TEXT_HEADERS });
   }
-  if (message.length > 280) {
-    return new NextResponse("本文が長すぎます（280文字まで）", { status: 400, headers: TEXT_HEADERS });
+  if (charCount(message) > MAX_COMMENT_CHARS) {
+    return new NextResponse("本文が長すぎます（全角500文字まで）", { status: 400, headers: TEXT_HEADERS });
   }
 
   const cookieHeader = request.headers.get("cookie") ?? "";

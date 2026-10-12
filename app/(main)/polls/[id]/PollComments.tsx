@@ -5,6 +5,7 @@ import { getUserToken } from "@/lib/client-token";
 import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import CommentText from "@/components/CommentText";
+import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import EmojiText from "@/components/EmojiText";
 import TranslateBox from "@/components/TranslateBox";
 import { useT, useLocale } from "@/lib/i18n-client";
@@ -98,8 +99,8 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    if (getCharCount(content) > 280) {
-      alert(t("コメントは全角140文字（半角280文字）以内です"));
+    if (getCharCount(content) > MAX_COMMENT_CHARS) {
+      alert(t("コメントは全角{n}文字（半角{m}文字）以内です", { n: Math.floor(MAX_COMMENT_CHARS / 2), m: MAX_COMMENT_CHARS }));
       return;
     }
     const token = getUserToken();
@@ -221,13 +222,13 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={t("コメントを入力...（全角140文字まで）")}
+          placeholder={t("コメントを入力...（全角500文字まで）")}
           rows={3}
           className="w-full px-3 py-2 rounded-lg border border-line text-sm resize-y focus:outline-none focus:ring-2 focus:ring-x/60"
         />
         <div className="flex items-center justify-between">
-          <span className={`text-xs ${getCharCount(content) > 280 ? "text-bad font-bold" : "text-mut"}`}>
-            {getCharCount(content)} / 280
+          <span className={`text-xs ${getCharCount(content) > MAX_COMMENT_CHARS ? "text-bad font-bold" : "text-mut"}`}>
+            {getCharCount(content)} / {MAX_COMMENT_CHARS}
           </span>
           <button
             type="submit"

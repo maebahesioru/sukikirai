@@ -47,7 +47,7 @@ export const AGE_GROUPS = [
 ] as const;
 
 export const COMMENTS_PER_PAGE = 20;
-export const MAX_COMMENT_CHARS = 280; // 全角140文字相当
+export const MAX_COMMENT_CHARS = 1000; // 全角500文字相当（リッチ表示対応で拡大 2026-10-12）
 export const MAX_NAME_LENGTH = 50;
 export const MAX_DESCRIPTION_LENGTH = 500;
 

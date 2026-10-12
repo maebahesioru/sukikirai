@@ -1,15 +1,32 @@
-// コメント本文の表示: >>N アンカーとURLをリンク化し、AA（アスキーアート）は等幅で表示する
+"use client";
+
+// コメント本文の表示（2026-10-12 リッチ化）:
+// Markdown / 色タグ(<font color>等) / LaTeX(KaTeX) / Mermaid / >>Nアンカー / URL / AA / Twemoji
+// パイプライン: lib/richtext（markdown-it→sanitize）→ Twemoji遅延適用 → MermaidはReactコンポーネントで描画
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { isAA } from "@/lib/format";
+import { renderRich } from "@/lib/richtext";
+import MermaidBlock from "./MermaidBlock";
 import EmojiText from "./EmojiText";
+import "katex/dist/katex.min.css";
 
-// https://… / www.… / 素のドメイン（note.com/xxx 等）をリンク化
-// URL本体はASCII URL文字のみ（日本語や「。」を巻き込まない）
+const BASE = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/";
+const HAS_EMOJI = /[\p{Extended_Pictographic}\u20E3]/u;
+type TwemojiParser = { parse: (s: string, o: Record<string, unknown>) => string };
+let parserPromise: Promise<TwemojiParser> | null = null;
+function loadParser(): Promise<TwemojiParser> {
+  if (!parserPromise) {
+    parserPromise = import("@twemoji/api").then((m) => m.default as unknown as TwemojiParser);
+  }
+  return parserPromise;
+}
+
+// ---- 軽量パス（AA時のみ使用）: URLと>>Nをリンク化しつつReactで描画 ----
 const URLCHARS = "A-Za-z0-9\\-._~:\\/?#\\[\\]@!$&'()*+,;=%";
 const URL_SRC = `(https?:\\/\\/[${URLCHARS}]+|www\\.[${URLCHARS}]+|(?:[a-z0-9-]+\\.)+(?:co\\.jp|com|net|org|gg|io|me|tv|jp|app|dev|fm|site|xyz)(?:\\/[${URLCHARS}]*)?)`;
 const URL_SPLIT = new RegExp(URL_SRC, "gi");
 const URL_ONE = new RegExp(`^${URL_SRC}$`, "i");
-// URL末尾に付きがちな句読点・閉じ括弧はリンクから外す
 const TRAIL_RE = /[)\]}>.,;:!?。、）」』】]+$/;
 
 function UrlLink({ raw }: { raw: string }) {
@@ -36,7 +53,7 @@ function UrlLink({ raw }: { raw: string }) {
   );
 }
 
-function renderContent(content: string): ReactNode[] {
+function renderPlain(content: string): ReactNode[] {
   const out: ReactNode[] = [];
   const urlParts = content.split(URL_SPLIT);
   urlParts.forEach((part, i) => {
@@ -69,8 +86,29 @@ export default function CommentText({
   content: string;
   className?: string;
 }) {
-  const inner = renderContent(content);
-  if (isAA(content)) {
+  const aa = isAA(content);
+  const rich = useMemo(() => (aa ? null : renderRich(content)), [content, aa]);
+  const [twemojiHtml, setTwemojiHtml] = useState<string | null>(null);
+
+  // Twemojiはクライアントで遅延適用（絵文字を含む時だけロード）
+  useEffect(() => {
+    setTwemojiHtml(null);
+    if (!rich || !HAS_EMOJI.test(rich.html)) return;
+    let alive = true;
+    loadParser()
+      .then((tw) => {
+        if (!alive) return;
+        setTwemojiHtml(
+          tw.parse(rich.html, { folder: "svg", ext: ".svg", base: BASE, className: "emoji" })
+        );
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [rich]);
+
+  if (aa) {
     // 呼び出し側の whitespace-pre-wrap / leading-* はAAでは邪魔なので落とす
     const cleanClass = (className ?? "")
       .replace(/\bwhitespace-pre-wrap\b/g, "")
@@ -79,9 +117,23 @@ export default function CommentText({
       <pre
         className={`font-aa whitespace-pre overflow-x-auto text-[13px] leading-[1.2] ${cleanClass}`}
       >
-        {inner}
+        {renderPlain(content)}
       </pre>
     );
   }
-  return <p className={className}>{inner}</p>;
+
+  const html = twemojiHtml ?? rich!.html;
+  // MermaidスロットでHTMLを分割し、図はReactコンポーネントとして描画する
+  const parts = html.split(/<div[^>]*data-mermaid="(\d+)"[^>]*><\/div>/);
+  const out: ReactNode[] = [];
+  parts.forEach((seg, i) => {
+    if (i % 2 === 1) {
+      out.push(<MermaidBlock key={`m${i}`} code={rich!.mermaid[Number(seg)] ?? ""} />);
+    } else if (seg) {
+      // sanitize-html通過済みHTML（katex/リンク/色タグ等のみ許可）を挿入する
+      out.push(<div key={`h${i}`} dangerouslySetInnerHTML={{ __html: seg }} />);
+    }
+  });
+  const cleanClass = (className ?? "").replace(/\bwhitespace-pre-wrap\b/g, "");
+  return <div className={`md-body ${cleanClass}`}>{out}</div>;
 }

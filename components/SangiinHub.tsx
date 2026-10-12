@@ -56,15 +56,8 @@ export default async function SangiinHub() {
     const top = [...byParty.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
     const color = top ? partyOf(top[0])?.color ?? "#475569" : "#475569";
     const label = top ? `${partyOf(top[0])?.name ?? ""}・${race.winners[0]?.name ?? ""}` : t("—");
-    const prefs =
-      race.districtId === "鳥取・島根"
-        ? ["鳥取県", "島根県"]
-        : race.districtId === "徳島・高知"
-          ? ["徳島県", "高知県"]
-          : [race.districtId];
-    // 合区は都道府県名だけでなく選挙区IDでも引けるように（地図のキー照合）
+    // 47区制では districtId = 都道府県名そのもの（地図は pref で引く）
     prefColor.set(race.districtId, { color, label });
-    for (const pref of prefs) prefColor.set(pref, { color, label });
   }
   const districtResults: DistrictResult[] = allDistricts().map((d) => {
     const pc = prefColor.get(sangiinOf(d.name));
@@ -177,7 +170,7 @@ export default async function SangiinHub() {
       {/* 地図 */}
       <section className="bg-panel border border-line rounded-2xl p-5">
         <h2 className="font-bold mb-3">🗾 {t("日本地図（47選挙区・最多当選の党で色分け）")}</h2>
-        <JapanElectionMap results={districtResults} />
+        <JapanElectionMap results={districtResults} mode="sangiin" />
       </section>
 
       {/* 選挙区一覧 */}

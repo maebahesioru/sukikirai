@@ -11,7 +11,14 @@ export type DistrictResult = { id: string; color: string; label: string };
 /** 日本地図（300小選挙区・当選党色分け・ズーム/パン対応）— 2026-10-10
  * 2026-10-11: モバイル対応 — 2本指ピンチズーム実装・増分パン・pointercancel対応・iOS callout抑制
  * 境界データ: /election-map.json（地域・交通データ研究所 パブリックドメインを加工） */
-export default function JapanElectionMap({ results }: { results: DistrictResult[] }) {
+export default function JapanElectionMap({
+  results,
+  mode = "shuraku",
+}: {
+  results: DistrictResult[];
+  /** shuraku=衆院300区（id=区名でルックアップ→/election/district/区名）/ sangiin=参院47区（pref=県名でルックアップ→/election/sangiin/district/県名） */
+  mode?: "shuraku" | "sangiin";
+}) {
   const [data, setData] = useState<MapData | null>(null);
   const [view, setView] = useState({ s: 1, x: 0, y: 0 });
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
@@ -146,6 +153,8 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
     return <div className="h-80 rounded-xl bg-panel2 animate-pulse" />;
   }
   const byId = new Map(results.map((r) => [r.id, r]));
+  /** 参院は県単位の色（区ジオメトリ→県名でルックアップ）。衆院は区IDそのまま */
+  const keyOf = (d: { id: string; pref: string }) => (mode === "sangiin" ? d.pref : d.id);
   const [, , w, h] = vb();
 
   return (
@@ -184,11 +193,16 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
         onPointerCancel={endPointer}
         onPointerLeave={endPointer}
         role="img"
-        aria-label="日本地図（300小選挙区・当選党色分け）"
+        aria-label={
+          mode === "sangiin"
+            ? "日本地図（47選挙区・最多当選の党で色分け）"
+            : "日本地図（300小選挙区・当選党色分け）"
+        }
       >
         <g transform={`translate(${view.x} ${view.y}) scale(${view.s})`}>
           {data.districts.map((d) => {
-            const r = byId.get(d.id);
+            const r = byId.get(keyOf(d));
+            const label = mode === "sangiin" ? d.pref : d.id;
             return (
               <path
                 key={d.id}
@@ -200,12 +214,16 @@ export default function JapanElectionMap({ results }: { results: DistrictResult[
                 onMouseMove={(e) => {
                   const wrap = wrapRef.current?.getBoundingClientRect();
                   if (!wrap) return;
-                  setTip({ x: e.clientX - wrap.left, y: e.clientY - wrap.top, text: `${d.id}｜${r?.label ?? ""}` });
+                  setTip({ x: e.clientX - wrap.left, y: e.clientY - wrap.top, text: `${label}｜${r?.label ?? ""}` });
                 }}
                 onMouseLeave={() => setTip(null)}
                 onClick={() => {
                   if (!dragRef.current?.moved) {
-                    router.push(`/election/district/${encodeURIComponent(d.id)}`);
+                    router.push(
+                      mode === "sangiin"
+                        ? `/election/sangiin/district/${encodeURIComponent(d.pref)}`
+                        : `/election/district/${encodeURIComponent(d.id)}`
+                    );
                   }
                 }}
               />

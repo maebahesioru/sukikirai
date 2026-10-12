@@ -26,7 +26,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: poll ? poll.title : t("投票トーク"),
     description: poll?.description ?? undefined,
-    alternates: { canonical: localePath(locale, `/polls/${id}`) },
+    alternates: {
+      canonical: localePath(locale, `/polls/${id}`),
+      types: { "application/atom+xml": `/feed/polls/${id}` },
+    },
     openGraph: {
       title: poll ? poll.title : t("投票トーク"),
       description: poll?.description ?? undefined,

@@ -268,3 +268,30 @@ mark.search-hl {
   margin: 0.15rem 0;
 }
 .md-body .dice-box code { background: none; padding: 0; }
+
+/* アンカーホバープレビュー（2026-10-12） */
+.anchor-tip {
+  position: fixed;
+  z-index: 70;
+  max-width: 320px;
+  background: var(--t-panel);
+  border: 1px solid var(--t-line2);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0.5rem 0.7rem;
+  pointer-events: none;
+}
+.anchor-tip-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--t-mut);
+  margin-bottom: 0.15rem;
+}
+.anchor-tip-body {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 8rem;
+  overflow: hidden;
+}

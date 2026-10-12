@@ -11,7 +11,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
   title: "管理スレ（要望・バグ報告）",
   description: "ツイッタラー世論調査への機能要望・バグ報告・その他の連絡用スレッドです。",
-  alternates: { canonical: localePath(locale, "/meta") },
+  alternates: {
+    canonical: localePath(locale, "/meta"),
+    types: { "application/atom+xml": "/feed/meta" },
+  },
   };
 }
 

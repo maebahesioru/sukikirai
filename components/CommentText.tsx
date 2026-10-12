@@ -82,14 +82,17 @@ function renderPlain(content: string): ReactNode[] {
 export default function CommentText({
   content,
   className,
+  resolveAnchor,
 }: {
   content: string;
   className?: string;
+  resolveAnchor?: (n: number) => { name: string; content: string } | null;
 }) {
   const aa = isAA(content) && !looksRich(content);
   const rich = useMemo(() => (aa ? null : renderRich(content)), [content, aa]);
   const [twemojiHtml, setTwemojiHtml] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; name: string; content: string } | null>(null);
 
   // スポイラー開閉・画像クリック拡大（委譲ハンドラ）
   const onClick = (e: MouseEvent<HTMLDivElement>) => {
@@ -104,6 +107,24 @@ export default function CommentText({
       e.preventDefault();
       setLightbox(imgLink.getAttribute("href"));
     }
+  };
+
+  // アンカーホバープレビュー（>>N にカーソルで参照先をチラ見）
+  const onOver = (e: MouseEvent<HTMLDivElement>) => {
+    if (!resolveAnchor) return;
+    const a = (e.target as HTMLElement).closest("a.anchor-link") as HTMLAnchorElement | null;
+    if (!a) return;
+    const m = (a.getAttribute("href") ?? "").match(/^#c(\d+)$/);
+    if (!m) return;
+    const data = resolveAnchor(parseInt(m[1], 10));
+    if (!data) return;
+    const rect = a.getBoundingClientRect();
+    const x = Math.min(Math.max(rect.left, 8), Math.max(8, window.innerWidth - 340));
+    const y = Math.min(rect.bottom + 6, window.innerHeight - 120);
+    setTip({ x, y, name: data.name, content: data.content });
+  };
+  const onOut = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("a.anchor-link")) setTip(null);
   };
 
   // Twemojiはクライアントで遅延適用（絵文字を含む時だけロード）
@@ -152,12 +173,18 @@ export default function CommentText({
   });
   const cleanClass = (className ?? "").replace(/\bwhitespace-pre-wrap\b/g, "");
   return (
-    <div className={`md-body ${cleanClass}`} onClick={onClick}>
+    <div className={`md-body ${cleanClass}`} onClick={onClick} onMouseOver={onOver} onMouseOut={onOut}>
       {out}
       {lightbox && (
         <div className="img-lightbox" onClick={() => setLightbox(null)}>
           {/* クリックで開いた画像（srcは sanitize 済みHTML由来 or リンクhref） */}
           <img src={lightbox} alt="" />
+        </div>
+      )}
+      {tip && (
+        <div className="anchor-tip" style={{ left: tip.x, top: tip.y }}>
+          <div className="anchor-tip-name">{tip.name}</div>
+          <div className="anchor-tip-body">{tip.content}</div>
         </div>
       )}
     </div>

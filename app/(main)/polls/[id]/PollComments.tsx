@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUserToken } from "@/lib/client-token";
 import { Send, ThumbsUp, ThumbsDown, MessageCircle, EyeOff, Share2, Trash2, Link2 } from "lucide-react";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
@@ -9,6 +9,7 @@ import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import EmojiText from "@/components/EmojiText";
 import TranslateBox from "@/components/TranslateBox";
 import { useT, useLocale } from "@/lib/i18n-client";
+import { useReadTracker } from "@/lib/use-read-tracker";
 
 type PollComment = {
   id: string;
@@ -145,6 +146,43 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
       setBusy(false);
     }
   };
+
+  // 既読管理＋新着＋アンカープレビュー（2026-10-12）
+  const latestNum = useMemo(() => {
+    let m = 0;
+    for (const c of comments) {
+      m = Math.max(m, c.comment_number);
+      for (const r of c.replies ?? []) m = Math.max(m, r.comment_number);
+    }
+    return m;
+  }, [comments]);
+  const prevRead = useReadTracker(`sk-read-poll-${pollId}`, latestNum);
+  const newStats = useMemo(() => {
+    let n = 0;
+    let f = Infinity;
+    for (const c of comments) {
+      if (c.comment_number > prevRead) { n++; f = Math.min(f, c.comment_number); }
+      for (const r of c.replies ?? []) if (r.comment_number > prevRead) { n++; f = Math.min(f, r.comment_number); }
+    }
+    return { n, first: f === Infinity ? null : f };
+  }, [comments, prevRead]);
+  const byNumber = useMemo(() => {
+    const m = new Map<number, { name: string | null; content: string }>();
+    for (const c of comments) {
+      m.set(c.comment_number, c);
+      for (const r of c.replies ?? []) m.set(r.comment_number, r);
+    }
+    return m;
+  }, [comments]);
+  const anchorLookup = useCallback(
+    (n: number) => {
+      const c = byNumber.get(n);
+      if (!c) return null;
+      const text = c.content.length > 140 ? c.content.slice(0, 140) + "…" : c.content;
+      return { name: c.name || t("名無しさん"), content: text };
+    },
+    [byNumber, t]
+  );
 
   const needle = q.trim().toLowerCase();
   const matchesQ = (c: { content: string; name: string | null }) =>
@@ -287,6 +325,18 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
         </div>
       </form>
 
+      {newStats.n > 0 && newStats.first !== null && (
+        <button
+          type="button"
+          onClick={() =>
+            document.getElementById(`c${newStats.first}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+          className="mt-4 w-full text-left text-xs font-bold text-x bg-xsoft/40 border border-x/30 rounded-lg px-3 py-2 hover:bg-xsoft/60 transition"
+        >
+          🔔 {t("新着{n}件（クリックで移動）", { n: newStats.n })}
+        </button>
+      )}
+
       <div className="space-y-4">
         {visible.map((c) => (
           <PollCommentItem
@@ -297,6 +347,7 @@ export default function PollComments({ pollId, pollTitle }: { pollId: string; po
             onUpdate={fetchComments}
             hiddenIds={hiddenIds}
             onHide={hide}
+            anchorLookup={anchorLookup}
           />
         ))}
         {visible.length === 0 && (
@@ -314,6 +365,7 @@ function PollCommentItem({
   onUpdate,
   hiddenIds,
   onHide,
+  anchorLookup,
 }: {
   comment: PollComment;
   pollId: string;
@@ -321,6 +373,7 @@ function PollCommentItem({
   onUpdate: () => void;
   hiddenIds: string[];
   onHide: (id: string) => void;
+  anchorLookup?: (n: number) => { name: string; content: string } | null;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -495,7 +548,7 @@ function PollCommentItem({
           {t("「{option}」に投票しました！", { option: comment.voted_option })}
         </p>
       )}
-      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
+      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" resolveAnchor={anchorLookup} />
       <div className="flex items-center gap-4 text-sm">
         <button
           onClick={() => react("good")}
@@ -578,7 +631,7 @@ function PollCommentItem({
                   {t("「{option}」に投票しました！", { option: r.voted_option })}
                 </p>
               )}
-              <TranslateBox text={r.content} variant="comment" className="whitespace-pre-wrap" />
+              <TranslateBox text={r.content} variant="comment" className="whitespace-pre-wrap" resolveAnchor={anchorLookup} />
             </div>
           ))}
         </div>

@@ -14,10 +14,12 @@ export default function TranslateBox({
   text,
   className,
   variant = "comment",
+  resolveAnchor,
 }: {
   text: string;
   className?: string;
   variant?: "comment" | "plain";
+  resolveAnchor?: (n: number) => { name: string; content: string } | null;
 }) {
   const locale = useLocale();
   const t = useT();
@@ -27,7 +29,7 @@ export default function TranslateBox({
   const original =
     variant === "comment" ? (
       <>
-        <CommentText content={text} className={className} />
+        <CommentText content={text} className={className} resolveAnchor={resolveAnchor} />
         <LinkEmbeds text={text} />
       </>
     ) : (

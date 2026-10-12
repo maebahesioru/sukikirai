@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUserToken } from "@/lib/client-token";
 import {
   EyeOff,
@@ -19,6 +19,7 @@ import EmojiText from "./EmojiText";
 import { timeAgo, fmtTime2ch } from "@/lib/format";
 import Avatar from "./Avatar";
 import { useT, useLocale } from "@/lib/i18n-client";
+import { useReadTracker } from "@/lib/use-read-tracker";
 import TranslateBox from "./TranslateBox";
 
 type FilterType = "all" | "like" | "dislike";
@@ -117,11 +118,59 @@ export default function CommentSection({
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
+  // 既読管理＋新着＋アンカープレビュー（2026-10-12）
+  const latestNum = useMemo(() => {
+    let m = 0;
+    for (const c of comments) {
+      m = Math.max(m, c.comment_number);
+      for (const r of c.replies) m = Math.max(m, r.comment_number);
+    }
+    return m;
+  }, [comments]);
+  const prevRead = useReadTracker(`sk-read-p-${personId}`, latestNum);
+  const newStats = useMemo(() => {
+    let n = 0;
+    let f = Infinity;
+    for (const c of comments) {
+      if (c.comment_number > prevRead) { n++; f = Math.min(f, c.comment_number); }
+      for (const r of c.replies) if (r.comment_number > prevRead) { n++; f = Math.min(f, r.comment_number); }
+    }
+    return { n, first: f === Infinity ? null : f };
+  }, [comments, prevRead]);
+  const byNumber = useMemo(() => {
+    const m = new Map<number, CommentRow>();
+    for (const c of comments) {
+      m.set(c.comment_number, c);
+      for (const r of c.replies) m.set(r.comment_number, r);
+    }
+    return m;
+  }, [comments]);
+  const anchorLookup = useCallback(
+    (n: number) => {
+      const c = byNumber.get(n);
+      if (!c) return null;
+      const text = c.content.length > 140 ? c.content.slice(0, 140) + "…" : c.content;
+      return { name: c.name || t("匿名"), content: text };
+    },
+    [byNumber, t]
+  );
+
   const visibleComments = comments.filter((c) => showHidden || !hiddenIds.includes(c.id));
   const hiddenCount = comments.filter((c) => hiddenIds.includes(c.id)).length;
 
   const list = (
     <>
+      {newStats.n > 0 && newStats.first !== null && (
+        <button
+          type="button"
+          onClick={() =>
+            document.getElementById(`c${newStats.first}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+          className="mt-4 w-full text-left text-xs font-bold text-x bg-xsoft/40 border border-x/30 rounded-lg px-3 py-2 hover:bg-xsoft/60 transition"
+        >
+          🔔 {t("新着{n}件（クリックで移動）", { n: newStats.n })}
+        </button>
+      )}
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
         {visibleComments.map((c) => (
           <CommentItem
@@ -134,6 +183,8 @@ export default function CommentSection({
             hiddenIds={hiddenIds}
             showHidden={showHidden}
             onHide={toggleHide}
+            isNew={c.comment_number > prevRead}
+            anchorLookup={anchorLookup}
           />
         ))}
         {visibleComments.length === 0 && !loading && (
@@ -532,6 +583,8 @@ function CommentItem({
   hiddenIds,
   showHidden,
   onHide,
+  isNew,
+  anchorLookup,
 }: {
   comment: CommentWithReplies;
   myVoteType?: "like" | "dislike" | null;
@@ -541,6 +594,8 @@ function CommentItem({
   hiddenIds: string[];
   showHidden: boolean;
   onHide: (id: string) => void;
+  isNew?: boolean;
+  anchorLookup?: (n: number) => { name: string; content: string } | null;
 }) {
   const [local, setLocal] = useState<CommentRow>(comment);
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
@@ -637,7 +692,7 @@ function CommentItem({
   };
 
   return (
-    <div id={`c${comment.comment_number}`} className={`border border-line rounded-xl p-4 ${isHidden ? "opacity-40" : ""}`}>
+    <div id={`c${comment.comment_number}`} className={`border border-line rounded-xl p-4 ${isHidden ? "opacity-40" : ""} ${isNew ? "ring-1 ring-x/40" : ""}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 flex-wrap text-sm">
           <span className="text-mut text-xs">#{comment.comment_number}</span>
@@ -695,7 +750,7 @@ function CommentItem({
         )}
       </div>
 
-      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
+      <TranslateBox text={comment.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" resolveAnchor={anchorLookup} />
 
       <div className="flex items-center gap-4 text-sm">
         <button
@@ -748,6 +803,7 @@ function CommentItem({
                 personName={personName}
                 hiddenIds={hiddenIds}
                 onHide={onHide}
+                anchorLookup={anchorLookup}
               />
             ))}
         </div>
@@ -778,6 +834,7 @@ function ReplyItem({
   personName,
   hiddenIds,
   onHide,
+  anchorLookup,
 }: {
   reply: CommentRow;
   parentNumber: number;
@@ -785,6 +842,7 @@ function ReplyItem({
   personName: string;
   hiddenIds: string[];
   onHide: (id: string) => void;
+  anchorLookup?: (n: number) => { name: string; content: string } | null;
 }) {
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
@@ -905,7 +963,7 @@ function ReplyItem({
         <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>
         <span className="ml-auto" />
       </div>
-      <TranslateBox text={reply.content} variant="comment" className="whitespace-pre-wrap mb-2" />
+      <TranslateBox text={reply.content} variant="comment" className="whitespace-pre-wrap mb-2" resolveAnchor={anchorLookup} />
       <div className="flex items-center gap-3 text-xs">
         <button
           onClick={() => react("good")}

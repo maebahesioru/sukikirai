@@ -47,7 +47,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       p.x_description ||
       p.description ||
       `${p.name}${p.handle ? ` (@${p.handle})` : ""} への好き嫌い投票・8項目評価・コメント一覧。`,
-    alternates: { canonical: localePath(locale, `/person/${p.id}`) },
+    alternates: {
+      canonical: localePath(locale, `/person/${p.id}`),
+      types: { "application/atom+xml": `/feed/person/${encodeURIComponent(p.id)}` },
+    },
     ...(archived ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${p.name}の評価・好き嫌い | ${SITE_NAME}`,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getUserToken } from "@/lib/client-token";
 import { MessageSquare, MessageCircle, ThumbsUp, ThumbsDown, Trash2, Send, EyeOff, Link2 } from "lucide-react";
 import { fmtTime2ch } from "@/lib/format";
@@ -10,6 +10,7 @@ import CommentText from "./CommentText";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import { charCount } from "@/lib/validate";
 import { useT } from "@/lib/i18n-client";
+import { useReadTracker } from "@/lib/use-read-tracker";
 import TranslateBox from "@/components/TranslateBox";
 
 type MetaPost = {
@@ -69,6 +70,50 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
       /* noop */
     }
   };
+
+  // 既読管理＋新着（2026-10-12）
+  const latestNum = useMemo(() => {
+    let m = 0;
+    for (const p of posts) {
+      m = Math.max(m, p.post_number);
+      for (const r of p.replies) m = Math.max(m, r.post_number);
+    }
+    return m;
+  }, [posts]);
+  const prevRead = useReadTracker("sk-read-meta", latestNum);
+  const newCount = useMemo(() => {
+    let n = 0;
+    for (const p of posts) {
+      if (p.post_number > prevRead) n++;
+      for (const r of p.replies) if (r.post_number > prevRead) n++;
+    }
+    return n;
+  }, [posts, prevRead]);
+  const firstNew = useMemo(() => {
+    let f = Infinity;
+    for (const p of posts) {
+      if (p.post_number > prevRead) f = Math.min(f, p.post_number);
+      for (const r of p.replies) if (r.post_number > prevRead) f = Math.min(f, r.post_number);
+    }
+    return f === Infinity ? null : f;
+  }, [posts, prevRead]);
+  const byNumber = useMemo(() => {
+    const m = new Map<number, MetaPost>();
+    for (const p of posts) {
+      m.set(p.post_number, p);
+      for (const r of p.replies) m.set(r.post_number, r);
+    }
+    return m;
+  }, [posts]);
+  const anchorLookup = useCallback(
+    (n: number) => {
+      const p = byNumber.get(n);
+      if (!p) return null;
+      const text = p.content.length > 140 ? p.content.slice(0, 140) + "…" : p.content;
+      return { name: p.name ?? "名無しさん", content: text };
+    },
+    [byNumber]
+  );
 
   const needle = q.trim().toLowerCase();
   const matchPost = (p: MetaPost) =>
@@ -137,6 +182,18 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
         )}
       </div>
 
+      {newCount > 0 && firstNew !== null && (
+        <button
+          type="button"
+          onClick={() =>
+            document.getElementById(`c${firstNew}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+          className="mb-3 w-full text-left text-xs font-bold text-x bg-xsoft/40 border border-x/30 rounded-lg px-3 py-2 hover:bg-xsoft/60 transition"
+        >
+          🔔 {t("新着{n}件（クリックで移動）", { n: newCount })}
+        </button>
+      )}
+
       <div className="space-y-4">
         {visible.length === 0 ? (
           <p className="text-sm text-mut text-center py-8">
@@ -144,7 +201,15 @@ export default function MetaThread({ initialPosts }: { initialPosts: MetaPostWit
           </p>
         ) : (
           visible.map((p) => (
-            <PostItem key={p.id} post={p} onUpdate={refresh} hidden={hidden.includes(p.id)} onHide={toggleHide} />
+            <PostItem
+              key={p.id}
+              post={p}
+              onUpdate={refresh}
+              hidden={hidden.includes(p.id)}
+              onHide={toggleHide}
+              isNew={p.post_number > prevRead}
+              anchorLookup={anchorLookup}
+            />
           ))
         )}
       </div>
@@ -386,11 +451,15 @@ function PostItem({
   onUpdate,
   hidden,
   onHide,
+  isNew,
+  anchorLookup,
 }: {
   post: MetaPostWithReplies;
   onUpdate: () => void;
   hidden: boolean;
   onHide: (id: string) => void;
+  isNew?: boolean;
+  anchorLookup?: (n: number) => { name: string; content: string } | null;
 }) {
   const t = useT();
   const [local, setLocal] = useState(post);
@@ -465,7 +534,7 @@ function PostItem({
   };
 
   return (
-    <div id={`c${post.post_number}`} className={`bg-panel2 border border-line rounded-xl p-4 ${hidden ? "opacity-40" : ""}`}>
+    <div id={`c${post.post_number}`} className={`bg-panel2 border border-line rounded-xl p-4 ${hidden ? "opacity-40" : ""} ${isNew ? "ring-1 ring-x/40" : ""}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 text-xs text-mut flex-wrap">
           <span className="text-mut text-xs">#{post.post_number}</span>
@@ -495,7 +564,7 @@ function PostItem({
         </button>
       </div>
 
-      <TranslateBox text={post.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" />
+      <TranslateBox text={post.content} variant="comment" className="whitespace-pre-wrap text-sm leading-relaxed mb-3" resolveAnchor={anchorLookup} />
       <LinkEmbeds text={post.content} />
 
       <div className="flex items-center gap-4 text-sm mt-2">
@@ -548,7 +617,7 @@ function PostItem({
       {local.replies.length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
           {local.replies.map((r) => (
-            <ReplyItem key={r.id} reply={r} parentNumber={post.post_number} onUpdate={onUpdate} />
+            <ReplyItem key={r.id} reply={r} parentNumber={post.post_number} onUpdate={onUpdate} anchorLookup={anchorLookup} />
           ))}
         </div>
       )}
@@ -569,7 +638,17 @@ function PostItem({
 
 // ---------------- 投稿表示（返信） ----------------
 
-function ReplyItem({ reply, parentNumber, onUpdate }: { reply: MetaPost; parentNumber: number; onUpdate: () => void }) {
+function ReplyItem({
+  reply,
+  parentNumber,
+  onUpdate,
+  anchorLookup,
+}: {
+  reply: MetaPost;
+  parentNumber: number;
+  onUpdate: () => void;
+  anchorLookup?: (n: number) => { name: string; content: string } | null;
+}) {
   const t = useT();
   const [local, setLocal] = useState(reply);
   const [myReaction, setMyReaction] = useState<"good" | "bad" | null>(null);
@@ -658,7 +737,7 @@ function ReplyItem({ reply, parentNumber, onUpdate }: { reply: MetaPost; parentN
         <span className="text-[11px] text-mut font-mono">ID:{reply.anon_id}</span>
         <span className="ml-auto" />
       </div>
-      <TranslateBox text={reply.content} variant="comment" className="whitespace-pre-wrap mb-2" />
+      <TranslateBox text={reply.content} variant="comment" className="whitespace-pre-wrap mb-2" resolveAnchor={anchorLookup} />
       <div className="flex items-center gap-3 text-xs">
         <button
           onClick={() => react("good")}

@@ -139,9 +139,9 @@ export function renderRich(content: string): RichContent {
   return { html, mermaid };
 }
 
-/** リッチ機能が使われていそうか（未使用なら素の軽量パスにできる） */
+/** 強いMarkdown/リッチ記法のシグナル（AA判定より優先する。AA誤爆防止のため限定的に） */
 export function looksRich(content: string): boolean {
-  return /(\*\*|__|~~|`|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>|^\s*#|\||\$\$?[^\s$]|<font|<b>|<i>|<u>|<ruby|\[[^\]]+\]\(|```|~~)/m.test(
+  return /(```|\$\$[^$]+\$\$|\$[^\s$][^$]*\$|\*\*[^*]+\*\*|~~[^~]+~~|<font\b|<ruby\b|\[[^\]]+\]\([^)]+\)|^\s*\|[^\n|]*\|[^\n|]*\||^#{1,4}\s)/m.test(
     content
   );
 }

@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { isAA } from "@/lib/format";
-import { renderRich } from "@/lib/richtext";
+import { looksRich, renderRich } from "@/lib/richtext";
 import MermaidBlock from "./MermaidBlock";
 import EmojiText from "./EmojiText";
 import "katex/dist/katex.min.css";
@@ -86,7 +86,7 @@ export default function CommentText({
   content: string;
   className?: string;
 }) {
-  const aa = isAA(content);
+  const aa = isAA(content) && !looksRich(content);
   const rich = useMemo(() => (aa ? null : renderRich(content)), [content, aa]);
   const [twemojiHtml, setTwemojiHtml] = useState<string | null>(null);
 

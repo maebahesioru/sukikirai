@@ -21,7 +21,8 @@ export default function ElectionTrendChart({ rows, note }: { rows: TrendRow[]; n
   const padR = 12;
   const padT = 12;
   const padB = 24;
-  const yMax = Math.max(50, ...[...latest.values()]);
+  // 縦軸は「全期間の最大値」で取る（最新値ベースだと序盤のスパイクが上にはみ出す — 2026-10-13修正）
+  const yMax = Math.max(50, ...rows.map((r) => r.seats));
   const x = (i: number) => padL + (i * (W - padL - padR)) / (keys.length - 1);
   const y = (v: number) => H - padB - (v * (H - padT - padB)) / yMax;
   const series = top.map((p) => {

@@ -317,7 +317,7 @@ export function classifyWithAuto(
 /** 企業・サービス（bio側は法人自認の言い回しのみ） */
 const COMPANY_ANY = ["運営しています", "サービスを提供", "プレスリリース", "企業アカウント", "co.,ltd", "inc.", "corp.", "代表取締役"];
 /** 企業（「公式」系）— 「非公式」を除外したうえで判定する（非公式アカウントの誤判定防止） */
-const COMPANY_ANY_OFFICIAL = ["公式アカウント", "公式xアカウント", "公式xです", "公式twitter", "公式ツイッター", "公式です", "オフィシャルアカウント", "officialaccount", "officialtwitter", "officialyoutube", "officialxpage", "officialpage"];
+const COMPANY_ANY_OFFICIAL = ["公式アカウント", "公式xアカウント", "公式xです", "公式twitter", "公式ツイッター", "公式です", "オフィシャルアカウント", "officialaccount", "officialtwitter", "officialyoutube", "officialxpage", "officialpage", "공식"];
 /** 「公式◯◯アカウント」の揺れ（公式広報アカウント・公式ニュースアカウント等） */
 const COMPANY_OFFICIAL_ACCOUNT_RE = /公式.{0,8}アカウント/;
 /** 名前側の公式シグナル（ブランドの自称。「非公式」は呼び出し側で除外） */
@@ -328,7 +328,7 @@ const COMPANY_NAME_ORG_RE = /(株式会社|有限会社|合同会社)/;
 /** 企業名ホワイトリスト（自己紹介に企業ワードが無い有名アカウント用） */
 const COMPANY_NAME_RE = /^(yahoo|youtube|google|openai|x|amazon|microsoft|apple|meta|nintendo|sony|rakuten|楽天|line|discord|tiktok|netflix|nhk)$/i;
 /** 政治家 */
-const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "内閣総理", "大臣", "知事", "市長", "市議会", "都議会", "立候補", "議員", "市議", "대통령", "당대표", "국회의원"];
+const POLITICIAN_ANY = ["政治家", "衆議院", "参議院", "国会議員", "内閣総理", "大臣", "知事", "市長", "市議会", "都議会", "立候補", "議員", "市議", "대통령", "당대표", "국회의원", "senator", "governor", "congressman", "congresswoman", "parliament"];
 /** 芸能人 */
 const CELEB_ANY = ["俳優", "女優", "芸人", "タレント", "声優", "歌手", "お笑いコンビ", "お笑い芸人", "actor", "actress", "singer"];
 /** Vtuber */
@@ -340,10 +340,10 @@ const BOT_NAME_RE = /(^|[^a-z])bot([^a-z]|$)/i;
 /** YouTuber（リンク・定型文も信号にする） */
 const YOUTUBER_ANY = ["youtuber", "ユーチューバー", "ユーチュバー", "youtube", "youtu.be", "チャンネル登録", "youtubeチャンネル", "youtube垢", "youtube登録者", "youtubeやって", "uuum", "登録者", "動画投稿", "動画を投稿", "vlog", "ショート動画"];
 /** 配信者（配信プラットフォームのURLも信号にする） */
-const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer", "twitcasting.tv", "showroom", "openrec.tv", "mildom", "iriam", "ポコチャ", "kick.com"];
+const STREAMER_ANY = ["配信", "実況", "生放送", "twitch", "ツイキャス", "ミラティブ", "ふわっち", "17live", "ミクチャ", "streamer", "twitcasting.tv", "showroom", "openrec.tv", "mildom", "iriam", "ポコチャ", "kick.com", "streaming", "esports"];
 /** クリエイター */
 const CREATOR_ANY = ["絵師", "イラストレーター", "漫画家", "漫画描", "小説家", "作曲家", "ボカロp", "dtm", "デザイナー", "カメラマン", "写真家", "アニメーター", "動画編集", "映像制作", "3dcg", "モデラー", "ハンドメイド", "グッズ制作", "mv制作", "絵を描く", "お絵描き", "作編曲", "サウンドクリエイター", "イラスト", "漫画", "絵描", "描いてます", "描いてる", "歌い手", "作詞", "編曲", "nicovideo.jp", "pixiv.net", "skeb.jp", "fanbox.cc", "soundcloud.com", "ゲーム制作", "ゲーム開発", "unityroom", "ファンアート", "note.com", "ブログ", "ライター", "執筆", "著書", "nico.ms", "描い", "描きます", "illustrator", "designer", "デザイン", "小説を書", "新刊", "kakuyomu", "カクヨム", "小説家になろう", "同人", "サークル「", "創作サークル", "サークルで活動", "即売会", "コミケ", "コミティア", "写真垢", "写真を撮", "撮影して", "フォトグラファ", "photograph", "弾き語り", "ミュージシャン", "トラックメイカー", "作曲", "エンジニア", "プログラミング", "開発者", "アプリ開発", "個人開発", "動画制作", "グッズ製作", "製作しています", "制作しています", "手芸", "編み物", "お菓子作り", "パン作り", "ギター弾き", "ギターを弾", "ギターやって", "ベースを弾", "ベースやって", "ドラムを叩", "作家", "レイヤー", "コスプレイヤー", "絵垢", "イラスト垢", "漫画垢", "創作垢", "作品垢", "小説垢", "絵日記", "ドット絵", "dj", "vj",
-  "artist", "musician", "composer", "animator", "filmmaker", "creator", "developer"];
+  "artist", "musician", "composer", "animator", "filmmaker", "creator", "developer", "drawing", "writer", "author"];
 /** 界隈の命名文化（ハンドル側の判定用）: _mania系・hikakin系 */
 const HIKAMER_HANDLE_RE = /(^|_)(mania|mani\d*)|hikakin/i;
 /** 学生（この界隈の主要属性） */
@@ -362,7 +362,7 @@ const ANIME_FAN_ANY = ["アニメ", "ゲーム", "漫画", "マンガ", "ラノ�
 const SPORTS_ANY = ["スポーツ", "野球", "サッカー", "フットボール", "バスケ", "バレー", "テニス", "卓球", "ゴルフ", "陸上部", "陸上競技", "水泳", "ボクシング", "格闘技", "柔道", "剣道", "空手", "スケボー", "スノボ", "サーフィン", "バドミントン", "jリーグ", "プロ野球", "甲子園", "サッカー部", "野球部", "バスケ部", "テニス部",
   // 球団名・リーグ・公営競技・モータースポーツ（2026-10-12追加）
   "ベイスターズ", "タイガース", "ジャイアンツ", "ホークス", "カープ", "バファローズ", "マリーンズ", "ライオンズ", "ファイターズ", "ドラゴンズ", "スワローズ", "イーグルス", "パリーグ", "セリーグ", "競馬", "競艇", "競輪", "ボートレース", "motogp", "スーパーgt", "プレミアリーグ",
-  "jockey", "athlete", "footballer", "baseball", "basketball", "worldchampion",
+  "jockey", "athlete", "footballer", "baseball", "basketball", "worldchampion", "formula1", "premierleague",
   "リヴァプール", "マンチェスター", "チェルシー", "アーセナル", "トッテナム", "バルセロナ", "レアルマドリード", "バイエルン", "ユヴェントス", "サポーター"];
 /** 鉄道好き */
 const RAILWAY_ANY = ["鉄道", "撮り鉄", "乗り鉄", "鉄オタ", "鉄ヲタ", "18きっぷ", "鉄道好き", "鉄道垢", "電車好き", "鉄道ファン", "音鉄"];
@@ -377,9 +377,11 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   const n = (name || "").normalize("NFKC").trim();
   // キーワード判定用テキストは空白（改行含む）を全除去 — bioの改行で「公式アカウント」等が分断されるのを防ぐ
   const text = `${n}\n${bio || ""}`.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+  // 空白を保持したテキスト（unofficialの単語境界判定用 — 「EarFunOfficial」のような連結語の誤爆防止）
+  const textW = `${n} ${bio || ""}`.normalize("NFKC").toLowerCase();
   const h = (handle || "").normalize("NFKC").toLowerCase();
 
-  const unofficial = UNOFFICIAL_RE.test(text);
+  const unofficial = /非公式|パロディ|parody/.test(text) || /(?:^|[^a-z])unofficial/.test(textW);
   const knownHikamer = legacyHikamer || wikiHikamer;
   // 1) 強い企業シグナル（法人格・企業名・法人自認）
   if (
@@ -391,7 +393,11 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
   }
   // 2) 個人の属性（政治家・芸能人）を企業より先に保護
   if (POLITICIAN_ANY.some((k) => text.includes(k))) return "政治家";
-  if (!knownHikamer && POLITICAL_RE.test(text)) return "政治・時事";
+  if (
+    !knownHikamer &&
+    (POLITICAL_RE.test(text) || /(?:^|[^a-z])(trump|maga|activist)(?![a-z])/.test(textW))
+  )
+    return "政治・時事";
   if (CELEB_ANY.some((k) => text.includes(k))) return "芸能人";
   // 3) 公式系の企業シグナル（既知ヒカマーは対象外＝界隈の冗談【公式】・自称を企業扱いしない）
   if (
@@ -399,7 +405,9 @@ export function classifyCategory(name: string, bio: string, legacyHikamer = fals
     !unofficial &&
     (COMPANY_NAME_OFFICIAL_RE.test(n) ||
       COMPANY_ANY_OFFICIAL.some((k) => text.includes(k)) ||
-      COMPANY_OFFICIAL_ACCOUNT_RE.test(text))
+      COMPANY_OFFICIAL_ACCOUNT_RE.test(text) ||
+      // EN "official" は単語境界＋@mention除外で判定（「@cueyofficial」等の誤爆防止）
+      /(?:^|[^a-z@_])official/.test(textW))
   ) {
     return "企業・サービス";
   }

@@ -25,16 +25,28 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
   inflight.add(p.id);
 
   try {
-    const res = await fetch(`https://api.fxtwitter.com/${encodeURIComponent(p.handle)}`, {
-      headers: { "User-Agent": UA, Accept: "application/json" },
-      redirect: "manual",
-      signal: AbortSignal.timeout(10000),
-    });
+    const doFetch = () =>
+      fetch(`https://api.fxtwitter.com/${encodeURIComponent(p.handle)}`, {
+        headers: { "User-Agent": UA, Accept: "application/json" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(10000),
+      });
+    let res = await doFetch();
 
-    // 凍結・削除・改名（302/404/410）→ スレ落ち扱い（日次チェッカーと同じ判定）
+    // 凍結・削除・改名（302/404/410）→ スレ落ち扱い（日次チェッカーと同じ判定）。
+    // ただしfxtwitterが稀に一時的な404を返すため、1回だけ再試行してから確定する
+    // （2026-10-13 でばねずみ誤アーカイブ事例）
     if (res.status === 302 || res.status === 404 || res.status === 410) {
-      await sql(`UPDATE people SET x_status = 'missing', x_checked_at = now() WHERE id = $1`, [p.id]);
-      return;
+      await new Promise((r) => setTimeout(r, 1500));
+      try {
+        res = await doFetch();
+      } catch {
+        /* 再試行も例外 → 下の判定に進む */
+      }
+      if (res.status === 302 || res.status === 404 || res.status === 410) {
+        await sql(`UPDATE people SET x_status = 'missing', x_checked_at = now() WHERE id = $1`, [p.id]);
+        return;
+      }
     }
     if (!res.ok) return; // 一時的なエラー等は何もしない
 

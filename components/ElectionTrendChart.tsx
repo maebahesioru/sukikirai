@@ -12,9 +12,10 @@ export default function ElectionTrendChart({ rows, note }: { rows: TrendRow[]; n
   const idx = new Map(keys.map((k, i) => [k, i]));
   const latest = new Map<string, number>();
   for (const r of rows) latest.set(r.party_id, r.seats);
-  const top = PARTIES.slice()
-    .sort((a, b) => (latest.get(b.id) ?? 0) - (latest.get(a.id) ?? 0))
-    .slice(0, 5);
+  // 全10党を表示（2026-10-13: 上位5党→全党に変更・並びは最新議席の多い順）
+  const top = PARTIES.slice().sort(
+    (a, b) => (latest.get(b.id) ?? 0) - (latest.get(a.id) ?? 0)
+  );
   const W = 720;
   const H = 240;
   const padL = 34;

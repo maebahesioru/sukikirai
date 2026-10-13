@@ -23,7 +23,7 @@ export async function generateMetadata({
   const district = decodeURIComponent(id);
   return {
     title: `${district} 開票状況 | 第1回ツイッタラー衆院選`,
-    description: `${district}の開票状況。好き+1票・嫌い-0.5票で競う小選挙区レース。`,
+    description: `${district}の開票状況。好き+1・嫌い-0.5＋コメント/評価分で競う小選挙区レース。`,
   };
 }
 
@@ -59,7 +59,7 @@ export default async function DistrictPage({ params }: { params: Promise<{ id: s
           {phase === "live" ? t("開票速報（随時更新）") : t("確定")}・{t("候補者{n}人", { n: cands.length })}
         </p>
         <p className="text-xs text-mut mt-2">
-          {t("得票 = 好き+1・嫌い-0.5。1位が当選（残り{day}日）", {
+          {t("得票 = 好き+1・嫌い-0.5 ／ コメント好き+2・嫌い-1.5 ／ 評価(星平均2.5以上+1.5・未満-1)。1位が当選（残り{day}日）", {
             day: Math.max(0, Math.ceil((Date.parse(ELECTION.endIso) - Date.now()) / 86400_000)),
           })}
         </p>

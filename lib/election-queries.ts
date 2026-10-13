@@ -6,11 +6,20 @@ import type { ElectionEntryRow } from "@/lib/election";
 
 const SCORE_SUB = `(
   SELECT person_id,
-         SUM(CASE vote_type WHEN 'like' THEN 1 ELSE -0.5 END)::float AS score,
-         COUNT(*) FILTER (WHERE vote_type = 'like') AS likes,
-         COUNT(*) FILTER (WHERE vote_type = 'dislike') AS dislikes
-  FROM votes WHERE created_at >= $1 AND created_at <= $2
-  GROUP BY person_id
+         SUM(pts)::float AS score,
+         COUNT(*) FILTER (WHERE kind = 'vote_like')::int AS likes,
+         COUNT(*) FILTER (WHERE kind = 'vote_dislike')::int AS dislikes
+  FROM (
+    SELECT person_id, CASE vote_type WHEN 'like' THEN 1.0 ELSE -0.5 END AS pts,
+           CASE vote_type WHEN 'like' THEN 'vote_like' ELSE 'vote_dislike' END AS kind
+    FROM votes WHERE created_at >= $1 AND created_at <= $2
+    UNION ALL
+    SELECT person_id, CASE vote_type WHEN 'like' THEN 2.0 ELSE -1.5 END, 'comment'
+    FROM comments WHERE created_at >= $1 AND created_at <= $2 AND NOT is_hidden
+    UNION ALL
+    SELECT person_id, CASE WHEN (fun + accuracy + influence + knowledge + humanity + charisma + favor + reply) >= 20 THEN 1.5 ELSE -1.0 END, 'eval'
+    FROM evaluations WHERE created_at >= $1 AND created_at <= $2
+  ) x GROUP BY person_id
 ) s`;
 
 const BASE_SELECT = `SELECT e.person_id, e.district_id, e.block_id, e.party_id, e.list_rank,

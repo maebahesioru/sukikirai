@@ -85,6 +85,7 @@ export const SOUSENKYO = {
   periodLabel: "10/6(火) 0:00 〜 10/12(月) 23:59",
   // 2026-10-10 中止（第1回ツイッタラー衆院選へ移行・オペレーター判断）
   cancelled: true,
+  cancelledIso: "2026-10-10T00:00:00+09:00",
 } as const;
 
 // ツイッタラー衆院選（2026-10-10 開幕・2週間）

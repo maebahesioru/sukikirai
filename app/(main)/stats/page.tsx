@@ -151,7 +151,7 @@ export default async function StatsPage() {
           <Link href="/election" className="text-xs text-x hover:underline">{t("特設ページ")}</Link>
         </div>
         <p className="text-xs text-mut">
-          {t("10/10(土)〜10/24(土)の2週間。好き+1票・嫌い-0.5票で300選挙区+212比例を争います。")}
+          {t("10/10(土)〜10/24(土)の2週間。好き+1・嫌い-0.5に加え、コメント(好き+2/嫌い-1.5)と評価(星平均2.5以上+1.5/未満-1)も得票になります。300選挙区+212比例を争います。")}
         </p>
       </section>
 

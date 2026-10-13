@@ -49,7 +49,7 @@ export default async function SangiinDistrictPage({ params }: { params: Promise<
         <p className="text-sm text-mut mt-1">
           {t("定数{n}議席・上位{n}人が当選", { n: num(meta.seats) })}
         </p>
-        <p className="text-xs text-mut mt-2">{t("好き+1票・嫌い-0.5票の合計で競う参院選挙区レース。")}</p>
+        <p className="text-xs text-mut mt-2">{t("好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。")}</p>
       </section>
 
       <section className="bg-panel border border-line rounded-2xl p-5">

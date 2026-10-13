@@ -692,5 +692,15 @@
  "フォロワー": "Followers",
  "フォロー中": "Following",
  "ツイート": "Tweets",
- "{year}年からX利用": "On X since {year}"
+ "{year}年からX利用": "On X since {year}",
+ "第1回ツイッタラー総選挙 アーカイブ（中止）": "1st Twitter Voter General Election — Archive (Cancelled)",
+ "中止となった第1回ツイッタラー総選挙の中止時点の最終結果アーカイブです。": "Archive of the final results at the time the 1st Twitter Voter General Election was cancelled.",
+ "開催期間 {period}。運営判断により中止し、新イベント「第1回ツイッタラー衆院選」に移行しました。": "Period: {period}. Cancelled by operator decision; moved to the new event \"1st Twitter Voter House Election\".",
+ "アーカイブ: 中止時点の最終結果（TOP{limit}）": "Archive: final results at cancellation (TOP{limit})",
+ "総投票 {votes}票・{people}人が参加": "{votes} total votes · {people} participants",
+ "票": " votes",
+ "得票 = 好き+1・嫌い-0.5 ／ コメント好き+2・嫌い-1.5 ／ 評価(星平均2.5以上+1.5・未満-1)。1位が当選（残り{day}日）": "Score = +1 like / −0.5 dislike ／ like comment +2 / dislike comment −1.5 ／ rating (avg ≥2.5: +1.5, <2.5: −1). 1st place wins ({day} days left)",
+ "10/10(土)〜10/24(土)の2週間。好き+1・嫌い-0.5に加え、コメント(好き+2/嫌い-1.5)と評価(星平均2.5以上+1.5/未満-1)も得票になります。300選挙区+212比例を争います。": "Two weeks, 10/10–10/24. Votes = like +1 / dislike −0.5, plus comments (like +2 / dislike −1.5) and ratings (avg ≥2.5: +1.5 / <2.5: −1). 300 districts + 212 proportional seats.",
+ "党の得票（党員の好き+1・嫌い-0.5＋コメント/評価分の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Party score (members' likes +1 / dislikes −0.5 plus comment/rating points) allocated via Sainte-Laguë. Elected from the list top (district winners excluded).",
+ "好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。": "Councillors district race scored by +1 like / −0.5 dislike plus comment/rating points."
 }

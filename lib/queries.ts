@@ -1900,6 +1900,41 @@ export async function getSousenkyoTotalVotes(): Promise<number> {
   return r?.c ?? 0;
 }
 
+/** 総選挙アーカイブ: 中止時点の最終順位（期間内の投票数） */
+export async function getSousenkyoArchive(limit = 50): Promise<{
+  rows: { id: string; name: string; avatar_url: string | null; votes: number; likes: number; dislikes: number }[];
+  totalVotes: number;
+  voters: number;
+}> {
+  const rows = await sql<{
+    id: string;
+    name: string;
+    avatar_url: string | null;
+    votes: number;
+    likes: number;
+    dislikes: number;
+  }>(
+    `SELECT p.id, p.name, p.avatar_url, v.votes, v.likes, v.dislikes
+     FROM (
+       SELECT person_id, COUNT(*)::int AS votes,
+              COUNT(*) FILTER (WHERE vote_type = 'like')::int AS likes,
+              COUNT(*) FILTER (WHERE vote_type = 'dislike')::int AS dislikes
+       FROM votes WHERE created_at >= $1 AND created_at < $2
+       GROUP BY person_id
+     ) v
+     JOIN people p ON p.id = v.person_id AND NOT p.is_hidden
+     ORDER BY v.votes DESC, p.id ASC
+     LIMIT $3`,
+    [SOUSENKYO.startIso, SOUSENKYO.cancelledIso, limit]
+  );
+  const t = await sql1<{ c: number; v: number }>(
+    `SELECT COUNT(*)::int AS c, COUNT(DISTINCT cookie_id)::int AS v
+     FROM votes WHERE created_at >= $1 AND created_at < $2`,
+    [SOUSENKYO.startIso, SOUSENKYO.cancelledIso]
+  );
+  return { rows, totalVotes: t?.c ?? 0, voters: t?.v ?? 0 };
+}
+
 export async function getEvalTotalCount(): Promise<number> {
   const r = await sql1<{ c: number }>("SELECT COUNT(*)::int AS c FROM evaluations");
   return r?.c ?? 0;

@@ -702,5 +702,9 @@
  "得票 = 好き+1・嫌い-0.5 ／ コメント好き+2・嫌い-1.5 ／ 評価(星平均2.5以上+1.5・未満-1)。1位が当選（残り{day}日）": "Puntuación = +1 me gusta / −0,5 no me gusta ／ comentario positivo +2 / negativo −1,5 ／ nota media ≥2,5: +1,5, <2,5: −1. Gana el 1.º ({day} días)",
  "10/10(土)〜10/24(土)の2週間。好き+1・嫌い-0.5に加え、コメント(好き+2/嫌い-1.5)と評価(星平均2.5以上+1.5/未満-1)も得票になります。300選挙区+212比例を争います。": "Dos semanas, 10/10–10/24. Puntuación = me gusta +1 / no me gusta −0,5, más comentarios (positivo +2 / negativo −1,5) y valoraciones (media ≥2,5: +1,5 / <2,5: −1). 300 distritos + 212 proporcionales.",
  "党の得票（党員の好き+1・嫌い-0.5＋コメント/評価分の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Puntuación del partido (me gusta +1 / no me gusta −0,5 de los miembros más comentarios/valoraciones) asignada por Sainte-Laguë. Elegidos desde lo alto de la lista (excluidos los ganadores de distrito).",
- "好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。": "Carrera de distrito de consejeros: me gusta +1 / no me gusta −0,5 más comentarios/valoraciones."
+ "好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。": "Carrera de distrito de consejeros: me gusta +1 / no me gusta −0,5 más comentarios/valoraciones.",
+ "@{handle} は現在、別のアカウントが使用されています（このページのアカウントは数値IDで確認済み・凍結または削除）。": "@{handle} lo usa actualmente otra cuenta (la cuenta de esta página fue verificada por ID numérico: suspendida o eliminada).",
+ "このIDは現在、別のアカウントが使用されています（元のアカウントは数値IDで確認済み・凍結または削除）。": "Este ID lo usa actualmente otra cuenta (la cuenta original fue verificada por ID numérico: suspendida o eliminada).",
+ "このXアカウントは凍結または削除されました（数値IDで確認済み・ID変更の可能性はありません）。": "Esta cuenta de X ha sido suspendida o eliminada (verificada por ID numérico; no fue renombrada).",
+ "このXアカウントは現在確認できません（凍結・削除・ID変更などの可能性があります）。": "Esta cuenta de X no se puede verificar ahora mismo (puede haber sido suspendida, eliminada, renombrada, etc.)."
 }

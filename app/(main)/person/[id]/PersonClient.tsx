@@ -222,10 +222,16 @@ export default function PersonClient({
               <div className="mt-3 bg-panel2 border border-line rounded-lg px-3 py-2 text-xs text-mut leading-relaxed">
                 ※{" "}
                 {person.x_status === "reused"
-                  ? person.handle
-                    ? t("@{handle} は現在、別のアカウントが使用されています（ID変更後に解放された可能性）。", { handle: person.handle })
-                    : t("このIDは現在、別のアカウントが使用されています。")
-                  : t("このXアカウントは現在確認できません（凍結・削除・ID変更など）。")}
+                  ? person.x_user_id
+                    ? person.handle
+                      ? t("@{handle} は現在、別のアカウントが使用されています（このページのアカウントは数値IDで確認済み・凍結または削除）。", { handle: person.handle })
+                      : t("このIDは現在、別のアカウントが使用されています（元のアカウントは数値IDで確認済み・凍結または削除）。")
+                    : person.handle
+                      ? t("@{handle} は現在、別のアカウントが使用されています（ID変更後に解放された可能性）。", { handle: person.handle })
+                      : t("このIDは現在、別のアカウントが使用されています。")
+                  : person.x_user_id
+                    ? t("このXアカウントは凍結または削除されました（数値IDで確認済み・ID変更の可能性はありません）。")
+                    : t("このXアカウントは現在確認できません（凍結・削除・ID変更などの可能性があります）。")}
                 {t("このページはアーカイブされました。")}
                 {person.x_checked_at && (
                   <span>

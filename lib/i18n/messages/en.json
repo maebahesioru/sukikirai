@@ -702,5 +702,9 @@
  "得票 = 好き+1・嫌い-0.5 ／ コメント好き+2・嫌い-1.5 ／ 評価(星平均2.5以上+1.5・未満-1)。1位が当選（残り{day}日）": "Score = +1 like / −0.5 dislike ／ like comment +2 / dislike comment −1.5 ／ rating (avg ≥2.5: +1.5, <2.5: −1). 1st place wins ({day} days left)",
  "10/10(土)〜10/24(土)の2週間。好き+1・嫌い-0.5に加え、コメント(好き+2/嫌い-1.5)と評価(星平均2.5以上+1.5/未満-1)も得票になります。300選挙区+212比例を争います。": "Two weeks, 10/10–10/24. Votes = like +1 / dislike −0.5, plus comments (like +2 / dislike −1.5) and ratings (avg ≥2.5: +1.5 / <2.5: −1). 300 districts + 212 proportional seats.",
  "党の得票（党員の好き+1・嫌い-0.5＋コメント/評価分の合計）でサン＝ラグ方式に配分。名簿上位から当選（小選挙区当選者は名簿から除外）。": "Party score (members' likes +1 / dislikes −0.5 plus comment/rating points) allocated via Sainte-Laguë. Elected from the list top (district winners excluded).",
- "好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。": "Councillors district race scored by +1 like / −0.5 dislike plus comment/rating points."
+ "好き+1・嫌い-0.5＋コメント/評価分の合計で競う参院選挙区レース。": "Councillors district race scored by +1 like / −0.5 dislike plus comment/rating points.",
+ "@{handle} は現在、別のアカウントが使用されています（このページのアカウントは数値IDで確認済み・凍結または削除）。": "@{handle} is currently used by another account (this page's account was verified by numeric ID: suspended or deleted).",
+ "このIDは現在、別のアカウントが使用されています（元のアカウントは数値IDで確認済み・凍結または削除）。": "This ID is currently used by another account (the original account was verified by numeric ID: suspended or deleted).",
+ "このXアカウントは凍結または削除されました（数値IDで確認済み・ID変更の可能性はありません）。": "This X account has been suspended or deleted (verified by numeric ID; it was not renamed).",
+ "このXアカウントは現在確認できません（凍結・削除・ID変更などの可能性があります）。": "This X account can't be confirmed right now (it may have been suspended, deleted, renamed, etc.)."
 }

@@ -295,3 +295,13 @@ mark.search-hl {
   max-height: 8rem;
   overflow: hidden;
 }
+
+/* 姉妹サイトポップアップの出現アニメ（2026-10-13） */
+@keyframes sister-popup-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sister-popup-in { animation: sister-popup-in 0.35s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .sister-popup-in { animation: none; }
+}

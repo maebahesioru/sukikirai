@@ -706,5 +706,9 @@
  "@{handle} は現在、別のアカウントが使用されています（このページのアカウントは数値IDで確認済み・凍結または削除）。": "@{handle} lo usa actualmente otra cuenta (la cuenta de esta página fue verificada por ID numérico: suspendida o eliminada).",
  "このIDは現在、別のアカウントが使用されています（元のアカウントは数値IDで確認済み・凍結または削除）。": "Este ID lo usa actualmente otra cuenta (la cuenta original fue verificada por ID numérico: suspendida o eliminada).",
  "このXアカウントは凍結または削除されました（数値IDで確認済み・ID変更の可能性はありません）。": "Esta cuenta de X ha sido suspendida o eliminada (verificada por ID numérico; no fue renombrada).",
- "このXアカウントは現在確認できません（凍結・削除・ID変更などの可能性があります）。": "Esta cuenta de X no se puede verificar ahora mismo (puede haber sido suspendida, eliminada, renombrada, etc.)."
+ "このXアカウントは現在確認できません（凍結・削除・ID変更などの可能性があります）。": "Esta cuenta de X no se puede verificar ahora mismo (puede haber sido suspendida, eliminada, renombrada, etc.).",
+ "馴れ合いサークルを見る": "Ver Nareai Circle",
+ "姉妹サイト": "Sitio hermano",
+ "Xの交流関係をサークル表示・AI診断つきで可視化。": "Visualiza tus interacciones en X como un gráfico circular, con diagnóstico de IA.",
+ "見てみる": "Ver más"
 }

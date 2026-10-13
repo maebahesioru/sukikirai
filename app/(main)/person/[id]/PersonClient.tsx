@@ -108,6 +108,17 @@ export default function PersonClient({
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
+              {person.handle && !archived && (
+                <a
+                  href={`https://nareaitter.hikamers.app/${encodeURIComponent(person.handle)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-mut hover:text-x inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-panel2 border border-line transition"
+                >
+                  {t("馴れ合いサークルを見る")}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             {(person.x_joined_at || (person.followers ?? 0) > 0 || person.x_tweets || person.x_following || person.x_protected) && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-mut">

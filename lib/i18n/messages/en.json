@@ -710,5 +710,6 @@
  "馴れ合いサークルを見る": "View Nareai Circle",
  "姉妹サイト": "Sister site",
  "Xの交流関係をサークル表示・AI診断つきで可視化。": "Visualize your X interactions as a circle graph, with AI analysis.",
- "見てみる": "Take a look"
+ "見てみる": "Take a look",
+ "登録時にXアカウントを特定できませんでした。": "The X account for this entry could not be identified at registration."
 }

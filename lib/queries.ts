@@ -948,6 +948,25 @@ export async function addPersonFromX(
     return { error: "Xユーザーが見つかりませんでした。IDを確認してください", status: 404 };
   }
 
+  // ★ 数値IDで既存チェック: 改名後の新ハンドルで再登録されると重複行ができるため、同一アカウントは既存行を返す（2026-10-13）
+  if (fx.id) {
+    const byUid = await sql1<Person>(
+      "SELECT * FROM people WHERE x_user_id = $1 AND NOT is_hidden LIMIT 1",
+      [fx.id]
+    );
+    if (byUid) {
+      // ハンドルが改名されていたら追従更新
+      if (byUid.handle && fx.screenName && byUid.handle.toLowerCase() !== fx.screenName.toLowerCase()) {
+        await sql("UPDATE people SET handle = $2, updated_at = now() WHERE id = $1", [
+          byUid.id,
+          fx.screenName,
+        ]);
+        byUid.handle = fx.screenName;
+      }
+      return { person: byUid, created: false };
+    }
+  }
+
   const again = await findPersonByHandleOrId(fx.screenName);
   if (again) return { person: again, created: false };
 

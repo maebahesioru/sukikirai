@@ -3,7 +3,7 @@
 // コメント本文の表示（2026-10-12 リッチ化）:
 // Markdown / 色タグ(<font color>等) / LaTeX(KaTeX) / Mermaid / >>Nアンカー / URL / AA / Twemoji
 // パイプライン: lib/richtext（markdown-it→sanitize）→ Twemoji遅延適用 → MermaidはReactコンポーネントで描画
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { isAA } from "@/lib/format";
 import { looksRich, renderRich } from "@/lib/richtext";
@@ -110,22 +110,45 @@ export default function CommentText({
   };
 
   // アンカーホバープレビュー（>>N にカーソルで参照先をチラ見）
-  const onOver = (e: MouseEvent<HTMLDivElement>) => {
+  // 2026-10-13修正: mouseover/mouseout方式は setTip→再レンダーでアンカーDOMが入れ替わり
+  // mouseoutのペアリングが壊れて消えなくなるため、pointermoveの直接判定に変更（DOM入れ替えに強い）。
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const tipNumRef = useRef<number | null>(null);
+  useEffect(() => {
     if (!resolveAnchor) return;
-    const a = (e.target as HTMLElement).closest("a.anchor-link") as HTMLAnchorElement | null;
-    if (!a) return;
-    const m = (a.getAttribute("href") ?? "").match(/^#c(\d+)$/);
-    if (!m) return;
-    const data = resolveAnchor(parseInt(m[1], 10));
-    if (!data) return;
-    const rect = a.getBoundingClientRect();
-    const x = Math.min(Math.max(rect.left, 8), Math.max(8, window.innerWidth - 340));
-    const y = Math.min(rect.bottom + 6, window.innerHeight - 120);
-    setTip({ x, y, name: data.name, content: data.content });
-  };
-  const onOut = (e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("a.anchor-link")) setTip(null);
-  };
+    const clear = () => {
+      if (tipNumRef.current !== null) {
+        tipNumRef.current = null;
+        setTip(null);
+      }
+    };
+    const onMove = (e: PointerEvent) => {
+      const a = (e.target as HTMLElement)?.closest?.("a.anchor-link") as HTMLAnchorElement | null;
+      if (!a || !wrapRef.current?.contains(a)) {
+        clear();
+        return;
+      }
+      const m = (a.getAttribute("href") ?? "").match(/^#c(\d+)$/);
+      const num = m ? parseInt(m[1], 10) : null;
+      if (num === null || num === tipNumRef.current) return; // 同じアンカー上では何もしない（再レンダー抑制）
+      const data = resolveAnchor(num);
+      if (!data) {
+        clear();
+        return;
+      }
+      tipNumRef.current = num;
+      const rect = a.getBoundingClientRect();
+      const x = Math.min(Math.max(rect.left, 8), Math.max(8, window.innerWidth - 340));
+      const y = Math.min(rect.bottom + 6, window.innerHeight - 120);
+      setTip({ x, y, name: data.name, content: data.content });
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("scroll", clear, { passive: true, capture: true });
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("scroll", clear, { capture: true } as EventListenerOptions);
+    };
+  }, [resolveAnchor]);
 
   // Twemojiはクライアントで遅延適用（絵文字を含む時だけロード）
   useEffect(() => {
@@ -173,7 +196,7 @@ export default function CommentText({
   });
   const cleanClass = (className ?? "").replace(/\bwhitespace-pre-wrap\b/g, "");
   return (
-    <div className={`md-body ${cleanClass}`} onClick={onClick} onMouseOver={onOver} onMouseOut={onOut}>
+    <div ref={wrapRef} className={`md-body ${cleanClass}`} onClick={onClick}>
       {out}
       {lightbox && (
         <div className="img-lightbox" onClick={() => setLightbox(null)}>

@@ -18,6 +18,7 @@ export default function SearchSuggest({
   formClassName = "",
   inputClassName,
   iconClassName = "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mut",
+  menuClassName = "left-0 right-0",
   placeholder,
   onSubmit,
   submitButton,
@@ -25,6 +26,7 @@ export default function SearchSuggest({
   formClassName?: string;
   inputClassName: string;
   iconClassName?: string;
+  menuClassName?: string;
   placeholder: string;
   onSubmit: (q: string) => void;
   submitButton?: React.ReactNode;
@@ -135,7 +137,10 @@ export default function SearchSuggest({
             autoComplete="off"
           />
           {open && (
-            <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-panel border border-line rounded-xl shadow-xl overflow-hidden">
+            <div
+              className={`absolute top-full mt-1.5 z-50 bg-panel border border-line rounded-xl shadow-xl overflow-hidden ${menuClassName}`}
+            >
+              <div className="max-h-[60vh] overflow-y-auto">
               {items.map((it, i) => (
                 <button
                   key={it.id}
@@ -152,10 +157,11 @@ export default function SearchSuggest({
                   <Avatar name={it.name} avatarUrl={it.avatar_url} size={28} />
                   <span className="text-sm font-medium truncate"><EmojiText text={it.name} /></span>
                   {it.handle && (
-                    <span className="text-xs text-mut truncate ml-auto shrink-0">@{it.handle}</span>
+                    <span className="text-xs text-mut truncate ml-auto shrink-0 max-w-[45%]">@{it.handle}</span>
                   )}
                 </button>
               ))}
+              </div>
               <button
                 type="button"
                 onMouseDown={(e) => {

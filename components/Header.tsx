@@ -50,6 +50,7 @@ export default function Header() {
 
           <SearchSuggest
             formClassName="flex-1 min-w-0 ml-auto max-w-xs"
+            menuClassName="sm:right-0 sm:left-auto sm:w-[340px] sm:max-w-[92vw] max-sm:fixed max-sm:inset-x-2 max-sm:top-14"
             inputClassName="w-full pl-9 pr-3 py-2 rounded-full border border-line bg-panel2 text-sm focus:outline-none focus:ring-2 focus:ring-x/60"
             placeholder={t("@ID・名前で検索")}
             onSubmit={(query) => {

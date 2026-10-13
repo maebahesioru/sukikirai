@@ -44,9 +44,40 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
       } catch {
         /* 再試行も例外 → 下の判定に進む */
       }
+      // 数値IDでの最終確認: 改名していたら復活してhandleを更新（API v2 /2/profile/id:rest_id — 2026-10-13）
       if (res.status === 302 || res.status === 404 || res.status === 410) {
-        await sql(`UPDATE people SET x_status = 'missing', x_checked_at = now() WHERE id = $1`, [p.id]);
-        return;
+        if (p.x_user_id) {
+          try {
+            const byId = await fetch(
+              `https://api.fxtwitter.com/2/profile/id:${encodeURIComponent(p.x_user_id)}`,
+              {
+                headers: { "User-Agent": UA, Accept: "application/json" },
+                signal: AbortSignal.timeout(10000),
+              }
+            );
+            if (byId.ok) {
+              const j = (await byId.json()) as {
+                user?: { screen_name?: string } & Record<string, unknown>;
+              };
+              if (j?.user && typeof j.user.screen_name === "string") {
+                const nh = j.user.screen_name.trim().slice(0, 100);
+                if (nh && nh.toLowerCase() !== handle.toLowerCase()) {
+                  await sql(`UPDATE people SET handle = $2, updated_at = now() WHERE id = $1`, [p.id, nh]);
+                }
+                res = new Response(JSON.stringify({ user: j.user }), {
+                  status: 200,
+                  headers: { "content-type": "application/json" },
+                });
+              }
+            }
+          } catch {
+            /* IDチェックも失敗 → 下のmissing判定へ */
+          }
+        }
+        if (res.status === 302 || res.status === 404 || res.status === 410) {
+          await sql(`UPDATE people SET x_status = 'missing', x_checked_at = now() WHERE id = $1`, [p.id]);
+          return;
+        }
       }
     }
     if (!res.ok) return; // 一時的なエラー等は何もしない
@@ -125,7 +156,7 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
        WHERE id = $1`,
       [
         p.id, uid, followers, desc, name, avatar, website,
-        location, banner, num(u.following), num(u.likes), num(u.media_count), num(u.tweets),
+        location, banner, num(u.following), num(u.likes), num(u.media_count), num(u.tweets ?? (u as { statuses?: number }).statuses),
         joinedIso, !!u.protected, !!(u.verification?.verified),
         u.verification?.type ? String(u.verification.type).slice(0, 20) : null,
       ]

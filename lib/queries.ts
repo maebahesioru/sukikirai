@@ -963,8 +963,10 @@ export async function addPersonFromX(
       id = `${baseSlug}-${i}`;
     }
     const r = await c.query<Person>(
-      `INSERT INTO people (id, handle, name, description, x_description, tags, category, avatar_url, followers, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'user')
+      `INSERT INTO people (id, handle, name, description, x_description, tags, category, avatar_url, followers,
+         x_user_id, x_checked_at, x_website, x_location, x_banner_url, x_following, x_likes, x_media_count, x_tweets,
+         x_joined_at, x_protected, x_verified, x_verified_type, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,now(),$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'user')
        ON CONFLICT (id) DO NOTHING
        RETURNING *`,
       [
@@ -977,6 +979,18 @@ export async function addPersonFromX(
         DEFAULT_CATEGORY,
         fx.avatarUrl,
         fx.followers,
+        fx.id || null,
+        fx.website,
+        fx.location,
+        fx.bannerUrl,
+        fx.following,
+        fx.likes,
+        fx.mediaCount,
+        fx.tweets,
+        fx.joinedAt,
+        fx.protected,
+        fx.verified,
+        fx.verifiedType,
       ]
     );
     if (r.rowCount === 0) {
@@ -1559,6 +1573,17 @@ export async function adminUpdatePerson(
     x_status: string | null;
     x_checked_at: string | null;
     x_description: string | null;
+    x_website: string | null;
+    x_location: string | null;
+    x_banner_url: string | null;
+    x_following: number | null;
+    x_likes: number | null;
+    x_media_count: number | null;
+    x_tweets: number | null;
+    x_joined_at: string | null;
+    x_protected: boolean | null;
+    x_verified: boolean | null;
+    x_verified_type: string | null;
   }>
 ): Promise<Person | null> {
   const colMap: Record<string, string> = {
@@ -1574,6 +1599,17 @@ export async function adminUpdatePerson(
     x_status: "x_status",
     x_checked_at: "x_checked_at",
     x_description: "x_description",
+    x_website: "x_website",
+    x_location: "x_location",
+    x_banner_url: "x_banner_url",
+    x_following: "x_following",
+    x_likes: "x_likes",
+    x_media_count: "x_media_count",
+    x_tweets: "x_tweets",
+    x_joined_at: "x_joined_at",
+    x_protected: "x_protected",
+    x_verified: "x_verified",
+    x_verified_type: "x_verified_type",
   };
   const sets: string[] = [];
   const params: unknown[] = [id];

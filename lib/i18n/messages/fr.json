@@ -687,5 +687,10 @@
  "好き？": "J'aime ?",
  "嫌い？": "Je n'aime pas ?",
  "大喜利好き": "Ogiri et mèmes",
- "プロフ未設定": "Sans profil"
+ "プロフ未設定": "Sans profil",
+ "鍵垢": "Privé",
+ "フォロワー": "Abonnés",
+ "フォロー中": "Abonnements",
+ "ツイート": "Tweets",
+ "{year}年からX利用": "Sur X depuis {year}"
 }

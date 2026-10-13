@@ -13,7 +13,7 @@ import CommentSection from "@/components/CommentSection";
 import type { EvalStats, Person, PollWithOptions, VoteStats } from "@/lib/types";
 import { useT } from "@/lib/i18n-client";
 import TranslateBox from "@/components/TranslateBox";
-import { fmtTime2ch } from "@/lib/format";
+import { num, fmtTime2ch } from "@/lib/format";
 
 type RankInfo = { rank: number; total: number } | null;
 
@@ -109,6 +109,33 @@ export default function PersonClient({
                 </a>
               )}
             </div>
+            {(person.x_joined_at || (person.followers ?? 0) > 0 || person.x_tweets || person.x_following || person.x_protected) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-mut">
+                {person.x_protected && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-panel2 border border-line">
+                    🔒 {t("鍵垢")}
+                  </span>
+                )}
+                {(person.followers ?? 0) > 0 && (
+                  <span>
+                    {t("フォロワー")} {num(person.followers ?? 0)}
+                  </span>
+                )}
+                {(person.x_following ?? 0) > 0 && (
+                  <span>
+                    {t("フォロー中")} {num(person.x_following ?? 0)}
+                  </span>
+                )}
+                {(person.x_tweets ?? 0) > 0 && (
+                  <span>
+                    {t("ツイート")} {num(person.x_tweets ?? 0)}
+                  </span>
+                )}
+                {person.x_joined_at && (
+                  <span>{t("{year}年からX利用", { year: new Date(person.x_joined_at).getFullYear() })}</span>
+                )}
+              </div>
+            )}
             {election && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Link

@@ -119,6 +119,17 @@ export async function POST(request: Request) {
         description: string;
         avatarUrl: string | null;
         followers: number;
+        bannerUrl: string | null;
+        following: number;
+        likes: number;
+        mediaCount: number;
+        tweets: number;
+        location: string | null;
+        joinedAt: string | null;
+        protected: boolean;
+        verified: boolean;
+        verifiedType: string | null;
+        website: string | null;
       } | null = null;
       let guessed = "";
       for (const cand of candidates) {
@@ -132,6 +143,17 @@ export async function POST(request: Request) {
             description: fx.description,
             avatarUrl: fx.avatarUrl,
             followers: fx.followers,
+            bannerUrl: fx.bannerUrl,
+            following: fx.following,
+            likes: fx.likes,
+            mediaCount: fx.mediaCount,
+            tweets: fx.tweets,
+            location: fx.location,
+            joinedAt: fx.joinedAt,
+            protected: fx.protected,
+            verified: fx.verified,
+            verifiedType: fx.verifiedType,
+            website: fx.website,
           };
           break;
         }
@@ -153,6 +175,17 @@ export async function POST(request: Request) {
         x_user_id: matched.id,
         x_status: "ok",
         x_checked_at: new Date().toISOString(),
+        x_website: matched.website,
+        x_location: matched.location,
+        x_banner_url: matched.bannerUrl,
+        x_following: matched.following,
+        x_likes: matched.likes,
+        x_media_count: matched.mediaCount,
+        x_tweets: matched.tweets,
+        x_joined_at: matched.joinedAt,
+        x_protected: matched.protected,
+        x_verified: matched.verified,
+        x_verified_type: matched.verifiedType,
       });
       return NextResponse.json({ success: true, person: updated });
     }

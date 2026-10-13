@@ -44,8 +44,17 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
         name?: string;
         description?: string;
         avatar_url?: string;
+        banner_url?: string;
         followers?: number;
+        following?: number;
+        likes?: number;
+        media_count?: number;
+        tweets?: number;
+        location?: string;
+        joined?: string;
+        protected?: boolean;
         website?: { url?: string };
+        verification?: { verified?: boolean; type?: string };
       };
     };
     const u = data.user;
@@ -71,6 +80,14 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
       typeof u.website?.url === "string" && u.website.url.startsWith("http")
         ? u.website.url.slice(0, 300)
         : null;
+    const banner =
+      typeof u.banner_url === "string" && u.banner_url.startsWith("http")
+        ? u.banner_url.slice(0, 500)
+        : null;
+    const num = (v: unknown) => (Number.isFinite(v as number) ? Math.max(0, Math.floor(v as number)) : null);
+    const location = typeof u.location === "string" && u.location.trim() ? u.location.trim().slice(0, 200) : null;
+    const joinedD = u.joined ? new Date(u.joined) : null;
+    const joinedIso = joinedD && !Number.isNaN(joinedD.getTime()) ? joinedD.toISOString() : null;
 
     await sql(
       `UPDATE people SET
@@ -81,9 +98,24 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
          name = CASE WHEN $5 <> '' THEN $5 ELSE name END,
          avatar_url = COALESCE($6, avatar_url),
          x_website = $7,
+         x_location = $8,
+         x_banner_url = COALESCE($9, x_banner_url),
+         x_following = $10,
+         x_likes = $11,
+         x_media_count = $12,
+         x_tweets = $13,
+         x_joined_at = COALESCE($14::timestamptz, x_joined_at),
+         x_protected = $15,
+         x_verified = $16,
+         x_verified_type = $17,
          x_checked_at = now()
        WHERE id = $1`,
-      [p.id, uid, followers, desc, name, avatar, website]
+      [
+        p.id, uid, followers, desc, name, avatar, website,
+        location, banner, num(u.following), num(u.likes), num(u.media_count), num(u.tweets),
+        joinedIso, !!u.protected, !!(u.verification?.verified),
+        u.verification?.type ? String(u.verification.type).slice(0, 20) : null,
+      ]
     );
   } catch {
     // 一時的なネットワークエラーは無視（日次チェッカーが拾う）

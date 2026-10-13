@@ -687,5 +687,10 @@
  "好き？": "Like?",
  "嫌い？": "Dislike?",
  "大喜利好き": "Ogiri & Memes",
- "プロフ未設定": "No profile"
+ "プロフ未設定": "No profile",
+ "鍵垢": "Private",
+ "フォロワー": "Followers",
+ "フォロー中": "Following",
+ "ツイート": "Tweets",
+ "{year}年からX利用": "On X since {year}"
 }

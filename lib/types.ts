@@ -14,6 +14,16 @@ export type Person = {
   x_status?: string | null;
   x_checked_at?: string | Date | null;
   x_description?: string | null;
+  x_location?: string | null;
+  x_banner_url?: string | null;
+  x_following?: number | null;
+  x_likes?: number | null;
+  x_media_count?: number | null;
+  x_tweets?: number | null;
+  x_joined_at?: string | Date | null;
+  x_protected?: boolean | null;
+  x_verified?: boolean | null;
+  x_verified_type?: string | null;
   created_at: string;
   updated_at: string;
 };

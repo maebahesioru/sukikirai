@@ -52,33 +52,43 @@ function corrColor(v: number): string {
   return `rgba(244, 33, 46, ${(0.08 + a * 0.75).toFixed(2)})`;
 }
 
+import { unstable_cache } from "next/cache";
+
+// 統計ダッシュボードの集計21本は重い（合計1秒級）→ 60秒キャッシュで実質即時化（2026-10-14）
+const getStatsData = unstable_cache(
+  async () =>
+    Promise.all([
+      getHomeStats(),
+      getEvalTotalCount(),
+      getCategoryStats(),
+      getTagStats(2, 20),
+      getEvalCorrelation(),
+      getScoreDistribution(),
+      getDailyTrend(30),
+      getRanking("score", 5),
+      getRanking("lowscore", 5),
+      getVoteHourHistogram(),
+      getVoteWeekdayHistogram(),
+      getItemAverages(),
+      getTopEvaluated(5),
+      getTopCommented(5),
+      getRanking("trending", 5),
+      getLikeRatioTrend(30),
+      getVoteTypeTotals(),
+      getVoteHeatmap(),
+      getFollowerBuckets(),
+      getSousenkyoRanking(10),
+      getSousenkyoTotalVotes(),
+    ]),
+  ["stats-page-v1"],
+  { revalidate: 60 }
+);
+
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
 export default async function StatsPage() {
   const t = await getServerT();
-  const [stats, evalTotal, categories, tags, corr, dist, trend30, topScore, lowScore, hourHist, weekdayHist, itemAvgs, topEval, topComment, trending5, likeTrend, voteTotals, heatmap, followerBuckets, sousenkyo10, sousenkyoTotal] = await Promise.all([
-    getHomeStats(),
-    getEvalTotalCount(),
-    getCategoryStats(),
-    getTagStats(2, 20),
-    getEvalCorrelation(),
-    getScoreDistribution(),
-    getDailyTrend(30),
-    getRanking("score", 5),
-    getRanking("lowscore", 5),
-    getVoteHourHistogram(),
-    getVoteWeekdayHistogram(),
-    getItemAverages(),
-    getTopEvaluated(5),
-    getTopCommented(5),
-    getRanking("trending", 5),
-    getLikeRatioTrend(30),
-    getVoteTypeTotals(),
-    getVoteHeatmap(),
-    getFollowerBuckets(),
-    getSousenkyoRanking(10),
-    getSousenkyoTotalVotes(),
-  ]);
+  const [stats, evalTotal, categories, tags, corr, dist, trend30, topScore, lowScore, hourHist, weekdayHist, itemAvgs, topEval, topComment, trending5, likeTrend, voteTotals, heatmap, followerBuckets, sousenkyo10, sousenkyoTotal] = await getStatsData();
   const trend = trend30.slice(-7);
   const today = trend[trend.length - 1];
   const maxV = Math.max(1, ...trend.map((d) => d.votes));

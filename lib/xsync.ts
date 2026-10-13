@@ -25,8 +25,9 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
   inflight.add(p.id);
 
   try {
+    const handle = p.handle; // クロージャ内でTSのナローイングを保つためconstで保持
     const doFetch = () =>
-      fetch(`https://api.fxtwitter.com/${encodeURIComponent(p.handle)}`, {
+      fetch(`https://api.fxtwitter.com/${encodeURIComponent(handle)}`, {
         headers: { "User-Agent": UA, Accept: "application/json" },
         redirect: "manual",
         signal: AbortSignal.timeout(10000),

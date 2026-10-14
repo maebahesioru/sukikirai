@@ -725,6 +725,21 @@ export async function postComment(
       }
     }
 
+    // 同一文面のページ横断連投対策（2026-10-14）: 20字以上の同文を同一トークンで24hに3回以上は拒否
+    if (input.content.trim().length >= 20) {
+      const crossDup = await c.query<{ c: number }>(
+        `SELECT COUNT(*)::int AS c FROM comments WHERE cookie_id = $1 AND content = $2 AND created_at >= now() - interval '24 hours'`,
+        [input.cookieId, input.content.trim()]
+      );
+      if ((crossDup.rows[0]?.c ?? 0) >= 2) {
+        return {
+          ok: false as const,
+          error: "同じ内容を複数のページに連投することはできません",
+          status: 429,
+        };
+      }
+    }
+
     if (input.parentCommentId) {
       const p = await c.query("SELECT id FROM comments WHERE id = $1 AND person_id = $2", [
         input.parentCommentId,

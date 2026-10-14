@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteCommentByKey, getComments, postComment } from "@/lib/queries";
+import { deleteCommentByKey, getComments, postComment, tokenIssuedAt } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isUuid, isValidToken, str } from "@/lib/validate";
 import { AGE_GROUPS, GENDERS, MAX_COMMENT_CHARS } from "@/lib/constants";
@@ -48,6 +48,20 @@ export async function POST(request: Request) {
     }
     if (!isValidToken(userToken)) {
       return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
+    }
+    // 発行済みトークンのみ受け付け（偽造トークンでの連投回避・投票と同水準 — 2026-10-14）
+    const issuedAt = await tokenIssuedAt(userToken);
+    if (!issuedAt) {
+      return NextResponse.json({ success: false, error: "Invalid user token" }, { status: 400 });
+    }
+    // 直近1時間に発行されたトークンでの対象フラッド制限（mint+use攻撃対策）
+    if (issuedAt.getTime() > Date.now() - 60 * 60 * 1000) {
+      if (!rateLimit(`freshcomment:target:${personId}`, 30, 60 * 1000)) {
+        return NextResponse.json(
+          { success: false, error: "コメントが集中しています。少し時間をおいてお試しください" },
+          { status: 429 }
+        );
+      }
     }
     if (charCount(content) > MAX_COMMENT_CHARS) {
       return NextResponse.json(

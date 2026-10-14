@@ -2186,17 +2186,39 @@ export async function getMetaPosts(limit = 500): Promise<MetaPostWithReplies[]> 
     const { cookie_id, ...rest } = r;
     return { ...rest, anon_id: anonId(cookie_id ?? null, r.id) };
   });
+  // 返信の表示は従来「トップレベル1階層下」までだったため、返信への返信(2階層目以降)が
+  // 描画から落ちるバグがあった（2026-10-15修正）。祖先を辿って可視トップレベルまで引き上げる。
+  const parentOf = new Map<string, string>();
+  for (const p of mapped) {
+    if (p.parent_post_id) parentOf.set(p.id, p.parent_post_id);
+  }
+  const topIds = new Set(mapped.filter((p) => !p.parent_post_id).map((p) => p.id));
   const byParent = new Map<string, MetaPostRow[]>();
   for (const p of mapped) {
-    if (p.parent_post_id) {
-      const arr = byParent.get(p.parent_post_id) ?? [];
+    if (!p.parent_post_id) continue;
+    let cur: string | undefined = p.parent_post_id;
+    let attach: string | null = null;
+    const seen = new Set<string>();
+    while (cur && !seen.has(cur)) {
+      if (topIds.has(cur)) {
+        attach = cur;
+        break;
+      }
+      seen.add(cur);
+      cur = parentOf.get(cur);
+    }
+    if (attach) {
+      const arr = byParent.get(attach) ?? [];
       arr.push(p);
-      byParent.set(p.parent_post_id, arr);
+      byParent.set(attach, arr);
     }
   }
   return mapped
     .filter((p) => !p.parent_post_id)
-    .map((m) => ({ ...m, replies: byParent.get(m.id) ?? [] }));
+    .map((m) => ({
+      ...m,
+      replies: (byParent.get(m.id) ?? []).sort((a, b) => a.post_number - b.post_number),
+    }));
 }
 
 export async function getMetaResCount(): Promise<number> {

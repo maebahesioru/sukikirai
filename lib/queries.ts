@@ -738,6 +738,20 @@ export async function postComment(
           status: 429,
         };
       }
+      // 類似文面の横断連投（文面を少し変える回避への先回り・2026-10-14）
+      const myRecent = await c.query<{ content: string }>(
+        `SELECT content FROM comments WHERE cookie_id = $1 AND person_id <> $2 AND created_at >= now() - interval '24 hours' ORDER BY created_at DESC LIMIT 30`,
+        [input.cookieId, input.personId]
+      );
+      for (const row of myRecent.rows) {
+        if (calculateSimilarity(row.content, input.content) >= 0.9) {
+          return {
+            ok: false as const,
+            error: "同じ内容を複数のページに連投することはできません",
+            status: 429,
+          };
+        }
+      }
     }
 
     if (input.parentCommentId) {

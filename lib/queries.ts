@@ -687,6 +687,31 @@ export async function postComment(
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
 
+
+    // 同一人物への連投対策（スコア操作防止・2026-10-14）: トップレベルコメントのみ制限（返信は対象外）
+    const perPersonDay = await c.query<{ c: number }>(
+      `SELECT COUNT(*)::int AS c FROM comments WHERE cookie_id = $1 AND person_id = $2 AND parent_comment_id IS NULL AND created_at >= now() - interval '24 hours'`,
+      [input.cookieId, input.personId]
+    );
+    if ((perPersonDay.rows[0]?.c ?? 0) >= 5) {
+      return {
+        ok: false as const,
+        error: "同じ人物へのコメントは24時間で5件までです（返信は制限なく使えます）",
+        status: 429,
+      };
+    }
+    const perPersonBurst = await c.query<{ c: number }>(
+      `SELECT COUNT(*)::int AS c FROM comments WHERE cookie_id = $1 AND person_id = $2 AND parent_comment_id IS NULL AND created_at >= now() - interval '10 minutes'`,
+      [input.cookieId, input.personId]
+    );
+    if ((perPersonBurst.rows[0]?.c ?? 0) >= 3) {
+      return {
+        ok: false as const,
+        error: "同じ人物への連投はできません。少し時間をおいてください",
+        status: 429,
+      };
+    }
+
     const recent = await c.query<{ content: string }>(
       `SELECT content FROM comments WHERE cookie_id = $1 AND person_id = $2 ORDER BY created_at DESC LIMIT 10`,
       [input.cookieId, input.personId]
@@ -1292,6 +1317,7 @@ export async function insertPollComment(input: {
     if ((tenMin.rows[0]?.c ?? 0) >= 30) {
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
+
 
     await c.query("SELECT pg_advisory_xact_lock(hashtext('suki:pollcomments:' || $1))", [input.pollId]);
     const num = await c.query<{ n: number }>(
@@ -2225,6 +2251,7 @@ export async function insertMetaPost(input: {
     if ((tenMin.rows[0]?.c ?? 0) >= 30) {
       return { ok: false as const, error: "投稿が多すぎます。しばらく時間をおいてから再度お試しください", status: 429 };
     }
+
 
     let parentPostId: string | null = null;
     if (input.parentPostId) {

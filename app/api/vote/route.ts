@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPerson, getVoteStats, insertVote, tokenIssuedAt, getVoteStreak } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget, tokenGuard } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 
 export async function POST(request: Request) {
@@ -30,6 +30,18 @@ export async function POST(request: Request) {
           { status: 429 }
         );
       }
+    }
+
+    // クッキー単位の機械投票対策（間隔15秒・10分12票・24時間80票 — 2026-10-15）
+    const tg = tokenGuard("vote", userToken);
+    if (tg !== "ok") {
+      const msg =
+        tg === "gap"
+          ? "連続での投票を検知しました。少し間をおいてからお試しください"
+          : tg === "burst"
+            ? "短時間に投票が集中しています。しばらく待ってからお試しください"
+            : "本日の投票数が上限に達しました。明日またお試しください";
+      return NextResponse.json({ success: false, error: msg }, { status: 429 });
     }
 
     const ip = clientIp(request);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEvalStats, getMyEvalToday, getPerson, insertEvaluation, tokenIssuedAt } from "@/lib/queries";
-import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget } from "@/lib/rate-limit";
+import { clientIp, rateLimit, allowNewVoter, fpTargetBlocked, markFpTarget, srvTargetBlocked, markSrvTarget, tokenGuard } from "@/lib/rate-limit";
 import { isValidFp, isValidToken, str } from "@/lib/validate";
 import { EVAL_KEYS } from "@/lib/constants";
 
@@ -28,6 +28,16 @@ export async function POST(request: Request) {
           { status: 429 }
         );
       }
+    }
+
+    // クッキー単位の機械評価対策（間隔8秒・24時間50件 — 2026-10-15）
+    const tg = tokenGuard("eval", userToken);
+    if (tg !== "ok") {
+      const msg =
+        tg === "gap"
+          ? "連続での評価を検知しました。少し間をおいてからお試しください"
+          : "本日の評価数が上限に達しました。明日またお試しください";
+      return NextResponse.json({ success: false, error: msg }, { status: 429 });
     }
 
     const ip = clientIp(request);

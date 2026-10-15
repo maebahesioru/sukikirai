@@ -21,6 +21,22 @@ export function rateLimit(key: string, max: number, windowMs: number): boolean {
   return true;
 }
 
+// ---- クッキー（トークン）単位の機械投票対策（2026-10-15追加・メモリ内のみ・保存なし）----
+// IP・FP・新規トークン枠を回しても、1トークンあたりの「速度・総量」は制限されていなかった穴を塞ぐ。
+// 実測: 人間の最多は1日38票（平均約481秒間隔）。機械は5〜25秒間隔で15〜985票/日。
+// vote: 間隔15秒・10分12票・24時間80票 / eval: 間隔8秒・24時間50件。
+export function tokenGuard(kind: "vote" | "eval", token: string): "ok" | "gap" | "burst" | "day" {
+  if (kind === "vote") {
+    if (!rateLimit(`tokv:gap:${token}`, 1, 15 * 1000)) return "gap";
+    if (!rateLimit(`tokv:burst:${token}`, 12, 10 * 60 * 1000)) return "burst";
+    if (!rateLimit(`tokv:day:${token}`, 80, 24 * 60 * 60 * 1000)) return "day";
+  } else {
+    if (!rateLimit(`toke:gap:${token}`, 1, 8 * 1000)) return "gap";
+    if (!rateLimit(`toke:day:${token}`, 50, 24 * 60 * 60 * 1000)) return "day";
+  }
+  return "ok";
+}
+
 // ---- 「1日1回系」の新規トークン枠（cookieリセット連投対策・メモリ内のみ・保存なし）----
 // 同一IPから「初めて見るトークン」で投票/評価できるのは1日 NEW_VOTER_MAX 個まで。
 // さらに短時間の連投（cookieリセット連打）を抑えるため、10分あたり NEW_VOTER_BURST 個までに制限。

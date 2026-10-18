@@ -9,6 +9,7 @@ import { anonId } from "./bbs2ch";
 import type {
   CommentRow,
   CommentWithReplies,
+  RecentReply,
   EvalStats,
   Poll,
   PollCommentRow,
@@ -632,6 +633,29 @@ export async function getComments(
     };
   });
   return { comments, total };
+}
+
+/** 過去スレッド（1ページ目に無い親）への新着レス — 2026-10-18 */
+export async function getRecentReplies(personId: string, limit = 8): Promise<RecentReply[]> {
+  const rows = await sql<CommentRow & { parent_comment_number: number; parent_page: number }>(
+    `WITH mains AS (
+       SELECT id, CEIL(row_number() OVER (ORDER BY created_at DESC) / 20.0)::int AS pg
+       FROM comments
+       WHERE person_id = $1 AND NOT is_hidden AND parent_comment_id IS NULL
+     )
+     SELECT ${COMMENT_COLS}, p.comment_number AS parent_comment_number, m.pg AS parent_page
+     FROM comments c ${REACTION_JOIN}
+     JOIN comments p ON p.id = c.parent_comment_id
+     JOIN mains m ON m.id = p.id
+     WHERE c.person_id = $1 AND c.parent_comment_id IS NOT NULL AND NOT c.is_hidden AND NOT p.is_hidden AND m.pg > 1
+     ORDER BY c.created_at DESC
+     LIMIT $2`,
+    [personId, limit]
+  );
+  return rows.map((r) => {
+    const { cookie_id, ...rest } = r;
+    return { ...rest, anon_id: anonId(cookie_id ?? null, r.id) };
+  });
 }
 
 export type CommentInput = {

@@ -12,7 +12,7 @@ import {
   Trash2,
   Link2,
 } from "lucide-react";
-import type { CommentRow, CommentWithReplies } from "@/lib/types";
+import type { CommentRow, CommentWithReplies, RecentReply } from "@/lib/types";
 import { MAX_COMMENT_CHARS } from "@/lib/constants";
 import CommentText from "./CommentText";
 import EmojiText from "./EmojiText";
@@ -58,6 +58,7 @@ export default function CommentSection({
   const [debouncedQ, setDebouncedQ] = useState("");
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [showHidden, setShowHidden] = useState(false);
+  const [recentReplies, setRecentReplies] = useState<RecentReply[]>([]);
   const t = useT();
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function CommentSection({
       if (data.success) {
         setComments(data.comments);
         setTotal(data.total);
+        setRecentReplies(data.recentReplies ?? []);
       }
     } catch {
       /* noop */
@@ -115,6 +117,17 @@ export default function CommentSection({
     const el = document.getElementById(`c${m[1]}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [comments]);
+
+  // 最新の返信 → 親ページへジャンプ（2026-10-18）
+  const [pendingJump, setPendingJump] = useState<number | null>(null);
+  useEffect(() => {
+    if (pendingJump == null || loading) return;
+    const el = document.getElementById(`c${pendingJump}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setPendingJump(null);
+    }
+  }, [pendingJump, comments, loading]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
@@ -171,6 +184,31 @@ export default function CommentSection({
           🔔 {t("新着{n}件（クリックで移動）", { n: newStats.n })}
         </button>
       )}
+      {page === 1 && !debouncedQ && filter === "all" && sort === "newest" && recentReplies.length > 0 && (
+        <div className="mt-4 rounded-xl border border-line bg-panel2/60 p-3">
+          <p className="text-xs font-bold text-mut mb-2">{t("最新の返信（古いスレッドへ）")}</p>
+          <div className="space-y-1">
+            {recentReplies.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => {
+                  setPendingJump(r.parent_comment_number);
+                  setPage(r.parent_page);
+                }}
+                className="w-full text-left text-sm rounded-lg px-2 py-1.5 hover:bg-panel transition flex items-start gap-2"
+              >
+                <span className="shrink-0 text-x font-bold text-xs mt-0.5">&gt;&gt;{r.parent_comment_number}</span>
+                <span className="min-w-0 truncate">
+                  <span className="text-xs text-mut mr-1">{r.name || t("匿名")}</span>
+                  <span className="text-txt">{r.content.length > 60 ? r.content.slice(0, 60) + "…" : r.content}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
         {visibleComments.map((c) => (
           <CommentItem

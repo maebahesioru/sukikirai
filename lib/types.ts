@@ -69,6 +69,9 @@ export type CommentRow = {
 
 export type CommentWithReplies = CommentRow & { replies: CommentRow[] };
 
+/** 過去スレッドへの新着レス（2026-10-18・返信が1ページ目に出ない問題の救済表示用） */
+export type RecentReply = CommentRow & { parent_comment_number: number; parent_page: number };
+
 export type PollType = "two_choice" | "three_plus_fixed" | "three_plus_open";
 
 export type PollOption = {

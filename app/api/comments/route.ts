@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteCommentByKey, getComments, postComment, tokenIssuedAt } from "@/lib/queries";
+import { deleteCommentByKey, getComments, getRecentReplies, postComment, tokenIssuedAt } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { charCount, isUuid, isValidToken, str } from "@/lib/validate";
 import { AGE_GROUPS, GENDERS, MAX_COMMENT_CHARS } from "@/lib/constants";
@@ -22,7 +22,12 @@ export async function GET(request: Request) {
     const sort = sortRaw === "popular" ? "popular" : "newest";
 
     const { comments, total } = await getComments(personId, { filter, sort, page, q: q || undefined });
-    return NextResponse.json({ success: true, comments, total });
+    // 過去スレへの新着レス（1ページ目・フィルタなし時のみ）— 2026-10-18
+    const recentReplies =
+      page === 1 && filter === "all" && sort === "newest" && !q
+        ? await getRecentReplies(personId)
+        : [];
+    return NextResponse.json({ success: true, comments, total, recentReplies });
   } catch (e) {
     console.error("comments GET error:", e);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

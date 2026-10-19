@@ -2,7 +2,7 @@
 import { createHash } from "crypto";
 import { sql, sql1, withTx, jstDayStart } from "./db";
 import { EVAL_KEYS, DEFAULT_CATEGORY, SOUSENKYO } from "./constants";
-import { isSpamContent, calculateSimilarity } from "./spam-filter";
+import { isSpamContent, isDuplicateContent } from "./spam-filter";
 import { fetchFxUser } from "./fxtwitter";
 import { assignRandomHouse } from "./election-queries";
 import { anonId } from "./bbs2ch";
@@ -741,11 +741,15 @@ export async function postComment(
       [input.cookieId, input.personId]
     );
     for (const row of recent.rows) {
-      if (row.content.trim() === input.content.trim()) {
-        return { ok: false as const, error: "同じ内容のコメントが既に投稿されています", status: 429 };
-      }
-      if (calculateSimilarity(row.content, input.content) >= 0.9) {
-        return { ok: false as const, error: "類似したコメントが既に投稿されています", status: 429 };
+      if (isDuplicateContent(row.content, input.content)) {
+        return {
+          ok: false as const,
+          error:
+            row.content.trim() === input.content.trim()
+              ? "同じ内容のコメントが既に投稿されています"
+              : "類似したコメントが既に投稿されています",
+          status: 429,
+        };
       }
     }
 
@@ -768,7 +772,7 @@ export async function postComment(
         [input.cookieId, input.personId]
       );
       for (const row of myRecent.rows) {
-        if (calculateSimilarity(row.content, input.content) >= 0.9) {
+        if (isDuplicateContent(row.content, input.content)) {
           return {
             ok: false as const,
             error: "同じ内容を複数のページに連投することはできません",

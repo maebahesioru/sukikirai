@@ -43,7 +43,7 @@ export default async function Footer() {
         </p>
         <p className="leading-relaxed text-xs">
           {t(
-            "運営: ヒカマーの十時間_mania（@maebahesioru2）｜※無法地帯です。投稿はすべてそのまま掲載され、削除・非表示は行いません。"
+            "運営: ヒカマーの十時間_mania（@maebahesioru2）｜※無法地帯です。投稿はそのまま掲載します（個人情報の晒し・犯罪予告のみ削除）。"
           )}
         </p>
         <p>

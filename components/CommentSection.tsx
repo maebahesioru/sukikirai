@@ -24,6 +24,11 @@ import TranslateBox from "./TranslateBox";
 
 type FilterType = "all" | "like" | "dislike";
 type SortType = "newest" | "popular";
+type ViewType = "tree" | "flat";
+
+type FlatEntry =
+  | { kind: "parent"; comment: CommentWithReplies; number: number; good: number }
+  | { kind: "reply"; reply: CommentRow; parentNumber: number; number: number; good: number };
 
 function getCharCount(text: string): number {
   let count = 0;
@@ -52,6 +57,7 @@ export default function CommentSection({
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("newest");
+  const [view, setView] = useState<ViewType>("tree");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
@@ -84,6 +90,25 @@ export default function CommentSection({
       }
       return next;
     });
+  }, []);
+
+  // 表示形式（ツリー/フラット・2026-10-21）。既定はツリー、選択は端末に保存
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("sk-commentView");
+      if (v === "flat" || v === "tree") setView(v);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const changeView = useCallback((v: ViewType) => {
+    setView(v);
+    try {
+      localStorage.setItem("sk-commentView", v);
+    } catch {
+      /* noop */
+    }
   }, []);
 
   const fetchComments = useCallback(async () => {
@@ -171,6 +196,29 @@ export default function CommentSection({
   const visibleComments = comments.filter((c) => showHidden || !hiddenIds.includes(c.id));
   const hiddenCount = comments.filter((c) => hiddenIds.includes(c.id)).length;
 
+  // フラット表示：親もレスも同じ並びに混ぜ、番号順（人気順はgood数）で並べる（2026-10-21）
+  const flatEntries = useMemo(() => {
+    const entries: FlatEntry[] = [];
+    for (const c of comments) {
+      if (!showHidden && hiddenIds.includes(c.id)) continue;
+      entries.push({ kind: "parent", comment: c, number: c.comment_number, good: c.good_count });
+      for (const r of c.replies ?? []) {
+        if (!showHidden && hiddenIds.includes(r.id)) continue;
+        entries.push({
+          kind: "reply",
+          reply: r,
+          parentNumber: c.comment_number,
+          number: r.comment_number,
+          good: r.good_count,
+        });
+      }
+    }
+    entries.sort((a, b) =>
+      sort === "popular" ? b.good - a.good || b.number - a.number : b.number - a.number
+    );
+    return entries;
+  }, [comments, hiddenIds, showHidden, sort]);
+
   const list = (
     <>
       {newStats.n > 0 && newStats.first !== null && (
@@ -210,21 +258,51 @@ export default function CommentSection({
       )}
 
       <div className={`space-y-4 ${archived ? "" : "mt-6"} ${loading ? "opacity-60" : ""}`}>
-        {visibleComments.map((c) => (
-          <CommentItem
-            key={c.id}
-            comment={c}
-            myVoteType={myVoteType}
-            onUpdate={fetchComments}
-            locked={archived}
-            personName={personName}
-            hiddenIds={hiddenIds}
-            showHidden={showHidden}
-            onHide={toggleHide}
-            isNew={c.comment_number > prevRead}
-            anchorLookup={anchorLookup}
-          />
-        ))}
+        {view === "flat"
+          ? flatEntries.map((e) =>
+              e.kind === "parent" ? (
+                <CommentItem
+                  key={e.comment.id}
+                  comment={e.comment}
+                  myVoteType={myVoteType}
+                  onUpdate={fetchComments}
+                  locked={archived}
+                  personName={personName}
+                  hiddenIds={hiddenIds}
+                  showHidden={showHidden}
+                  onHide={toggleHide}
+                  isNew={e.comment.comment_number > prevRead}
+                  anchorLookup={anchorLookup}
+                  flat
+                />
+              ) : (
+                <ReplyItem
+                  key={e.reply.id}
+                  reply={e.reply}
+                  parentNumber={e.parentNumber}
+                  onUpdate={fetchComments}
+                  personName={personName}
+                  hiddenIds={hiddenIds}
+                  onHide={toggleHide}
+                  anchorLookup={anchorLookup}
+                />
+              )
+            )
+          : visibleComments.map((c) => (
+              <CommentItem
+                key={c.id}
+                comment={c}
+                myVoteType={myVoteType}
+                onUpdate={fetchComments}
+                locked={archived}
+                personName={personName}
+                hiddenIds={hiddenIds}
+                showHidden={showHidden}
+                onHide={toggleHide}
+                isNew={c.comment_number > prevRead}
+                anchorLookup={anchorLookup}
+              />
+            ))}
         {visibleComments.length === 0 && !loading && (
           <p className="text-center text-mut py-8 text-sm">
             {debouncedQ ? t("一致するコメントがありません") : archived ? t("コメントはありません") : t("まだコメントがありません。最初のコメントを書いてみよう！")}
@@ -320,6 +398,23 @@ export default function CommentSection({
           >
             {t("人気順")}
           </button>
+          <span className="text-mut text-sm ml-1">{t("表示:")}</span>
+          {(
+            [
+              ["tree", "ツリー"],
+              ["flat", "フラット"],
+            ] as [ViewType, string][]
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => changeView(v)}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                view === v ? "bg-x text-white border-x" : "bg-panel2 text-mut border-line hover:text-txt"
+              }`}
+            >
+              {t(label)}
+            </button>
+          ))}
           <input
             type="text"
             value={q}
@@ -623,6 +718,7 @@ function CommentItem({
   onHide,
   isNew,
   anchorLookup,
+  flat = false,
 }: {
   comment: CommentWithReplies;
   myVoteType?: "like" | "dislike" | null;
@@ -634,6 +730,7 @@ function CommentItem({
   onHide: (id: string) => void;
   isNew?: boolean;
   anchorLookup?: (n: number) => { name: string; content: string } | null;
+  flat?: boolean;
 }) {
   const [local, setLocal] = useState<CommentRow>(comment);
   const [replies, setReplies] = useState<CommentRow[]>(comment.replies);
@@ -828,7 +925,7 @@ function CommentItem({
         </button>
       </div>
 
-      {replies.filter((r) => showHidden || !hiddenIds.includes(r.id)).length > 0 && (
+      {!flat && replies.filter((r) => showHidden || !hiddenIds.includes(r.id)).length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-line space-y-3">
           {replies
             .filter((r) => showHidden || !hiddenIds.includes(r.id))

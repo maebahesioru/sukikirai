@@ -4,7 +4,7 @@ import { localePath } from "@/lib/i18n-core";
 import { getLocale } from "@/lib/i18n-server";
 import Link from "next/link";
 import { Search, UserPlus } from "lucide-react";
-import { findPersonByHandleOrId, normalizeHandle, searchPeople, searchComments } from "@/lib/queries";
+import { findVisiblePersonByHandleOrId, normalizeHandle, searchPeople, searchComments } from "@/lib/queries";
 import { findXUserCandidates } from "@/lib/xsearch";
 import PersonCard from "@/components/PersonCard";
 import XUserCandidates from "@/components/XUserCandidates";
@@ -36,7 +36,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
   const handle = q ? normalizeHandle(q) : null;
 
   const [exact, results, commentSearch] = await Promise.all([
-    handle ? findPersonByHandleOrId(handle) : Promise.resolve(null),
+    handle ? findVisiblePersonByHandleOrId(handle) : Promise.resolve(null),
     q ? searchPeople(q, 48) : Promise.resolve([]),
     q ? searchComments(q, 20) : Promise.resolve({ hits: [], total: 0 }),
   ]);

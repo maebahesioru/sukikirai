@@ -1015,6 +1015,23 @@ export async function findPersonByHandleOrId(handle: string): Promise<Person | n
   );
 }
 
+/**
+ * 表示中（is_hidden = FALSE）の行だけを対象にした handle/id 検索。
+ * 旧データの非表示行（重複掃除・旧ハンドル・削除済みなど）に一致してしまうと
+ * 「追加に成功したのに /person/<id> が 404」になるため、ユーザーが叩く追加系はこちらを使う（2026-10-23）
+ */
+export async function findVisiblePersonByHandleOrId(handle: string): Promise<Person | null> {
+  const h = handle.toLowerCase();
+  const slug = h.replace(/_/g, "-");
+  return sql1<Person>(
+    `SELECT * FROM people
+     WHERE NOT is_hidden
+       AND (lower(handle) = $1 OR id = $1 OR id = $2 OR replace(lower(id), '-', '_') = $1)
+     LIMIT 1`,
+    [h, slug]
+  );
+}
+
 export async function addPersonFromX(
   handleRaw: string
 ): Promise<{ person: Person; created: boolean } | { error: string; status: number }> {
@@ -1022,8 +1039,26 @@ export async function addPersonFromX(
   if (!handle) {
     return { error: "XのIDの形式が正しくありません（英数字と _ のみ、15文字まで）", status: 400 };
   }
-  const existing = await findPersonByHandleOrId(handle);
+  const existing = await findVisiblePersonByHandleOrId(handle);
   if (existing) return { person: existing, created: false };
+
+  // 非表示行（旧データの重複・旧ハンドルなど）だけが一致する場合:
+  // 同じXの数値IDを持つ表示中の行があればそこへ寄せ、無ければ 404 ページではなく明示エラーで返す
+  const hiddenHit = await findPersonByHandleOrId(handle);
+  if (hiddenHit?.is_hidden) {
+    const twin = hiddenHit.x_user_id
+      ? await sql1<Person>(
+          "SELECT * FROM people WHERE x_user_id = $1 AND NOT is_hidden LIMIT 1",
+          [hiddenHit.x_user_id]
+        )
+      : null;
+    if (twin) return { person: twin, created: false };
+    return {
+      error:
+        "このIDは非表示の旧データと一致します（重複登録・旧ハンドルなど）。表示されているハンドルで検索してください",
+      status: 409,
+    };
+  }
 
   const fx = await fetchFxUser(handle);
   if (!fx) {
@@ -1049,8 +1084,17 @@ export async function addPersonFromX(
     }
   }
 
-  const again = await findPersonByHandleOrId(fx.screenName);
+  const again = await findVisiblePersonByHandleOrId(fx.screenName);
   if (again) return { person: again, created: false };
+
+  // 改名で新ハンドルに変わっただけの「非表示の旧行」は復活させない（同じ人物なら表示中の行へ寄せる）
+  if (fx.id) {
+    const twin = await sql1<Person>(
+      "SELECT * FROM people WHERE x_user_id = $1 AND NOT is_hidden LIMIT 1",
+      [fx.id]
+    );
+    if (twin) return { person: twin, created: false };
+  }
 
   const baseSlug =
     fx.screenName.toLowerCase().replace(/_/g, "-").replace(/[^a-z0-9-]/g, "") ||
@@ -1104,7 +1148,11 @@ export async function addPersonFromX(
     return r.rows[0];
   });
 
-  if (person) await assignRandomHouse(person.id);
+  if (!person) {
+    // ON CONFLICT で弾かれた（同IDの行がある）のに handle 一致も無い＝稀な競合。500 で落とさず明示エラーを返す
+    return { error: "登録に失敗しました（IDが競合しています）。少し時間をおいて再試行してください", status: 409 };
+  }
+  await assignRandomHouse(person.id);
   return { person, created: true };
 }
 

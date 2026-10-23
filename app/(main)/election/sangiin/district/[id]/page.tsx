@@ -5,6 +5,7 @@ import { PARTIES } from "@/data/election";
 import { SANGIIN_DISTRICTS } from "@/data/sangiin";
 import Avatar from "@/components/Avatar";
 import { getServerT } from "@/lib/i18n-server";
+import { ELECTION } from "@/lib/constants";
 import { num } from "@/lib/format";
 import type { Metadata } from "next";
 
@@ -34,6 +35,7 @@ export default async function SangiinDistrictPage({ params }: { params: Promise<
   if (!meta) notFound();
   const t = await getServerT();
   const cands = await getSangiinEntriesByDistrict(districtId);
+  const phase = Date.now() <= Date.parse(ELECTION.endIso) ? "live" : "after";
 
   return (
     <div className="space-y-5">
@@ -82,7 +84,7 @@ export default async function SangiinDistrictPage({ params }: { params: Promise<
                 </div>
                 {isWinner && (
                   <span className="shrink-0 text-xs font-bold px-2 py-1 rounded-full bg-x text-white whitespace-nowrap">
-                    {t("当選")}
+                    {phase === "after" ? t("当選") : t("当選圏")}
                   </span>
                 )}
               </div>

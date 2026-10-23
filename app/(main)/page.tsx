@@ -240,7 +240,7 @@ export default async function HomePage() {
             <div className="min-w-0 flex-1">
               <div className="font-bold text-sm group-hover:text-x transition">{t(ELECTION.title)}</div>
               <div className="text-xs text-mut mt-0.5">
-                {t("開催中！10/24(土)まで — 289選挙区+176比例・毎日投票で推しの議席を獲れ")}
+                {t("開催中！10/31(土)まで — 289選挙区+176比例・毎日投票で推しの議席を獲れ")}
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-mut shrink-0" />

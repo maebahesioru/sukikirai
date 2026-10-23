@@ -116,7 +116,7 @@ export default async function DistrictPage({ params }: { params: Promise<{ id: s
       </section>
 
       <p className="text-center text-xs text-mut">
-        {t("期間終了（10/24 23:59）時点の得票で確定します。毎日投票するほど推しが有利。")}
+        {t("期間終了（10/31 23:59）時点の得票で確定します。毎日投票するほど推しが有利。")}
       </p>
     </div>
   );

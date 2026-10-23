@@ -21,12 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t(ELECTION.title),
     description: t(
-      "全登録ユーザーが300の小選挙区と10党にランダム配属され、期間中の「好き」票（嫌い票は-0.5）で議席を争う2週間イベント。比例復活あり。"
+      "全登録ユーザーが300の小選挙区と10党にランダム配属され、期間中の「好き」票（嫌い票は-0.5）で議席を争う3週間イベント。比例復活あり。"
     ),
     alternates: { canonical: localePath(locale, "/election") },
     openGraph: {
       title: t(ELECTION.title),
-      description: t("300選挙区+212比例・10党で議席を争う2週間イベント"),
+      description: t("300選挙区+212比例・10党で議席を争う3週間イベント"),
       images: ["/og.png"],
     },
   };
@@ -298,7 +298,7 @@ export default async function ElectionPage({ searchParams }: { searchParams: Pro
           <li>{t("得票 = 期間中の「好き」+1票、「嫌い」-0.5票（毎日投票できるほど有利）")}</li>
           <li>{t("小選挙区 = 1位が当選（300議席）")}</li>
           <li>{t("比例 = 党のブロック得票でサン＝ラグ方式配分→党内名簿順で当選。小選挙区で負けても名簿が上位なら復活当選（212議席）")}</li>
-          <li>{t("期間終了（10/24 23:59）時点の数字で確定します")}</li>
+          <li>{t("期間終了（10/31 23:59）時点の数字で確定します")}</li>
         </ul>
       </section>
     </div>

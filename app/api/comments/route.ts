@@ -68,6 +68,20 @@ export async function POST(request: Request) {
         );
       }
     }
+    // 同一クッキー（=同一トークン）から同一人物への連投制限: 10分で5件まで — 2026-10-23
+    if (!rateLimit(`comment:ck:${userToken}:${personId}`, 5, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "同じページへの投稿が続いています。少し時間をおいてお試しください" },
+        { status: 429 }
+      );
+    }
+    // 同一クッキー×同一人物への同一文面の連投を拒否（クッキー回し連投対策）— 2026-10-23
+    if (!rateLimit(`comment:dupe:${userToken}:${personId}:${hashDeleteKey(content)}`, 1, 60 * 60 * 1000)) {
+      return NextResponse.json(
+        { success: false, error: "同じ内容を続けて投稿することはできません" },
+        { status: 429 }
+      );
+    }
     if (charCount(content) > MAX_COMMENT_CHARS) {
       return NextResponse.json(
         { success: false, error: `コメントは全角${Math.floor(MAX_COMMENT_CHARS / 2)}文字（半角${MAX_COMMENT_CHARS}文字）以内です` },
@@ -76,7 +90,7 @@ export async function POST(request: Request) {
     }
 
     const ip = clientIp(request);
-    if (!rateLimit(`comment:ip:${ip}`, 300, 60 * 60 * 1000)) {
+    if (!rateLimit(`comment:ip:${ip}`, 60, 60 * 60 * 1000)) {
       return NextResponse.json(
         { success: false, error: "投稿が多すぎます。しばらくお待ちください" },
         { status: 429 }

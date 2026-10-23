@@ -188,6 +188,9 @@ export async function assignSangiinEntry(personId: string): Promise<void> {
   try {
     const exists = await sql(`SELECT 1 FROM sangiin_entries WHERE person_id = $1`, [personId]);
     if (exists.length > 0) return;
+    // 両方登場は禁止（衆院に居る人は参院へ入れない）
+    const inShu = await sql(`SELECT 1 FROM election_entries WHERE person_id = $1`, [personId]);
+    if (inShu.length > 0) return;
     const pr = await sql<{ text: string }>(
       `SELECT COALESCE(x_description,'') || ' ' || COALESCE(description,'') || ' ' || COALESCE(x_website,'') AS text FROM people WHERE id = $1`,
       [personId]
@@ -265,6 +268,9 @@ export async function assignElectionEntry(personId: string): Promise<void> {
   try {
     const exists = await sql(`SELECT 1 FROM election_entries WHERE person_id = $1`, [personId]);
     if (exists.length > 0) return;
+    // 両方登場は禁止（参院へ移動済みの人は衆院に戻さない）
+    const inSangiin = await sql(`SELECT 1 FROM sangiin_entries WHERE person_id = $1`, [personId]);
+    if (inSangiin.length > 0) return;
     // プロフ・リンク欄から確定配属を試みる
     const pr = await sql<{ text: string }>(
       `SELECT COALESCE(x_description,'') || ' ' || COALESCE(description,'') || ' ' || COALESCE(x_website,'') AS text FROM people WHERE id = $1`,

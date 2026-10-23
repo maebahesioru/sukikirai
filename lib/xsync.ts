@@ -2,6 +2,7 @@
 // 人物ページが開かれたとき、1時間以上確認していない人だけバックグラウンドで fxTwitter から最新化する。
 // （表示は現在の値を即返し、次回アクセス時に新データが見える stale-while-revalidate 方式）
 import { sql, sql1 } from "./db";
+import { assignElectionEntry } from "./election-queries";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
@@ -161,6 +162,11 @@ export async function maybeRefreshPersonProfile(personId: string): Promise<void>
         u.verification?.type ? String(u.verification.type).slice(0, 20) : null,
       ]
     );
+
+    // 名簿に居ない人は現行イベントへ入れる（既に入っていれば即 return するので無害）。
+    // 休止・アーカイブから復活した人が「投票できるのにイベント未参加」のまま放置されていたため
+    // （2026-10-23 granny-gn 事例・日次チェッカーが先に復活させても拾えるよう毎回確認する）
+    await assignElectionEntry(p.id);
   } catch {
     // 一時的なネットワークエラーは無視（日次チェッカーが拾う）
   } finally {

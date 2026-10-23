@@ -8,6 +8,7 @@ import {
   getPerson,
 } from "@/lib/queries";
 import { fetchFxUser } from "@/lib/fxtwitter";
+import { assignElectionEntry } from "@/lib/election-queries";
 import { normalizeHandle } from "@/lib/queries";
 import { str } from "@/lib/validate";
 import { CATEGORIES } from "@/lib/constants";
@@ -187,6 +188,8 @@ export async function POST(request: Request) {
         x_verified: matched.verified,
         x_verified_type: matched.verifiedType,
       });
+      // 名簿に居ない人（休止から復活した人等）は現行イベントへ入れる。既に入っていれば何もしない
+      await assignElectionEntry(id);
       return NextResponse.json({ success: true, person: updated });
     }
 

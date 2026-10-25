@@ -16,12 +16,21 @@ const SCORE_SUB = `(
     UNION ALL
     -- コメント得票は「同一クッキー×同一人物で1件」だけ加点（クッキー回しの連投対策 — 2026-10-23）
     -- 4文字以下（「神」「神神神」等）は加点対象外
+    -- 同一人物に同じ文面が10件以上並ぶ荒らしの連投波も加点対象外（2026-10-25。クッキーを回して
+    -- 1件ずつ書くと上のDISTINCT ONをすり抜けて得点が跳ねるため。表示自体は残す）
     SELECT person_id, CASE vote_type WHEN 'like' THEN 2.0 ELSE -1.5 END, 'comment'
     FROM (
       SELECT DISTINCT ON (person_id, cookie_id) person_id, cookie_id, vote_type
-      FROM comments
+      FROM comments c
       WHERE created_at >= $1 AND created_at <= $2 AND NOT is_hidden
         AND char_length(btrim(content)) > 4
+        AND (
+          SELECT count(*) FROM comments c2
+          WHERE c2.person_id = c.person_id
+            AND c2.created_at >= $1 AND c2.created_at <= $2
+            AND NOT c2.is_hidden
+            AND btrim(c2.content) = btrim(c.content)
+        ) < 10
       ORDER BY person_id, cookie_id, created_at
     ) cq
     UNION ALL

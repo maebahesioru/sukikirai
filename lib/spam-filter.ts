@@ -66,10 +66,13 @@ export function isSpamContent(
     }
   }
 
-  // 同じ文字の5連続以上。ただし空白・罫線・区切り記号の繰り返しは対象外（2026-10-19）
+  // 同じ文字の5連続以上。ただし空白・罫線・区切り記号・数字の繰り返しは対象外（2026-10-19 / 2026-10-27）
   // 背景: WHOIS/ログ/コード等の整形出力は空白や罫線の連続が正常。「あああああ」「AAAAA」等は引き続き検出。
-  const repeatedCharPattern = /([^\s\-–—=*_~#|+.,:;・])\1{4,}/u;
-  if (repeatedCharPattern.test(content)) {
+  // 2026-10-27: 数字の連続（0000000004.000011455 等）は URL・ID・価格で正常なため対象外に。
+  //             URL 内の文字も対象外にする（prtimes.jp 等のゼロ詰め ID で投稿できなかった）。
+  const repeatedCharPattern = /([^\s\-–—=*_~#|+.,:;・0-9０-９])\1{4,}/u;
+  const withoutUrls = content.replace(new RegExp(URL_PATTERN.source, "gi"), " ");
+  if (repeatedCharPattern.test(withoutUrls)) {
     return { isSpam: true, reason: "同じ文字の連続使用が検出されました" };
   }
 

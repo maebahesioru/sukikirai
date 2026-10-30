@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addPersonFromX } from "@/lib/queries";
+import { addPersonFromX, findVisiblePersonByHandleOrId, normalizeHandle } from "@/lib/queries";
 import { autoTagPerson } from "@/lib/autotag";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { str } from "@/lib/validate";
@@ -12,6 +12,26 @@ export async function POST(request: Request) {
     const query = str(body.query, 60).trim();
     if (!query) {
       return NextResponse.json({ success: false, error: "検索ワードを入力してください" }, { status: 400 });
+    }
+
+    // 既に登録済みならレート制限を通さずに即返す（2026-10-30）。
+    // 同じ人のページを何度も検索し直した時に「追加リクエストが多すぎます／少し待ってから」で
+    // 弾かれ、「追加できない」と誤解されるのを防ぐ。DB参照だけなので外部呼び出しは無い。
+    const handleNorm = normalizeHandle(query);
+    if (handleNorm) {
+      const known = await findVisiblePersonByHandleOrId(handleNorm);
+      if (known) {
+        return NextResponse.json({
+          success: true,
+          created: false,
+          person: {
+            id: known.id,
+            name: known.name,
+            handle: known.handle,
+            avatar_url: known.avatar_url,
+          },
+        });
+      }
     }
 
     const ip = clientIp(request);

@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 import { sql, sql1, withTx, jstDayStart } from "./db";
 import { EVAL_KEYS, DEFAULT_CATEGORY, SOUSENKYO } from "./constants";
 import { isSpamContent, isDuplicateContent } from "./spam-filter";
-import { fetchFxUser } from "./fxtwitter";
+import { fetchFxUserDetailed } from "./fxtwitter";
 import { assignRandomHouse } from "./election-queries";
 import { anonId } from "./bbs2ch";
 import type {
@@ -1060,10 +1060,26 @@ export async function addPersonFromX(
     };
   }
 
-  const fx = await fetchFxUser(handle);
-  if (!fx) {
+  // 失敗理由を区別して返す（2026-10-30）:
+  // 以前は「Xユーザーが見つかりませんでした」に丸めていたため、凍結やX側の一時障害でも
+  // 「IDが間違っている」と誤解させる文言になっていた。
+  const fxLookup = await fetchFxUserDetailed(handle);
+  if ("error" in fxLookup) {
+    if (fxLookup.error === "suspended") {
+      return {
+        error: "このアカウントはX側で凍結されています（凍結が解除されると追加できます）",
+        status: 404,
+      };
+    }
+    if (fxLookup.error === "upstream") {
+      return {
+        error: "X側の取得が混み合っています。少し時間をおいてもう一度お試しください",
+        status: 503,
+      };
+    }
     return { error: "Xユーザーが見つかりませんでした。IDを確認してください", status: 404 };
   }
+  const fx = fxLookup.user;
 
   // ★ 数値IDで既存チェック: 改名後の新ハンドルで再登録されると重複行ができるため、同一アカウントは既存行を返す（2026-10-13）
   if (fx.id) {

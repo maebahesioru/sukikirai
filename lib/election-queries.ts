@@ -10,9 +10,13 @@ const SCORE_SUB = `(
          COUNT(*) FILTER (WHERE kind = 'vote_like')::int AS likes,
          COUNT(*) FILTER (WHERE kind = 'vote_dislike')::int AS dislikes
   FROM (
-    SELECT person_id, CASE vote_type WHEN 'like' THEN 1.0 ELSE -0.5 END AS pts,
-           CASE vote_type WHEN 'like' THEN 'vote_like' ELSE 'vote_dislike' END AS kind
-    FROM votes WHERE created_at >= $1 AND created_at <= $2
+    SELECT v.person_id, CASE v.vote_type WHEN 'like' THEN 1.0 ELSE -0.5 END AS pts,
+           CASE v.vote_type WHEN 'like' THEN 'vote_like' ELSE 'vote_dislike' END AS kind
+    FROM votes v
+    WHERE v.created_at >= $1 AND v.created_at <= $2
+      -- 協調投票リング（複数クッキーでの組織的水増し）の加点除外 — 2026-10-30
+      -- 一次証拠で確定したクッキーだけを vote_ring_excluded に登録する（誤検知を出さないため自動判定はしない）
+      AND NOT EXISTS (SELECT 1 FROM vote_ring_excluded r WHERE r.cookie_id = v.cookie_id)
     UNION ALL
     -- コメント得票は「同一クッキー×同一人物で1件」だけ加点（クッキー回しの連投対策 — 2026-10-23）
     -- 4文字以下（「神」「神神神」等）は加点対象外

@@ -66,6 +66,16 @@ CREATE INDEX IF NOT EXISTS idx_votes_cookie ON votes(cookie_id);
 CREATE INDEX IF NOT EXISTS idx_votes_created ON votes(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_votes_pc ON votes(person_id, cookie_id, created_at DESC);
 
+-- 協調投票リング（複数クッキーでの組織的な水増し）の加点除外リスト（2026-10-30）
+-- 一次証拠（初投票のburst・共投先の一致・投稿時刻の突合）で確定したクッキーだけを運営が登録する。
+-- 得点計算ではこのクッキーの票を除外するが、票そのもの（表示・履歴）は消さない。
+CREATE TABLE IF NOT EXISTS vote_ring_excluded (
+  cookie_id TEXT PRIMARY KEY,
+  note TEXT,
+  evidence TEXT,
+  added_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   person_id TEXT NOT NULL REFERENCES people(id) ON DELETE CASCADE,

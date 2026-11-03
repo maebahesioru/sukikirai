@@ -18,7 +18,7 @@ export default async function Footer() {
           <Link href="/today" className="hover:text-txt transition">
             {t("今日のまとめ")}
           </Link>
-          <Link href="/election" className="hover:text-txt transition">
+          <Link href="/events" className="hover:text-txt transition">
             {t("衆院選")}
           </Link>
           <Link href="/people" className="hover:text-txt transition">

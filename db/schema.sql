@@ -312,3 +312,54 @@ CREATE TABLE IF NOT EXISTS election_snapshots (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS election_snapshots_day_hour_party ON election_snapshots (day, hour, party_id);
+
+-- ツイッタラーズイカゲーム（2026-11-05 開始）
+-- 日次ポイント（person = スレッド単位。受け取った行動を点数化）
+CREATE TABLE IF NOT EXISTS squid_scores (
+  day INTEGER NOT NULL,
+  person_id TEXT NOT NULL,
+  raw_pts REAL NOT NULL DEFAULT 0,
+  pts REAL NOT NULL DEFAULT 0,
+  vote_pts REAL NOT NULL DEFAULT 0,
+  eval_pts REAL NOT NULL DEFAULT 0,
+  comment_pts REAL NOT NULL DEFAULT 0,
+  vote_count INTEGER NOT NULL DEFAULT 0,
+  vote_likes INTEGER NOT NULL DEFAULT 0,
+  eval_count INTEGER NOT NULL DEFAULT 0,
+  comment_count INTEGER NOT NULL DEFAULT 0,
+  last_action_at TIMESTAMPTZ,
+  PRIMARY KEY (day, person_id)
+);
+CREATE INDEX IF NOT EXISTS idx_squid_scores_person ON squid_scores(person_id);
+
+-- 参加者（people 全件を tick 時に同期）
+CREATE TABLE IF NOT EXISTS squid_participants (
+  person_id TEXT PRIMARY KEY,
+  cum_pts REAL NOT NULL DEFAULT 0,
+  eliminated_day INTEGER,
+  eliminated_round TEXT,
+  last_day INTEGER,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_squid_participants_alive ON squid_participants(eliminated_day, cum_pts DESC);
+
+-- 日ごとの判定結果
+CREATE TABLE IF NOT EXISTS squid_days (
+  day INTEGER PRIMARY KEY,
+  stage_slug TEXT NOT NULL,
+  alive_before INTEGER NOT NULL DEFAULT 0,
+  cutline_pts REAL,
+  eliminated INTEGER NOT NULL DEFAULT 0,
+  alive_after INTEGER NOT NULL DEFAULT 0,
+  computed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 天空イカゲームの6時間ごとの判定
+CREATE TABLE IF NOT EXISTS squid_rounds (
+  slot INTEGER PRIMARY KEY,
+  round_at TIMESTAMPTZ NOT NULL,
+  alive_before INTEGER NOT NULL,
+  eliminated INTEGER NOT NULL,
+  alive_after INTEGER NOT NULL,
+  computed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

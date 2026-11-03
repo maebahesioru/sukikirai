@@ -32,6 +32,7 @@ export default function PersonClient({
   likeRank,
   election,
   sangiin,
+  squid,
   commentsPreview,
   commentsTotal,
   isBot = false,
@@ -69,6 +70,13 @@ export default function PersonClient({
     dislikes: number;
     rank: number;
     total: number;
+  } | null;
+  squid: {
+    alive: boolean;
+    cumPts: number;
+    eliminatedDay: number | null;
+    eliminatedRound: string | null;
+    rank: number | null;
   } | null;
   commentsPreview: { id: string; name: string | null; content: string; created_at: string; replies: { id: string; name: string | null; content: string; created_at: string }[] }[];
   commentsTotal: number;
@@ -208,6 +216,20 @@ export default function PersonClient({
                 >
                   📣 {t("応援をシェア")}
                 </button>
+              </div>
+            )}
+            {squid && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Link
+                  href="/squid"
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-xsoft text-x border border-x/40 hover:opacity-80 transition whitespace-nowrap"
+                >
+                  🦑{" "}
+                  {squid.alive
+                    ? t("イカゲーム生存 {rank}位", { rank: squid.rank ?? 0 })
+                    : t("イカゲーム Day {d} 脱落", { d: squid.eliminatedDay ?? 0 })}
+                  <span className="font-normal opacity-70">{squid.cumPts.toFixed(1)}pt</span>
+                </Link>
               </div>
             )}
             {profileText && (

@@ -53,7 +53,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/search`, lastModified: now, changeFrequency: "weekly", priority: 0.6, alternates: alternatesFor("/search") },
     { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.3, alternates: alternatesFor("/terms") },
     { url: `${SITE_URL}/meta`, lastModified: now, changeFrequency: "daily", priority: 0.4, alternates: alternatesFor("/meta") },
-    { url: `${SITE_URL}/election`, lastModified: now, changeFrequency: "hourly", priority: 0.9, alternates: alternatesFor("/election") },
+    { url: `${SITE_URL}/election`, lastModified: now, changeFrequency: "weekly", priority: 0.6, alternates: alternatesFor("/election") },
+    { url: `${SITE_URL}/events`, lastModified: now, changeFrequency: "daily", priority: 0.8, alternates: alternatesFor("/events") },
+    { url: `${SITE_URL}/squid`, lastModified: now, changeFrequency: "hourly", priority: 0.9, alternates: alternatesFor("/squid") },
   ];
 
   // 衆院選ページ（選挙区289・ブロック11・政党10）— 2026-10-11追加

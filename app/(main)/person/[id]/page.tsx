@@ -26,6 +26,7 @@ import { isCrawler } from "@/lib/bot-verify";
 import { getComments } from "@/lib/queries";
 import type { CommentWithReplies } from "@/lib/types";
 import { getPersonSangiinElection } from "@/lib/sangiin-queries";
+import { getPersonSquidStatus } from "@/lib/squid-queries";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { maybeRefreshPersonProfile } from "@/lib/xsync";
 import PersonClient from "./PersonClient";
@@ -89,7 +90,7 @@ export default async function PersonPage({ params }: Params) {
   const cookieStore = await cookies();
   const token = cookieStore.get("user_token")?.value ?? "";
 
-  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak, sousenkyoRankRaw, myVoteEver, electionEntry, sangiinEntry] =
+  const [voteStats, evalStats, myVote, myEval, tagRanking, relatedPeople, relatedPolls, likeRank, trending, recent, streak, sousenkyoRankRaw, myVoteEver, electionEntry, sangiinEntry, squidStatus] =
     await Promise.all([
       getVoteStats(id),
       getEvalStats(id),
@@ -108,6 +109,7 @@ export default async function PersonPage({ params }: Params) {
       getMyVoteEver(id, token),
       getPersonElection(id),
       getPersonSangiinElection(id),
+      getPersonSquidStatus(id),
     ]);
 
   // 総選挙終了後、TOP10のみバッジ表示（受賞者がシェアする動機づけ）
@@ -173,6 +175,7 @@ export default async function PersonPage({ params }: Params) {
           initialStreak={streak}
           election={electionEntry}
           sangiin={sangiinEntry}
+          squid={squidStatus}
           commentsPreview={previewComments}
           commentsTotal={previewTotal}
           isBot={isBot}

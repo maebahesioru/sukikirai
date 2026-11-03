@@ -12,7 +12,6 @@ import { useT } from "@/lib/i18n-client";
 
 const NAV = [
   { href: "/events", label: "イベント" },
-  { href: "/squid", label: "🦑イカゲーム" },
   { href: "/ranking/popularity", label: "ランキング" },
   { href: "/people", label: "人物一覧" },
   { href: "/polls", label: "投票トーク" },

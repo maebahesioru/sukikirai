@@ -648,6 +648,8 @@ export async function getPersonSquidStatus(personId: string): Promise<{
   rank: number | null;
 } | null> {
   await ensureSquidTables();
+  // 開始前は全員0ptで並ぶため、バッジは出さない（誤った順位を見せない）
+  if (squidDay(new Date()) < 1) return null;
   const row = await sql1<{ cum_pts: number; eliminated_day: number | null; eliminated_round: string | null }>(
     "SELECT cum_pts, eliminated_day, eliminated_round FROM squid_participants WHERE person_id = $1",
     [personId]
